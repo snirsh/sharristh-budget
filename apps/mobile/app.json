@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Sharristh Budget",
+    "slug": "sharristh-budget",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "sharristh",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sharristh.budget"
+    },
+    "android": {
+      "package": "com.sharristh.budget"
+    },
+    "plugins": ["expo-router"]
+  }
+}

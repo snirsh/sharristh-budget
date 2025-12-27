@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// HOUSEHOLD & USERS
+// ============================================
+
+model Household {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members      HouseholdMember[]
+  accounts     Account[]
+  categories   Category[]
+  transactions Transaction[]
+  budgets      Budget[]
+  rules        CategoryRule[]
+  recurring    RecurringTransactionTemplate[]
+
+  @@map("households")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships  HouseholdMember[]
+  transactions Transaction[]
+  corrections  UserCorrection[]
+
+  @@map("users")
+}
+
+model HouseholdMember {
+  id          String   @id @default(cuid())
+  householdId String
+  userId      String
+  role        String   @default("member") // owner | member
+  createdAt   DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@index([householdId])
+  @@index([userId])
+  @@map("household_members")
+}
+
+// ============================================
+// ACCOUNTS
+// ============================================
+
+model Account {
+  id           String   @id @default(cuid())
+  householdId  String
+  name         String
+  type         String // checking | savings | credit | cash
+  currency     String   @default("ILS")
+  balance      Float    @default(0)
+  isActive     Boolean  @default(true)
+  institutionName String?
+  lastSyncedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([householdId])
+  @@map("accounts")
+}
+
+// ============================================
+// CATEGORIES
+// ============================================
+
+model Category {
+  id               String   @id @default(cuid())
+  householdId      String
+  name             String
+  type             String   // income | expected | varying
+  parentCategoryId String?
+  icon             String?
+  color            String?
+  isActive         Boolean  @default(true)
+  isSystem         Boolean  @default(false)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  parent        Category?      @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  children      Category[]     @relation("CategoryHierarchy")
+  transactions  Transaction[]
+  budgets       Budget[]
+  rules         CategoryRule[]
+  recurring     RecurringTransactionTemplate[]
+
+  @@unique([householdId, name, parentCategoryId])
+  @@index([householdId])
+  @@index([parentCategoryId])
+  @@index([type])
+  @@map("categories")
+}
+
+// ============================================
+// TRANSACTIONS
+// ============================================
+
+model Transaction {
+  id                    String    @id @default(cuid())
+  householdId           String
+  accountId             String
+  userId                String?
+  categoryId            String?
+  date                  DateTime
+  description           String
+  merchant              String?
+  amount                Float
+  direction             String    // income | expense | transfer
+  categorizationSource  String?   // manual | rule_merchant | rule_keyword | rule_regex | fallback
+  confidence            Float?
+  notes                 String?
+  needsReview           Boolean   @default(false)
+  isRecurringInstance   Boolean   @default(false)
+  recurringTemplateId   String?
+  recurringInstanceKey  String?   // templateId_YYYY-MM-DD for uniqueness
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  household   Household                      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  account     Account                        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user        User?                          @relation(fields: [userId], references: [id])
+  category    Category?                      @relation(fields: [categoryId], references: [id])
+  template    RecurringTransactionTemplate?  @relation(fields: [recurringTemplateId], references: [id])
+  corrections UserCorrection[]
+
+  @@unique([recurringTemplateId, recurringInstanceKey])
+  @@index([householdId])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([date])
+  @@index([householdId, date])
+  @@index([recurringTemplateId])
+  @@map("transactions")
+}
+
+// ============================================
+// BUDGETS
+// ============================================
+
+model Budget {
+  id                String   @id @default(cuid())
+  householdId       String
+  categoryId        String
+  month             String   // YYYY-MM format
+  plannedAmount     Float
+  limitAmount       Float?
+  limitType         String?  // soft | hard
+  alertThresholdPct Float    @default(0.8)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, categoryId, month])
+  @@index([householdId])
+  @@index([categoryId])
+  @@index([month])
+  @@map("budgets")
+}
+
+// ============================================
+// CATEGORY RULES
+// ============================================
+
+model CategoryRule {
+  id           String   @id @default(cuid())
+  householdId  String
+  categoryId   String
+  type         String   // merchant | keyword | regex
+  pattern      String
+  priority     Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdFrom  String?  // correction | manual
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([categoryId])
+  @@index([type])
+  @@map("category_rules")
+}
+
+// ============================================
+// USER CORRECTIONS (for learning)
+// ============================================
+
+model UserCorrection {
+  id                 String   @id @default(cuid())
+  userId             String
+  transactionId      String
+  fromCategoryId     String?
+  toCategoryId       String
+  createdRuleId      String?
+  createdAt          DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([transactionId])
+  @@map("user_corrections")
+}
+
+// ============================================
+// RECURRING TRANSACTIONS
+// ============================================
+
+model RecurringTransactionTemplate {
+  id                String    @id @default(cuid())
+  householdId       String
+  name              String
+  direction         String    // income | expense | transfer
+  amount            Float
+  defaultCategoryId String?
+  description       String?
+  merchant          String?
+  accountId         String?
+  
+  // Schedule
+  frequency         String    // daily | weekly | monthly | yearly
+  interval          Int       @default(1)
+  byWeekday         String?   // 0-6 for weekly (comma-separated for multiple)
+  byMonthDay        Int?      // 1-31 for monthly
+  startDate         DateTime
+  endDate           DateTime?
+  timezone          String    @default("Asia/Jerusalem")
+  
+  isActive          Boolean   @default(true)
+  nextRunAt         DateTime?
+  lastRunAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  household    Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  category     Category?             @relation(fields: [defaultCategoryId], references: [id])
+  overrides    RecurringOverride[]
+  transactions Transaction[]
+
+  @@index([householdId])
+  @@index([isActive])
+  @@index([nextRunAt])
+  @@map("recurring_templates")
+}
+
+model RecurringOverride {
+  id          String   @id @default(cuid())
+  templateId  String
+  instanceKey String   // YYYY-MM-DD
+  action      String   // skip | modify
+  amount      Float?
+  categoryId  String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  template RecurringTransactionTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, instanceKey])
+  @@index([templateId])
+  @@map("recurring_overrides")
+}
+

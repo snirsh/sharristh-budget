@@ -1,0 +1,15 @@
+{
+  "name": "@sharristh/config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./tailwind": "./tailwind/index.js",
+    "./eslint": "./eslint/index.js",
+    "./tsconfig/*.json": "./tsconfig/*.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
+

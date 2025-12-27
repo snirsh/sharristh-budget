@@ -1,0 +1,167 @@
+import { z } from 'zod';
+import { router, publicProcedure } from '../trpc';
+import { createCategoryRuleSchema } from '@sharristh/domain/schemas';
+
+export const rulesRouter = router({
+  /**
+   * List all rules
+   */
+  list: publicProcedure
+    .input(
+      z
+        .object({
+          categoryId: z.string().optional(),
+          type: z.enum(['merchant', 'keyword', 'regex']).optional(),
+          includeInactive: z.boolean().default(false),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Record<string, unknown> = {
+        householdId: ctx.householdId,
+      };
+
+      if (input?.categoryId) {
+        where.categoryId = input.categoryId;
+      }
+
+      if (input?.type) {
+        where.type = input.type;
+      }
+
+      if (!input?.includeInactive) {
+        where.isActive = true;
+      }
+
+      return ctx.prisma.categoryRule.findMany({
+        where,
+        include: {
+          category: true,
+        },
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+      });
+    }),
+
+  /**
+   * Get single rule by ID
+   */
+  byId: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    return ctx.prisma.categoryRule.findUnique({
+      where: { id: input },
+      include: {
+        category: true,
+      },
+    });
+  }),
+
+  /**
+   * Create a new rule
+   */
+  create: publicProcedure.input(createCategoryRuleSchema).mutation(async ({ ctx, input }) => {
+    return ctx.prisma.categoryRule.create({
+      data: {
+        householdId: ctx.householdId,
+        categoryId: input.categoryId,
+        type: input.type,
+        pattern: input.pattern,
+        priority: input.priority ?? 5,
+        isActive: true,
+        createdFrom: 'manual',
+      },
+      include: {
+        category: true,
+      },
+    });
+  }),
+
+  /**
+   * Update a rule
+   */
+  update: publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        data: z.object({
+          categoryId: z.string().optional(),
+          pattern: z.string().optional(),
+          priority: z.number().optional(),
+          isActive: z.boolean().optional(),
+        }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.categoryRule.update({
+        where: { id: input.id, householdId: ctx.householdId },
+        data: input.data,
+        include: {
+          category: true,
+        },
+      });
+    }),
+
+  /**
+   * Delete a rule
+   */
+  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    return ctx.prisma.categoryRule.delete({
+      where: { id: input, householdId: ctx.householdId },
+    });
+  }),
+
+  /**
+   * Toggle rule active status
+   */
+  toggle: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    const rule = await ctx.prisma.categoryRule.findUnique({
+      where: { id: input },
+    });
+
+    if (!rule) {
+      throw new Error('Rule not found');
+    }
+
+    return ctx.prisma.categoryRule.update({
+      where: { id: input },
+      data: { isActive: !rule.isActive },
+      include: {
+        category: true,
+      },
+    });
+  }),
+
+  /**
+   * Test a rule against sample text
+   */
+  test: publicProcedure
+    .input(
+      z.object({
+        type: z.enum(['merchant', 'keyword', 'regex']),
+        pattern: z.string(),
+        testText: z.string(),
+      })
+    )
+    .query(({ input }) => {
+      const textLower = input.testText.toLowerCase();
+      const patternLower = input.pattern.toLowerCase();
+
+      let matches = false;
+
+      switch (input.type) {
+        case 'merchant':
+        case 'keyword':
+          matches = textLower.includes(patternLower);
+          break;
+        case 'regex':
+          try {
+            const regex = new RegExp(input.pattern, 'i');
+            matches = regex.test(input.testText);
+          } catch {
+            return { matches: false, error: 'Invalid regex pattern' };
+          }
+          break;
+      }
+
+      return { matches };
+    }),
+});
+

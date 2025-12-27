@@ -1,0 +1,288 @@
+import { z } from 'zod';
+import { router, publicProcedure } from '../trpc';
+import {
+  createBudgetSchema,
+  updateBudgetSchema,
+  monthSchema,
+} from '@sharristh/domain/schemas';
+import {
+  evaluateBudgetStatus,
+  calculateCategorySpending,
+  getAlertBudgets,
+  type Budget,
+  type Transaction,
+} from '@sharristh/domain';
+
+// Helper to map Prisma budget to domain type
+function toBudget(b: {
+  id: string;
+  householdId: string;
+  categoryId: string;
+  month: string;
+  plannedAmount: number;
+  limitAmount?: number | null;
+  limitType?: string | null;
+  alertThresholdPct: number;
+}): Budget {
+  return {
+    ...b,
+    limitType: b.limitType as 'soft' | 'hard' | null | undefined,
+  };
+}
+
+// Helper to map Prisma transactions to domain type
+function toTransactions(txs: Array<{
+  id: string;
+  householdId: string;
+  accountId: string;
+  userId?: string | null;
+  categoryId?: string | null;
+  date: Date;
+  description: string;
+  merchant?: string | null;
+  amount: number;
+  direction: string;
+  needsReview: boolean;
+  isRecurringInstance: boolean;
+  recurringTemplateId?: string | null;
+  recurringInstanceKey?: string | null;
+}>): Transaction[] {
+  return txs.map(t => ({
+    ...t,
+    direction: t.direction as 'income' | 'expense' | 'transfer',
+    date: new Date(t.date),
+  }));
+}
+
+export const budgetsRouter = router({
+  /**
+   * Get budgets for a month with evaluations
+   */
+  forMonth: publicProcedure.input(monthSchema).query(async ({ ctx, input }) => {
+    const budgets = await ctx.prisma.budget.findMany({
+      where: {
+        householdId: ctx.householdId,
+        month: input,
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    // Get all transactions for the month to calculate actual spending
+    const [year, monthNum] = input.split('-').map(Number);
+    const startDate = new Date(year!, monthNum! - 1, 1);
+    const endDate = new Date(year!, monthNum!, 0);
+
+    const transactions = await ctx.prisma.transaction.findMany({
+      where: {
+        householdId: ctx.householdId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+        direction: 'expense',
+      },
+    });
+
+    // Evaluate each budget
+    const domainTransactions = toTransactions(transactions);
+    const evaluations = budgets.map((budget) => {
+      const actualAmount = calculateCategorySpending(
+        domainTransactions,
+        budget.categoryId,
+        input
+      );
+
+      return {
+        ...evaluateBudgetStatus(toBudget(budget), actualAmount),
+        category: budget.category,
+      };
+    });
+
+    return evaluations;
+  }),
+
+  /**
+   * Get alert budgets (nearing or exceeding limits)
+   */
+  alerts: publicProcedure.input(monthSchema).query(async ({ ctx, input }) => {
+    const budgets = await ctx.prisma.budget.findMany({
+      where: {
+        householdId: ctx.householdId,
+        month: input,
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    const [year, monthNum] = input.split('-').map(Number);
+    const startDate = new Date(year!, monthNum! - 1, 1);
+    const endDate = new Date(year!, monthNum!, 0);
+
+    const transactions = await ctx.prisma.transaction.findMany({
+      where: {
+        householdId: ctx.householdId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+        direction: 'expense',
+      },
+    });
+
+    const domainTransactions = toTransactions(transactions);
+    const evaluations = budgets.map((budget) => {
+      const actualAmount = calculateCategorySpending(
+        domainTransactions,
+        budget.categoryId,
+        input
+      );
+
+      return {
+        ...evaluateBudgetStatus(toBudget(budget), actualAmount),
+        category: budget.category,
+      };
+    });
+
+    return getAlertBudgets(evaluations).map((e) => ({
+      ...e,
+      category: budgets.find((b) => b.categoryId === e.budget.categoryId)?.category,
+    }));
+  }),
+
+  /**
+   * Get or create budget for a category/month
+   */
+  byCategory: publicProcedure
+    .input(
+      z.object({
+        categoryId: z.string(),
+        month: monthSchema,
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.prisma.budget.findUnique({
+        where: {
+          householdId_categoryId_month: {
+            householdId: ctx.householdId,
+            categoryId: input.categoryId,
+            month: input.month,
+          },
+        },
+        include: {
+          category: true,
+        },
+      });
+    }),
+
+  /**
+   * Create or update a budget (upsert)
+   */
+  upsert: publicProcedure.input(createBudgetSchema).mutation(async ({ ctx, input }) => {
+    return ctx.prisma.budget.upsert({
+      where: {
+        householdId_categoryId_month: {
+          householdId: ctx.householdId,
+          categoryId: input.categoryId,
+          month: input.month,
+        },
+      },
+      create: {
+        householdId: ctx.householdId,
+        categoryId: input.categoryId,
+        month: input.month,
+        plannedAmount: input.plannedAmount,
+        limitAmount: input.limitAmount,
+        limitType: input.limitType,
+        alertThresholdPct: input.alertThresholdPct ?? 0.8,
+      },
+      update: {
+        plannedAmount: input.plannedAmount,
+        limitAmount: input.limitAmount,
+        limitType: input.limitType,
+        alertThresholdPct: input.alertThresholdPct,
+      },
+      include: {
+        category: true,
+      },
+    });
+  }),
+
+  /**
+   * Update a budget
+   */
+  update: publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        data: updateBudgetSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.budget.update({
+        where: { id: input.id },
+        data: input.data,
+        include: {
+          category: true,
+        },
+      });
+    }),
+
+  /**
+   * Copy budgets from one month to another
+   */
+  copyMonth: publicProcedure
+    .input(
+      z.object({
+        fromMonth: monthSchema,
+        toMonth: monthSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const sourceBudgets = await ctx.prisma.budget.findMany({
+        where: {
+          householdId: ctx.householdId,
+          month: input.fromMonth,
+        },
+      });
+
+      // Create budgets for target month (skip if already exists)
+      const created = await Promise.all(
+        sourceBudgets.map((budget) =>
+          ctx.prisma.budget.upsert({
+            where: {
+              householdId_categoryId_month: {
+                householdId: ctx.householdId,
+                categoryId: budget.categoryId,
+                month: input.toMonth,
+              },
+            },
+            create: {
+              householdId: ctx.householdId,
+              categoryId: budget.categoryId,
+              month: input.toMonth,
+              plannedAmount: budget.plannedAmount,
+              limitAmount: budget.limitAmount,
+              limitType: budget.limitType,
+              alertThresholdPct: budget.alertThresholdPct,
+            },
+            update: {}, // Don't overwrite existing
+          })
+        )
+      );
+
+      return { count: created.length };
+    }),
+
+  /**
+   * Delete a budget
+   */
+  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    return ctx.prisma.budget.delete({
+      where: { id: input },
+    });
+  }),
+});
+
