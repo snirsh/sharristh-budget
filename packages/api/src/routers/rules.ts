@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { createCategoryRuleSchema } from '@sfam/domain/schemas';
 
 export const rulesRouter = router({
   /**
    * List all rules
    */
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z
         .object({
@@ -45,7 +45,7 @@ export const rulesRouter = router({
   /**
    * Get single rule by ID
    */
-  byId: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
+  byId: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     return ctx.prisma.categoryRule.findUnique({
       where: { id: input },
       include: {
@@ -57,7 +57,7 @@ export const rulesRouter = router({
   /**
    * Create a new rule
    */
-  create: publicProcedure.input(createCategoryRuleSchema).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(createCategoryRuleSchema).mutation(async ({ ctx, input }) => {
     return ctx.prisma.categoryRule.create({
       data: {
         householdId: ctx.householdId,
@@ -77,7 +77,7 @@ export const rulesRouter = router({
   /**
    * Update a rule
    */
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -102,7 +102,7 @@ export const rulesRouter = router({
   /**
    * Delete a rule
    */
-  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     return ctx.prisma.categoryRule.delete({
       where: { id: input, householdId: ctx.householdId },
     });
@@ -111,7 +111,7 @@ export const rulesRouter = router({
   /**
    * Toggle rule active status
    */
-  toggle: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  toggle: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const rule = await ctx.prisma.categoryRule.findUnique({
       where: { id: input },
     });
@@ -132,7 +132,7 @@ export const rulesRouter = router({
   /**
    * Test a rule against sample text
    */
-  test: publicProcedure
+  test: protectedProcedure
     .input(
       z.object({
         type: z.enum(['merchant', 'keyword', 'regex']),

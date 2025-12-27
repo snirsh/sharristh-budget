@@ -4,7 +4,8 @@ import { RulesContent } from '@/components/rules/RulesContent';
 export const dynamic = 'force-dynamic';
 
 export default async function RulesPage() {
-  const categories = await serverTrpc.categories.list();
+  const trpc = await serverTrpc();
+  const categories = await trpc.categories.list();
 
   return <RulesContent categories={categories} />;
 }

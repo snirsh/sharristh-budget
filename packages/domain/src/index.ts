@@ -31,6 +31,21 @@ export {
   getScheduleDescription,
 } from './recurring';
 
+// Category hierarchy logic
+export {
+  wouldCreateCycle,
+  getDescendantIds,
+  getAncestorIds,
+  getCategoryPath,
+  getAvailableParents,
+  validateCategoryUpdate,
+  validateCategoryDelete,
+  getCategoryDepth,
+  hasChildren,
+  getDirectChildren,
+  getCategoryIdsToDelete,
+} from './category';
+
 // Utility functions
 export function formatCurrency(amount: number, currency = 'ILS'): string {
   return new Intl.NumberFormat('he-IL', {

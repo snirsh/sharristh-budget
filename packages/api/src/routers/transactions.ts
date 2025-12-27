@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import {
   createTransactionSchema,
   updateTransactionSchema,
@@ -11,7 +11,7 @@ export const transactionsRouter = router({
   /**
    * List transactions with filters
    */
-  list: publicProcedure.input(transactionFiltersSchema).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(transactionFiltersSchema).query(async ({ ctx, input }) => {
     const where: Record<string, unknown> = {
       householdId: ctx.householdId,
     };
@@ -65,7 +65,7 @@ export const transactionsRouter = router({
   /**
    * Get single transaction by ID
    */
-  byId: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
+  byId: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     return ctx.prisma.transaction.findUnique({
       where: { id: input, householdId: ctx.householdId },
       include: {
@@ -79,7 +79,7 @@ export const transactionsRouter = router({
   /**
    * Create a new transaction
    */
-  create: publicProcedure.input(createTransactionSchema).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(createTransactionSchema).mutation(async ({ ctx, input }) => {
     // Get rules for auto-categorization
     const rulesRaw = await ctx.prisma.categoryRule.findMany({
       where: { householdId: ctx.householdId, isActive: true },
@@ -136,7 +136,7 @@ export const transactionsRouter = router({
   /**
    * Update a transaction (including recategorization)
    */
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -166,7 +166,7 @@ export const transactionsRouter = router({
   /**
    * Delete a transaction
    */
-  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     return ctx.prisma.transaction.delete({
       where: { id: input, householdId: ctx.householdId },
     });
@@ -175,7 +175,7 @@ export const transactionsRouter = router({
   /**
    * Get transactions needing review
    */
-  needsReview: publicProcedure.query(async ({ ctx }) => {
+  needsReview: protectedProcedure.query(async ({ ctx }) => {
     return ctx.prisma.transaction.findMany({
       where: {
         householdId: ctx.householdId,
@@ -193,7 +193,7 @@ export const transactionsRouter = router({
   /**
    * Recategorize a transaction and optionally create a rule
    */
-  recategorize: publicProcedure
+  recategorize: protectedProcedure
     .input(
       z.object({
         transactionId: z.string(),

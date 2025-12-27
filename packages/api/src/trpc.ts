@@ -1,13 +1,23 @@
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import type { PrismaClient } from '@sfam/db';
+
+/**
+ * Session user type from auth
+ */
+export interface SessionUser {
+  id: string;
+  email: string;
+  name?: string | null;
+}
 
 /**
  * Context for tRPC procedures
  */
 export interface Context {
   prisma: PrismaClient;
-  householdId: string; // For now, assume single household (stub auth)
+  user: SessionUser | null;
+  householdId: string | null;
 }
 
 /**
@@ -32,4 +42,25 @@ export const mergeRouters = t.mergeRouters;
  * Create caller factory for server-side calls
  */
 export const createCallerFactory = t.createCallerFactory;
+
+/**
+ * Middleware that enforces authentication
+ */
+const isAuthed = middleware(async ({ ctx, next }) => {
+  if (!ctx.user || !ctx.householdId) {
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You must be logged in to perform this action' });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+      householdId: ctx.householdId,
+    },
+  });
+});
+
+/**
+ * Protected procedure - requires authentication
+ */
+export const protectedProcedure = t.procedure.use(isAuthed);
 

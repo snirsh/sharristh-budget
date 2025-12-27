@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { createCategorySchema, updateCategorySchema } from '@sfam/domain/schemas';
 
 export const categoriesRouter = router({
   /**
    * List all categories (optionally by type)
    */
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z
         .object({
@@ -44,7 +44,7 @@ export const categoriesRouter = router({
   /**
    * Get category tree (hierarchical)
    */
-  tree: publicProcedure.query(async ({ ctx }) => {
+  tree: protectedProcedure.query(async ({ ctx }) => {
     const categories = await ctx.prisma.category.findMany({
       where: {
         householdId: ctx.householdId,
@@ -72,7 +72,7 @@ export const categoriesRouter = router({
   /**
    * Get single category by ID
    */
-  byId: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
+  byId: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     return ctx.prisma.category.findUnique({
       where: { id: input },
       include: {
@@ -89,7 +89,7 @@ export const categoriesRouter = router({
   /**
    * Create a new category
    */
-  create: publicProcedure.input(createCategorySchema).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(createCategorySchema).mutation(async ({ ctx, input }) => {
     // Get max sort order for this type
     const maxSort = await ctx.prisma.category.aggregate({
       where: {
@@ -120,7 +120,7 @@ export const categoriesRouter = router({
   /**
    * Update a category
    */
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -136,11 +136,6 @@ export const categoriesRouter = router({
 
       if (!existingCategory) {
         throw new Error('Category not found');
-      }
-
-      // Prevent editing system categories' type
-      if (existingCategory.isSystem && input.data.type) {
-        throw new Error('Cannot change type of system categories');
       }
 
       // If changing parent, validate no circular reference
@@ -211,7 +206,7 @@ export const categoriesRouter = router({
   /**
    * Disable a category (soft delete)
    */
-  disable: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  disable: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     // Also disable all children
     await ctx.prisma.category.updateMany({
       where: {
@@ -230,7 +225,7 @@ export const categoriesRouter = router({
   /**
    * Enable a category
    */
-  enable: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  enable: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     return ctx.prisma.category.update({
       where: { id: input, householdId: ctx.householdId },
       data: { isActive: true },
@@ -240,7 +235,7 @@ export const categoriesRouter = router({
   /**
    * Reorder categories
    */
-  reorder: publicProcedure
+  reorder: protectedProcedure
     .input(
       z.array(
         z.object({
@@ -261,5 +256,176 @@ export const categoriesRouter = router({
 
       return { success: true };
     }),
+
+  /**
+   * Get information about what will be affected by deleting a category
+   */
+  getDeleteInfo: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const category = await ctx.prisma.category.findUnique({
+      where: { id: input, householdId: ctx.householdId },
+      include: {
+        children: {
+          include: {
+            children: true, // Get grandchildren too
+          },
+        },
+      },
+    });
+
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    // Collect all descendant IDs recursively
+    const getAllDescendantIds = (cat: typeof category): string[] => {
+      const ids: string[] = [];
+      if (cat.children) {
+        for (const child of cat.children) {
+          ids.push(child.id);
+          ids.push(...getAllDescendantIds(child as typeof category));
+        }
+      }
+      return ids;
+    };
+
+    const descendantIds = getAllDescendantIds(category);
+    const allCategoryIds = [input, ...descendantIds];
+
+    // Count transactions that will be affected
+    const transactionCount = await ctx.prisma.transaction.count({
+      where: {
+        householdId: ctx.householdId,
+        categoryId: { in: allCategoryIds },
+      },
+    });
+
+    // Count budgets that will be affected
+    const budgetCount = await ctx.prisma.budget.count({
+      where: {
+        householdId: ctx.householdId,
+        categoryId: { in: allCategoryIds },
+      },
+    });
+
+    // Count rules that will be affected
+    const ruleCount = await ctx.prisma.categoryRule.count({
+      where: {
+        householdId: ctx.householdId,
+        categoryId: { in: allCategoryIds },
+      },
+    });
+
+    // Get subcategory details
+    const subcategories = await ctx.prisma.category.findMany({
+      where: {
+        id: { in: descendantIds },
+        householdId: ctx.householdId,
+      },
+      select: {
+        id: true,
+        name: true,
+        icon: true,
+      },
+    });
+
+    return {
+      category: {
+        id: category.id,
+        name: category.name,
+        icon: category.icon,
+        isSystem: category.isSystem,
+      },
+      subcategories,
+      affectedCounts: {
+        transactions: transactionCount,
+        budgets: budgetCount,
+        rules: ruleCount,
+      },
+      canDelete: true,
+    };
+  }),
+
+  /**
+   * Delete a category and all its subcategories (hard delete)
+   */
+  delete: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+    const category = await ctx.prisma.category.findUnique({
+      where: { id: input, householdId: ctx.householdId },
+    });
+
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    // Get all descendant IDs recursively
+    const getAllDescendantIds = async (categoryId: string): Promise<string[]> => {
+      const children = await ctx.prisma.category.findMany({
+        where: { parentCategoryId: categoryId, householdId: ctx.householdId },
+        select: { id: true },
+      });
+
+      const ids: string[] = [];
+      for (const child of children) {
+        ids.push(child.id);
+        ids.push(...(await getAllDescendantIds(child.id)));
+      }
+      return ids;
+    };
+
+    const descendantIds = await getAllDescendantIds(input);
+    const allCategoryIds = [input, ...descendantIds];
+
+    // Use a transaction to ensure atomicity
+    await ctx.prisma.$transaction(async (tx) => {
+      // Unassign transactions (set categoryId to null)
+      await tx.transaction.updateMany({
+        where: {
+          householdId: ctx.householdId,
+          categoryId: { in: allCategoryIds },
+        },
+        data: { categoryId: null, needsReview: true },
+      });
+
+      // Delete budgets
+      await tx.budget.deleteMany({
+        where: {
+          householdId: ctx.householdId,
+          categoryId: { in: allCategoryIds },
+        },
+      });
+
+      // Delete category rules
+      await tx.categoryRule.deleteMany({
+        where: {
+          householdId: ctx.householdId,
+          categoryId: { in: allCategoryIds },
+        },
+      });
+
+      // Delete recurring templates' category references
+      await tx.recurringTransactionTemplate.updateMany({
+        where: {
+          householdId: ctx.householdId,
+          defaultCategoryId: { in: allCategoryIds },
+        },
+        data: { defaultCategoryId: null },
+      });
+
+      // Delete categories (children first, then parent)
+      // Delete in reverse order to avoid foreign key issues
+      for (const id of [...descendantIds].reverse()) {
+        await tx.category.delete({
+          where: { id, householdId: ctx.householdId },
+        });
+      }
+
+      // Finally delete the main category
+      await tx.category.delete({
+        where: { id: input, householdId: ctx.householdId },
+      });
+    });
+
+    return { success: true, deletedCount: allCategoryIds.length };
+  }),
 });
 

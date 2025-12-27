@@ -10,7 +10,8 @@ export default async function TransactionsPage({
 }) {
   const params = await searchParams;
   const needsReview = params.needsReview === 'true';
-  const categories = await serverTrpc.categories.list();
+  const trpc = await serverTrpc();
+  const categories = await trpc.categories.list();
 
   return (
     <TransactionsContent

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import {
   createBudgetSchema,
   updateBudgetSchema,
@@ -58,7 +58,7 @@ export const budgetsRouter = router({
   /**
    * Get budgets for a month with evaluations
    */
-  forMonth: publicProcedure.input(monthSchema).query(async ({ ctx, input }) => {
+  forMonth: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
     const budgets = await ctx.prisma.budget.findMany({
       where: {
         householdId: ctx.householdId,
@@ -106,7 +106,7 @@ export const budgetsRouter = router({
   /**
    * Get alert budgets (nearing or exceeding limits)
    */
-  alerts: publicProcedure.input(monthSchema).query(async ({ ctx, input }) => {
+  alerts: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
     const budgets = await ctx.prisma.budget.findMany({
       where: {
         householdId: ctx.householdId,
@@ -155,7 +155,7 @@ export const budgetsRouter = router({
   /**
    * Get or create budget for a category/month
    */
-  byCategory: publicProcedure
+  byCategory: protectedProcedure
     .input(
       z.object({
         categoryId: z.string(),
@@ -180,7 +180,7 @@ export const budgetsRouter = router({
   /**
    * Create or update a budget (upsert)
    */
-  upsert: publicProcedure.input(createBudgetSchema).mutation(async ({ ctx, input }) => {
+  upsert: protectedProcedure.input(createBudgetSchema).mutation(async ({ ctx, input }) => {
     return ctx.prisma.budget.upsert({
       where: {
         householdId_categoryId_month: {
@@ -213,7 +213,7 @@ export const budgetsRouter = router({
   /**
    * Update a budget
    */
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -233,7 +233,7 @@ export const budgetsRouter = router({
   /**
    * Copy budgets from one month to another
    */
-  copyMonth: publicProcedure
+  copyMonth: protectedProcedure
     .input(
       z.object({
         fromMonth: monthSchema,
@@ -279,7 +279,7 @@ export const budgetsRouter = router({
   /**
    * Delete a budget
    */
-  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     return ctx.prisma.budget.delete({
       where: { id: input },
     });

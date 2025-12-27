@@ -1,6 +1,6 @@
 // tRPC setup
-export { router, publicProcedure, middleware, createCallerFactory } from './trpc';
-export type { Context } from './trpc';
+export { router, publicProcedure, protectedProcedure, middleware, createCallerFactory } from './trpc';
+export type { Context, SessionUser } from './trpc';
 
 // Root router
 export { appRouter } from './root';

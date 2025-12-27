@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import {
   createRecurringTemplateSchema,
   updateRecurringTemplateSchema,
@@ -63,7 +63,7 @@ export const recurringRouter = router({
   /**
    * List all recurring templates
    */
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z
         .object({
@@ -92,7 +92,7 @@ export const recurringRouter = router({
   /**
    * Get single template by ID
    */
-  byId: publicProcedure.input(z.string()).query(async ({ ctx, input }) => {
+  byId: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     const template = await ctx.prisma.recurringTransactionTemplate.findUnique({
       where: { id: input },
       include: {
@@ -119,7 +119,7 @@ export const recurringRouter = router({
   /**
    * Create a new recurring template
    */
-  create: publicProcedure.input(createRecurringTemplateSchema).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(createRecurringTemplateSchema).mutation(async ({ ctx, input }) => {
     const nextRunAt = calculateNextRunAt({
       ...input,
       id: '',
@@ -157,7 +157,7 @@ export const recurringRouter = router({
   /**
    * Update a recurring template (affects future only)
    */
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -206,7 +206,7 @@ export const recurringRouter = router({
   /**
    * Delete a recurring template
    */
-  delete: publicProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     return ctx.prisma.recurringTransactionTemplate.delete({
       where: { id: input, householdId: ctx.householdId },
     });
@@ -215,7 +215,7 @@ export const recurringRouter = router({
   /**
    * Get expanded occurrences for a month
    */
-  occurrences: publicProcedure
+  occurrences: protectedProcedure
     .input(
       z.object({
         templateId: z.string().optional(),
@@ -287,7 +287,7 @@ export const recurringRouter = router({
   /**
    * Create an override for a specific occurrence
    */
-  override: publicProcedure.input(recurringOverrideSchema).mutation(async ({ ctx, input }) => {
+  override: protectedProcedure.input(recurringOverrideSchema).mutation(async ({ ctx, input }) => {
     return ctx.prisma.recurringOverride.upsert({
       where: {
         templateId_instanceKey: {
@@ -315,7 +315,7 @@ export const recurringRouter = router({
   /**
    * Generate missing occurrences as actual transactions
    */
-  generateOccurrences: publicProcedure
+  generateOccurrences: protectedProcedure
     .input(
       z.object({
         templateId: z.string().optional(),

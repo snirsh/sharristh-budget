@@ -13,6 +13,11 @@ import {
   X,
   Palette,
   FolderTree,
+  Trash2,
+  AlertTriangle,
+  FileText,
+  Calculator,
+  Wand2,
 } from 'lucide-react';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@sfam/api';
@@ -29,6 +34,12 @@ interface EditingState {
   type: CategoryType;
   parentCategoryId: string | null;
   isNew: boolean;
+}
+
+interface DeleteState {
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string | null;
 }
 
 const DEFAULT_COLORS = [
@@ -49,12 +60,19 @@ export function CategoriesContent() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [deleteState, setDeleteState] = useState<DeleteState | null>(null);
 
   const utils = trpc.useUtils();
 
   const { data: categories = [] } = trpc.categories.list.useQuery({
     includeInactive: showInactive,
   });
+
+  // Query for delete info when deleteState is set
+  const { data: deleteInfo, isLoading: isLoadingDeleteInfo } = trpc.categories.getDeleteInfo.useQuery(
+    deleteState?.categoryId ?? '',
+    { enabled: !!deleteState?.categoryId }
+  );
 
   const updateMutation = trpc.categories.update.useMutation({
     onSuccess: () => {
@@ -76,6 +94,13 @@ export function CategoriesContent() {
 
   const enableMutation = trpc.categories.enable.useMutation({
     onSuccess: () => utils.categories.list.invalidate(),
+  });
+
+  const deleteMutation = trpc.categories.delete.useMutation({
+    onSuccess: () => {
+      utils.categories.list.invalidate();
+      setDeleteState(null);
+    },
   });
 
   const toggleExpanded = (id: string) => {
@@ -118,6 +143,23 @@ export function CategoriesContent() {
     setShowModal(false);
     setEditing(null);
   }, []);
+
+  const openDeleteModal = useCallback((cat: Category) => {
+    setDeleteState({
+      categoryId: cat.id,
+      categoryName: cat.name,
+      categoryIcon: cat.icon,
+    });
+  }, []);
+
+  const closeDeleteModal = useCallback(() => {
+    setDeleteState(null);
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    if (!deleteState) return;
+    deleteMutation.mutate(deleteState.categoryId);
+  }, [deleteState, deleteMutation]);
 
   const handleSave = useCallback(() => {
     if (!editing) return;
@@ -239,12 +281,14 @@ export function CategoriesContent() {
                   onStartEdit={() => openEditModal(cat)}
                   onToggleActive={() => toggleActive(cat)}
                   onAddChild={() => openCreateModal(type, cat.id)}
+                  onDelete={() => openDeleteModal(cat)}
                   allCategories={categories}
                   expandedCategories={expandedCategories}
                   openEditModal={openEditModal}
                   toggleExpanded={toggleExpanded}
                   toggleActive={toggleActive}
                   openCreateModal={openCreateModal}
+                  openDeleteModal={openDeleteModal}
                 />
               ))}
               {cats.length === 0 && (
@@ -413,6 +457,131 @@ export function CategoriesContent() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteState && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={closeDeleteModal} />
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2 text-red-600">
+                <Trash2 className="h-5 w-5" />
+                <h2 className="text-xl font-semibold">Delete Category</h2>
+              </div>
+              <button
+                onClick={closeDeleteModal}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {isLoadingDeleteInfo ? (
+              <div className="py-8 text-center text-gray-500">
+                Loading...
+              </div>
+            ) : deleteInfo ? (
+              <div className="space-y-4">
+                <p className="text-gray-700">
+                  Are you sure you want to delete this category?
+                </p>
+
+                {/* Category Preview */}
+                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <span className="text-2xl">{deleteInfo.category.icon || '📁'}</span>
+                  <span className="font-semibold text-gray-900">{deleteInfo.category.name}</span>
+                </div>
+
+                {/* Subcategories Warning */}
+                {deleteInfo.subcategories.length > 0 && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-amber-800">
+                          This will also delete {deleteInfo.subcategories.length} subcategor{deleteInfo.subcategories.length === 1 ? 'y' : 'ies'}:
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {deleteInfo.subcategories.slice(0, 5).map((sub) => (
+                            <li key={sub.id} className="text-sm text-amber-700 flex items-center gap-2">
+                              <span>{sub.icon || '📁'}</span>
+                              <span>{sub.name}</span>
+                            </li>
+                          ))}
+                          {deleteInfo.subcategories.length > 5 && (
+                            <li className="text-sm text-amber-600 italic">
+                              ...and {deleteInfo.subcategories.length - 5} more
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Affected Items */}
+                {(deleteInfo.affectedCounts.transactions > 0 ||
+                  deleteInfo.affectedCounts.budgets > 0 ||
+                  deleteInfo.affectedCounts.rules > 0) && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-2">
+                    <p className="font-medium text-blue-800 text-sm">This will affect:</p>
+                    {deleteInfo.affectedCounts.transactions > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                        <FileText className="h-4 w-4" />
+                        <span>
+                          {deleteInfo.affectedCounts.transactions} transaction{deleteInfo.affectedCounts.transactions === 1 ? '' : 's'} will become uncategorized
+                        </span>
+                      </div>
+                    )}
+                    {deleteInfo.affectedCounts.budgets > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                        <Calculator className="h-4 w-4" />
+                        <span>
+                          {deleteInfo.affectedCounts.budgets} budget{deleteInfo.affectedCounts.budgets === 1 ? '' : 's'} will be deleted
+                        </span>
+                      </div>
+                    )}
+                    {deleteInfo.affectedCounts.rules > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                        <Wand2 className="h-4 w-4" />
+                        <span>
+                          {deleteInfo.affectedCounts.rules} categorization rule{deleteInfo.affectedCounts.rules === 1 ? '' : 's'} will be deleted
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Final Warning */}
+                <p className="text-sm text-gray-500 text-center">
+                  This action cannot be undone.
+                </p>
+              </div>
+            ) : null}
+
+            {/* Actions */}
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={closeDeleteModal} className="btn-ghost">
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={!deleteInfo?.canDelete || deleteMutation.isPending}
+                className="btn bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete Category'}
+              </button>
+            </div>
+
+            {/* Error Display */}
+            {deleteMutation.error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {deleteMutation.error.message}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -425,12 +594,14 @@ interface CategoryRowProps {
   onStartEdit: () => void;
   onToggleActive: () => void;
   onAddChild: () => void;
+  onDelete: () => void;
   allCategories: Category[];
   expandedCategories: Set<string>;
   openEditModal: (cat: Category) => void;
   toggleExpanded: (id: string) => void;
   toggleActive: (cat: Category) => void;
   openCreateModal: (type: CategoryType, parentId?: string) => void;
+  openDeleteModal: (cat: Category) => void;
 }
 
 function CategoryRow({
@@ -441,12 +612,14 @@ function CategoryRow({
   onStartEdit,
   onToggleActive,
   onAddChild,
+  onDelete,
   allCategories,
   expandedCategories,
   openEditModal,
   toggleExpanded,
   toggleActive,
   openCreateModal,
+  openDeleteModal,
 }: CategoryRowProps) {
   const children = allCategories.filter((c) => c.parentCategoryId === category.id);
   const hasChildren = children.length > 0;
@@ -491,38 +664,38 @@ function CategoryRow({
 
         {/* Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {!category.isSystem && (
-            <>
-              <button
-                onClick={onAddChild}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                title="Add subcategory"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-              <button
-                onClick={onStartEdit}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                title="Edit category"
-              >
-                <Edit2 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={onToggleActive}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                title={category.isActive ? 'Disable category' : 'Enable category'}
-              >
-                {category.isActive ? (
-                  <ToggleRight className="h-5 w-5 text-emerald-500" />
-                ) : (
-                  <ToggleLeft className="h-5 w-5" />
-                )}
-              </button>
-            </>
-          )}
-          {category.isSystem && (
-            <span className="text-xs text-gray-400 px-2">System</span>
-          )}
+          <button
+            onClick={onAddChild}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+            title="Add subcategory"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onStartEdit}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+            title="Edit category"
+          >
+            <Edit2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onToggleActive}
+            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+            title={category.isActive ? 'Disable category' : 'Enable category'}
+          >
+            {category.isActive ? (
+              <ToggleRight className="h-5 w-5 text-emerald-500" />
+            ) : (
+              <ToggleLeft className="h-5 w-5" />
+            )}
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+            title="Delete category"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -538,12 +711,14 @@ function CategoryRow({
             onStartEdit={() => openEditModal(child)}
             onToggleActive={() => toggleActive(child)}
             onAddChild={() => openCreateModal(child.type as CategoryType, child.id)}
+            onDelete={() => openDeleteModal(child)}
             allCategories={allCategories}
             expandedCategories={expandedCategories}
             openEditModal={openEditModal}
             toggleExpanded={toggleExpanded}
             toggleActive={toggleActive}
             openCreateModal={openCreateModal}
+            openDeleteModal={openDeleteModal}
           />
         ))}
     </Fragment>

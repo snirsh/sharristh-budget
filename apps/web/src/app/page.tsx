@@ -6,11 +6,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const month = getCurrentMonth();
+  const trpc = await serverTrpc();
   
   const [overview, categoryBreakdown, recentTransactions] = await Promise.all([
-    serverTrpc.dashboard.overview(month),
-    serverTrpc.dashboard.categoryBreakdown(month),
-    serverTrpc.dashboard.recentTransactions({ limit: 5 }),
+    trpc.dashboard.overview(month),
+    trpc.dashboard.categoryBreakdown(month),
+    trpc.dashboard.recentTransactions({ limit: 5 }),
   ]);
 
   return (

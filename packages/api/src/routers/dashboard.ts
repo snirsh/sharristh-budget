@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { monthSchema } from '@sfam/domain/schemas';
 import {
   calculateMonthlyKPIs,
@@ -55,7 +55,7 @@ export const dashboardRouter = router({
   /**
    * Get dashboard overview for a month
    */
-  overview: publicProcedure.input(monthSchema).query(async ({ ctx, input }) => {
+  overview: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
     const endDate = new Date(year!, monthNum!, 0);
@@ -157,7 +157,7 @@ export const dashboardRouter = router({
   /**
    * Get category breakdown for a month
    */
-  categoryBreakdown: publicProcedure.input(monthSchema).query(async ({ ctx, input }) => {
+  categoryBreakdown: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
     const endDate = new Date(year!, monthNum!, 0);
@@ -224,7 +224,7 @@ export const dashboardRouter = router({
   /**
    * Get income breakdown for a month
    */
-  incomeBreakdown: publicProcedure.input(monthSchema).query(async ({ ctx, input }) => {
+  incomeBreakdown: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
     const endDate = new Date(year!, monthNum!, 0);
@@ -280,7 +280,7 @@ export const dashboardRouter = router({
   /**
    * Get recent transactions
    */
-  recentTransactions: publicProcedure
+  recentTransactions: protectedProcedure
     .input(z.object({ limit: z.number().default(10) }))
     .query(async ({ ctx, input }) => {
       return ctx.prisma.transaction.findMany({
@@ -299,7 +299,7 @@ export const dashboardRouter = router({
   /**
    * Get accounts summary
    */
-  accountsSummary: publicProcedure.query(async ({ ctx }) => {
+  accountsSummary: protectedProcedure.query(async ({ ctx }) => {
     const accounts = await ctx.prisma.account.findMany({
       where: {
         householdId: ctx.householdId,

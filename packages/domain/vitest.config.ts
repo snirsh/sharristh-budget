@@ -8,6 +8,12 @@ export default defineConfig({
     coverage: {
       reporter: ['text', 'json', 'html'],
     },
+    pool: 'vmThreads',
+    poolOptions: {
+      vmThreads: {
+        singleThread: true,
+      },
+    },
   },
 });
 
