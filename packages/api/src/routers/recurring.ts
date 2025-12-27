@@ -4,14 +4,14 @@ import {
   createRecurringTemplateSchema,
   updateRecurringTemplateSchema,
   recurringOverrideSchema,
-} from '@sharristh/domain/schemas';
+} from '@sfam/domain/schemas';
 import {
   expandRecurringToMonth,
   calculateNextRunAt,
   getScheduleDescription,
   type RecurringTransactionTemplate,
   type RecurringOverride,
-} from '@sharristh/domain';
+} from '@sfam/domain';
 
 // Helper to map Prisma types to domain types
 function toRecurringTemplate(t: {

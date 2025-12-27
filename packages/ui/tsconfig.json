@@ -1,5 +1,5 @@
 {
-  "extends": "@sharristh/config/tsconfig/react-native.json",
+  "extends": "@sfam/config/tsconfig/react-native.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "outDir": "./dist",

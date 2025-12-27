@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc';
-import { createCategorySchema, updateCategorySchema } from '@sharristh/domain/schemas';
+import { createCategorySchema, updateCategorySchema } from '@sfam/domain/schemas';
 
 export const categoriesRouter = router({
   /**
@@ -128,6 +128,76 @@ export const categoriesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Validate that the category exists and belongs to this household
+      const existingCategory = await ctx.prisma.category.findUnique({
+        where: { id: input.id, householdId: ctx.householdId },
+        include: { children: true },
+      });
+
+      if (!existingCategory) {
+        throw new Error('Category not found');
+      }
+
+      // Prevent editing system categories' type
+      if (existingCategory.isSystem && input.data.type) {
+        throw new Error('Cannot change type of system categories');
+      }
+
+      // If changing parent, validate no circular reference
+      if (input.data.parentCategoryId !== undefined) {
+        if (input.data.parentCategoryId === input.id) {
+          throw new Error('Category cannot be its own parent');
+        }
+
+        // Check that the new parent is not a descendant of this category
+        if (input.data.parentCategoryId) {
+          const isDescendant = async (
+            categoryId: string,
+            potentialAncestorId: string
+          ): Promise<boolean> => {
+            const category = await ctx.prisma.category.findUnique({
+              where: { id: categoryId },
+              select: { parentCategoryId: true },
+            });
+            if (!category?.parentCategoryId) return false;
+            if (category.parentCategoryId === potentialAncestorId) return true;
+            return isDescendant(category.parentCategoryId, potentialAncestorId);
+          };
+
+          const wouldCreateCycle = await isDescendant(
+            input.data.parentCategoryId,
+            input.id
+          );
+          if (wouldCreateCycle) {
+            throw new Error('Cannot create circular category hierarchy');
+          }
+
+          // Validate parent exists and belongs to same household
+          const parent = await ctx.prisma.category.findUnique({
+            where: { id: input.data.parentCategoryId, householdId: ctx.householdId },
+          });
+          if (!parent) {
+            throw new Error('Parent category not found');
+          }
+
+          // When setting a parent, inherit the type from the parent
+          if (!input.data.type && parent.type !== existingCategory.type) {
+            input.data.type = parent.type as 'income' | 'expected' | 'varying';
+          }
+        }
+      }
+
+      // If changing type and category has children, update children types too
+      if (input.data.type && input.data.type !== existingCategory.type) {
+        await ctx.prisma.category.updateMany({
+          where: {
+            householdId: ctx.householdId,
+            parentCategoryId: input.id,
+          },
+          data: { type: input.data.type },
+        });
+      }
+
       return ctx.prisma.category.update({
         where: { id: input.id, householdId: ctx.householdId },
         data: input.data,

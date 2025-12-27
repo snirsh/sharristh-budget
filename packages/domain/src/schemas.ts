@@ -90,6 +90,8 @@ export const createCategorySchema = z.object({
 
 export const updateCategorySchema = z.object({
   name: z.string().min(1).max(50).optional(),
+  type: categoryTypeSchema.optional(),
+  parentCategoryId: z.string().nullable().optional(),
   icon: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
   isActive: z.boolean().optional(),

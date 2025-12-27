@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc';
-import { createCategoryRuleSchema } from '@sharristh/domain/schemas';
+import { createCategoryRuleSchema } from '@sfam/domain/schemas';
 
 export const rulesRouter = router({
   /**

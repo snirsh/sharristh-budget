@@ -4,14 +4,14 @@ import {
   createBudgetSchema,
   updateBudgetSchema,
   monthSchema,
-} from '@sharristh/domain/schemas';
+} from '@sfam/domain/schemas';
 import {
   evaluateBudgetStatus,
   calculateCategorySpending,
   getAlertBudgets,
   type Budget,
   type Transaction,
-} from '@sharristh/domain';
+} from '@sfam/domain';
 
 // Helper to map Prisma budget to domain type
 function toBudget(b: {

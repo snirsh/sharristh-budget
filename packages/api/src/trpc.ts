@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
-import type { PrismaClient } from '@sharristh/db';
+import type { PrismaClient } from '@sfam/db';
 
 /**
  * Context for tRPC procedures

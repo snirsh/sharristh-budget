@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide will help you get started developing on the Sharristh Budget application.
+This guide will help you get started developing on the Sharristh Family Budget application.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ This guide will help you get started developing on the Sharristh Budget applicat
 
 ```bash
 git clone <repository-url>
-cd sharristh-budget
+cd sharristh-family-budget
 pnpm install
 ```
 
@@ -209,7 +209,7 @@ pnpm db:seed
 
 ```bash
 pnpm db:generate
-pnpm turbo build --filter=@sharristh/db
+pnpm turbo build --filter=@sfam/db
 ```
 
 ### Mobile Metro Bundler Issues

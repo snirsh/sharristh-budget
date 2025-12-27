@@ -1,5 +1,5 @@
 {
-  "name": "@sharristh/web",
+  "name": "@sfam/web",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -10,9 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@sharristh/api": "workspace:*",
-    "@sharristh/db": "workspace:*",
-    "@sharristh/domain": "workspace:*",
+    "@sfam/api": "workspace:*",
+    "@sfam/db": "workspace:*",
+    "@sfam/domain": "workspace:*",
     "@tanstack/react-query": "^4.36.1",
     "@trpc/client": "^10.45.2",
     "@trpc/react-query": "^10.45.2",
@@ -30,7 +30,7 @@
     "@hookform/resolvers": "^3.9.1"
   },
   "devDependencies": {
-    "@sharristh/config": "workspace:*",
+    "@sfam/config": "workspace:*",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",

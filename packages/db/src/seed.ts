@@ -33,7 +33,7 @@ async function main() {
   const user1 = await prisma.user.create({
     data: {
       id: 'user-1',
-      email: 'partner1@sharristh.family',
+      email: 'partner1@sfam.family',
       name: 'Alex',
     },
   });
@@ -41,7 +41,7 @@ async function main() {
   const user2 = await prisma.user.create({
     data: {
       id: 'user-2',
-      email: 'partner2@sharristh.family',
+      email: 'partner2@sfam.family',
       name: 'Jordan',
     },
   });

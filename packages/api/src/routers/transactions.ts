@@ -4,8 +4,8 @@ import {
   createTransactionSchema,
   updateTransactionSchema,
   transactionFiltersSchema,
-} from '@sharristh/domain/schemas';
-import { categorizeTransaction } from '@sharristh/domain';
+} from '@sfam/domain/schemas';
+import { categorizeTransaction } from '@sfam/domain';
 
 export const transactionsRouter = router({
   /**

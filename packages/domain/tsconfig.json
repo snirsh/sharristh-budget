@@ -1,5 +1,5 @@
 {
-  "extends": "@sharristh/config/tsconfig/library.json",
+  "extends": "@sfam/config/tsconfig/library.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src"

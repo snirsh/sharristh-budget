@@ -1,11 +1,11 @@
 # Architecture Overview
 
-This document describes the architecture of the Sharristh Budget application, a production-grade monorepo for household budget tracking.
+This document describes the architecture of the Sharristh Family Budget application, a production-grade monorepo for household budget tracking.
 
 ## Monorepo Structure
 
 ```
-sharristh-budget/
+sharristh-family-budget/
 ├── apps/
 │   ├── web/          # Next.js web application
 │   └── mobile/       # Expo React Native application

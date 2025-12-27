@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@sharristh/api', '@sharristh/db', '@sharristh/domain'],
+  transpilePackages: ['@sfam/api', '@sfam/db', '@sfam/domain'],
   serverExternalPackages: ['@prisma/client'],
 };
 

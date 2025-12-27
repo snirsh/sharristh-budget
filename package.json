@@ -1,17 +1,17 @@
 {
-  "name": "sharristh-budget",
+  "name": "sharristh-family-budget",
   "private": true,
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "dev:web": "turbo dev --filter=@sharristh/web",
-    "dev:mobile": "turbo dev --filter=@sharristh/mobile",
+    "dev:web": "turbo dev --filter=@sfam/web",
+    "dev:mobile": "turbo dev --filter=@sfam/mobile",
     "lint": "turbo lint",
     "test": "turbo test",
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
     "db:seed": "turbo db:seed",
-    "db:studio": "pnpm --filter @sharristh/db db:studio",
+    "db:studio": "pnpm --filter @sfam/db db:studio",
     "typecheck": "turbo typecheck",
     "clean": "turbo clean && rm -rf node_modules"
   },

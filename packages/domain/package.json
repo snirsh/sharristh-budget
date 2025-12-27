@@ -1,5 +1,5 @@
 {
-  "name": "@sharristh/domain",
+  "name": "@sfam/domain",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -28,7 +28,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@sharristh/config": "workspace:*",
+    "@sfam/config": "workspace:*",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

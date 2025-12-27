@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc';
-import { monthSchema } from '@sharristh/domain/schemas';
+import { monthSchema } from '@sfam/domain/schemas';
 import {
   calculateMonthlyKPIs,
   evaluateBudgetStatus,
@@ -8,7 +8,7 @@ import {
   getAlertBudgets,
   type Budget,
   type Transaction,
-} from '@sharristh/domain';
+} from '@sfam/domain';
 
 // Helper to map Prisma budget to domain type
 function toBudget(b: {

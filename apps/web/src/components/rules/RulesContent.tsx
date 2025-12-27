@@ -5,7 +5,7 @@ import { trpc } from '@/lib/trpc/client';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import type { inferRouterOutputs } from '@trpc/server';
-import type { AppRouter } from '@sharristh/api';
+import type { AppRouter } from '@sfam/api';
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type Rule = RouterOutputs['rules']['list'][number];

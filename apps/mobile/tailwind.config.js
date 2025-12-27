@@ -1,4 +1,4 @@
-const { tokens } = require('@sharristh/config/tailwind');
+const { tokens } = require('@sfam/config/tailwind');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {

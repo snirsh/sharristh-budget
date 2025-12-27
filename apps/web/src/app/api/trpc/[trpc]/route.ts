@@ -1,6 +1,6 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter, type Context } from '@sharristh/api';
-import { prisma } from '@sharristh/db';
+import { appRouter, type Context } from '@sfam/api';
+import { prisma } from '@sfam/db';
 
 const handler = (req: Request) =>
   fetchRequestHandler({
