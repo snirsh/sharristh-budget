@@ -9,9 +9,22 @@ import {
   expandRecurringToMonth,
   calculateNextRunAt,
   getScheduleDescription,
+  detectRecurringPatterns,
   type RecurringTransactionTemplate,
   type RecurringOverride,
 } from '@sfam/domain';
+
+/**
+ * Normalize merchant name for comparison (matches pattern-detection logic)
+ */
+function normalizeMerchantForComparison(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/\b(ltd|inc|llc|corp|limited|co|company)\b\.?/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 // Helper to map Prisma types to domain types
 function toRecurringTemplate(t: {
@@ -417,6 +430,154 @@ export const recurringRouter = router({
       }
 
       return { created: createdCount };
+    }),
+
+  /**
+   * Detect recurring transaction patterns
+   */
+  detectPatterns: protectedProcedure
+    .input(
+      z
+        .object({
+          lookbackMonths: z.number().min(1).max(24).optional(),
+          minOccurrences: z.number().min(2).max(10).optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      // Get all expense transactions for the household
+      const transactions = await ctx.prisma.transaction.findMany({
+        where: {
+          householdId: ctx.householdId,
+          direction: 'expense',
+          isRecurringInstance: false, // Exclude existing recurring instances
+        },
+        orderBy: { date: 'desc' },
+      });
+
+      // Get existing active recurring templates to exclude their merchants
+      const existingTemplates = await ctx.prisma.recurringTransactionTemplate.findMany({
+        where: {
+          householdId: ctx.householdId,
+          isActive: true,
+        },
+        select: {
+          merchant: true,
+        },
+      });
+
+      // Create set of existing merchants (normalized for comparison)
+      const existingMerchants = new Set(
+        existingTemplates
+          .filter((t) => t.merchant)
+          .map((t) => normalizeMerchantForComparison(t.merchant!))
+      );
+
+      // Map to domain type
+      const domainTransactions = transactions.map((tx) => ({
+        id: tx.id,
+        date: tx.date,
+        description: tx.description,
+        merchant: tx.merchant,
+        amount: tx.amount,
+        direction: tx.direction as 'income' | 'expense' | 'transfer',
+      }));
+
+      // Detect patterns
+      const allPatterns = detectRecurringPatterns(domainTransactions, input);
+
+      // Filter out patterns for merchants that already have templates
+      const newPatterns = allPatterns.filter(
+        (pattern) => !existingMerchants.has(normalizeMerchantForComparison(pattern.merchant))
+      );
+
+      return newPatterns;
+    }),
+
+  /**
+   * Create recurring template from detected pattern
+   */
+  createFromPattern: protectedProcedure
+    .input(
+      z.object({
+        merchant: z.string(),
+        amount: z.number().positive(),
+        categoryId: z.string().optional(),
+        frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
+        interval: z.number().int().positive(),
+        byMonthDay: z.number().int().min(1).max(31).optional(),
+        startDate: z.date(),
+        accountId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Validate category if provided
+      if (input.categoryId) {
+        const category = await ctx.prisma.category.findFirst({
+          where: {
+            id: input.categoryId,
+            householdId: ctx.householdId,
+          },
+        });
+
+        if (!category) {
+          throw new Error('Category not found or does not belong to your household');
+        }
+      }
+
+      // Validate account if provided
+      if (input.accountId) {
+        const account = await ctx.prisma.account.findFirst({
+          where: {
+            id: input.accountId,
+            householdId: ctx.householdId,
+          },
+        });
+
+        if (!account) {
+          throw new Error('Account not found or does not belong to your household');
+        }
+      }
+
+      // Create template
+      const template = await ctx.prisma.recurringTransactionTemplate.create({
+        data: {
+          householdId: ctx.householdId,
+          name: `${input.merchant} (recurring)`,
+          merchant: input.merchant,
+          direction: 'expense',
+          amount: input.amount,
+          defaultCategoryId: input.categoryId,
+          accountId: input.accountId,
+          frequency: input.frequency,
+          interval: input.interval,
+          byMonthDay: input.byMonthDay,
+          startDate: input.startDate,
+          timezone: 'Asia/Jerusalem',
+          isActive: true,
+          nextRunAt: calculateNextRunAt(
+            {
+              id: '',
+              householdId: ctx.householdId,
+              name: input.merchant,
+              direction: 'expense',
+              amount: input.amount,
+              frequency: input.frequency,
+              interval: input.interval,
+              byMonthDay: input.byMonthDay,
+              startDate: input.startDate,
+              timezone: 'Asia/Jerusalem',
+              isActive: true,
+            },
+            input.startDate
+          ),
+        },
+        include: {
+          category: true,
+        },
+      });
+
+      return template;
     }),
 });
 

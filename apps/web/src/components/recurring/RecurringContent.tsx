@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
-import { ToggleLeft, ToggleRight, Trash2, Calendar, Play } from 'lucide-react';
+import { ToggleLeft, ToggleRight, Trash2, Calendar, Play, Plus, Search } from 'lucide-react';
+import { AddRecurringDialog } from './AddRecurringDialog';
+import { PatternDetectionDialog } from './PatternDetectionDialog';
 
 interface Template {
   id: string;
@@ -25,12 +27,16 @@ interface Template {
 
 export function RecurringContent() {
   const [showInactive, setShowInactive] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isPatternDialogOpen, setIsPatternDialogOpen] = useState(false);
 
   const utils = trpc.useUtils();
 
   const { data: templates = [] } = trpc.recurring.list.useQuery({
     includeInactive: showInactive,
   });
+
+  const { data: categories = [] } = trpc.categories.list.useQuery();
 
   const updateMutation = trpc.recurring.update.useMutation({
     onSuccess: () => utils.recurring.list.invalidate(),
@@ -76,14 +82,28 @@ export function RecurringContent() {
             Show inactive
           </label>
           <button
+            onClick={() => setIsPatternDialogOpen(true)}
+            className="btn btn-outline"
+          >
+            <Search className="h-4 w-4" />
+            Detect Patterns
+          </button>
+          <button
             onClick={() => {
               generateMutation.mutate({ upToDate: new Date() });
             }}
             disabled={generateMutation.isPending}
-            className="btn-secondary"
+            className="btn btn-outline"
           >
-            <Play className="h-4 w-4 mr-2" />
+            <Play className="h-4 w-4" />
             {generateMutation.isPending ? 'Generating...' : 'Generate Missing'}
+          </button>
+          <button
+            onClick={() => setIsAddDialogOpen(true)}
+            className="btn btn-primary"
+          >
+            <Plus className="h-4 w-4" />
+            Add Recurring
           </button>
         </div>
       </div>
@@ -149,6 +169,18 @@ export function RecurringContent() {
           )}
         </div>
       </div>
+
+      {/* Add Recurring Dialog */}
+      <AddRecurringDialog
+        categories={categories}
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSuccess={() => utils.recurring.list.invalidate()}
+      />
+      <PatternDetectionDialog
+        isOpen={isPatternDialogOpen}
+        onClose={() => setIsPatternDialogOpen(false)}
+      />
     </div>
   );
 }

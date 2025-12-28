@@ -16,12 +16,58 @@ async function getUserHouseholdId(userId: string): Promise<string | null> {
 }
 
 /**
+ * Get or create demo household for demo mode
+ */
+async function getDemoHouseholdId(): Promise<string> {
+  const DEMO_USER_ID = 'demo-user';
+  const DEMO_HOUSEHOLD_NAME = '🎭 Demo Household';
+
+  // Check if demo household exists
+  let household = await prisma.household.findFirst({
+    where: { name: DEMO_HOUSEHOLD_NAME },
+  });
+
+  if (!household) {
+    // Create demo household with demo user
+    household = await prisma.household.create({
+      data: {
+        name: DEMO_HOUSEHOLD_NAME,
+        members: {
+          create: {
+            userId: DEMO_USER_ID,
+            role: 'owner',
+          },
+        },
+      },
+    });
+  }
+
+  return household.id;
+}
+
+/**
  * Create tRPC context with authentication
+ * In demo mode, uses a mock demo user and household
  */
 async function createContext(_req: Request): Promise<Context> {
-  // Get session from Auth.js
+  // Demo mode: use mock user and demo household
+  if (process.env.DEMO_MODE === 'true') {
+    const householdId = await getDemoHouseholdId();
+
+    return {
+      prisma,
+      user: {
+        id: 'demo-user',
+        email: 'demo@example.com',
+        name: 'Demo User',
+      },
+      householdId,
+    };
+  }
+
+  // Regular mode: use auth session
   const session = await auth();
-  
+
   if (!session?.user?.id) {
     return {
       prisma,

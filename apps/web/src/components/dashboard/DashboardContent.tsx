@@ -292,7 +292,6 @@ function CategoryRow({
   };
 }) {
   const progressWidth = Math.min(item.percentUsed * 100, 100);
-  const isOverBudget = item.percentUsed > 1;
 
   return (
     <div className="flex items-center gap-4">
@@ -313,11 +312,10 @@ function CategoryRow({
           <div
             className={cn(
               'h-full rounded-full transition-all',
-              isOverBudget
-                ? 'bg-danger-500'
-                : item.percentUsed > 0.8
-                ? 'bg-warning-500'
-                : 'bg-success-500'
+              // Green for 0-100%, red only when exceeded (>100%)
+              item.percentUsed <= 1.0
+                ? 'bg-success-500'
+                : 'bg-danger-500'
             )}
             style={{ width: `${progressWidth}%` }}
           />

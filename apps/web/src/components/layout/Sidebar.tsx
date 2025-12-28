@@ -12,6 +12,7 @@ import {
   Settings,
   Sparkles,
   LogOut,
+  Link2,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -22,6 +23,7 @@ const navigation = [
   { name: 'Categories', href: '/categories', icon: FolderTree },
   { name: 'Rules', href: '/rules', icon: Sparkles },
   { name: 'Recurring', href: '/recurring', icon: Repeat },
+  { name: 'Connections', href: '/connections', icon: Link2 },
 ];
 
 export function Sidebar() {

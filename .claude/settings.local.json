@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(pnpm --filter @sfam/scraper build)",
+      "Bash(pnpm build)",
+      "Bash(npm view:*)",
+      "Bash(pnpm --filter @sfam/web build)",
+      "Bash(pnpm --filter @sfam/api build)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(npx prisma --version)",
+      "Bash(test:*)",
+      "Bash(pnpm prisma db push:*)",
+      "Bash(pnpm playwright test:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm tsx:*)",
+      "Bash(pnpm dev:web:demo:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(sqlite3:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs:*)",
+      "Bash(pnpm --filter @sfam/domain build:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

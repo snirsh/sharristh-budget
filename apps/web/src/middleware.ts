@@ -20,6 +20,7 @@ function isPublicRoute(pathname: string): boolean {
 /**
  * Middleware to protect routes
  * Redirects unauthenticated users to login
+ * Skips auth in demo mode
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -29,10 +30,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Skip auth check in demo mode
+  if (process.env.DEMO_MODE === 'true') {
+    return NextResponse.next();
+  }
+
   // Check for session cookie
   // Auth.js uses different cookie names based on environment
-  const sessionCookie = 
-    request.cookies.get('authjs.session-token') || 
+  const sessionCookie =
+    request.cookies.get('authjs.session-token') ||
     request.cookies.get('__Secure-authjs.session-token');
 
   // If no session, redirect to login

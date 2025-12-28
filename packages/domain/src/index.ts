@@ -8,6 +8,13 @@ export {
   suggestRuleFromCorrection,
 } from './categorization';
 
+// AI-powered categorization
+export { suggestCategoryWithAI } from './ai-categorization';
+
+// Pattern detection for recurring transactions
+export { detectRecurringPatterns } from './pattern-detection';
+export type { TransactionPattern, PatternDetectionConfig } from './pattern-detection';
+
 // Budget evaluation logic
 export {
   evaluateBudgetStatus,

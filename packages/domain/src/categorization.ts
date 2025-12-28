@@ -3,31 +3,35 @@ import type {
   CategoryRule,
   CategorizationResult,
   CategorizationSource,
+  CategoryForCategorization,
 } from './types';
+import { suggestCategoryWithAI } from './ai-categorization';
 
 /**
- * Default category IDs for fallback categorization
+ * Fallback categorization returns null categoryId
+ * The API layer will determine the appropriate fallback category from the database
  */
-const DEFAULT_CATEGORIES = {
-  VARYING_EXPENSES: 'cat-varying',
-  OTHER_INCOME: 'cat-other-income',
-} as const;
 
 /**
- * Categorizes a transaction based on rules and history
+ * Categorizes a transaction based on rules and AI
  *
  * Priority order:
  * 1. Manual category (already set) → source=manual, confidence=1.0
  * 2. Merchant rule match → confidence=0.95
  * 3. Keyword rule match → confidence=0.80
  * 4. Regex rule match → confidence=0.75
- * 5. Fallback (varying/other income) → confidence=0.50
+ * 5. AI suggestion (if enabled) → confidence=~0.85
+ * 6. Fallback (varying/other income) → confidence=0.50
  */
-export function categorizeTransaction(
+export async function categorizeTransaction(
   tx: TransactionInput,
   rules: CategoryRule[],
-  _history?: TransactionInput[]
-): CategorizationResult {
+  categories?: CategoryForCategorization[],
+  options?: {
+    enableAI?: boolean;
+    ollamaBaseUrl?: string;
+  }
+): Promise<CategorizationResult> {
   // 1. If category is already set, return as manual
   if (tx.categoryId) {
     return {
@@ -65,7 +69,24 @@ export function categorizeTransaction(
     return regexMatch;
   }
 
-  // 5. Fallback based on direction
+  // 5. Try AI suggestion (if enabled and categories provided)
+  if (options?.enableAI && categories && categories.length > 0) {
+    try {
+      const aiResult = await suggestCategoryWithAI(
+        tx,
+        categories,
+        options.ollamaBaseUrl
+      );
+      if (aiResult) {
+        return aiResult;
+      }
+    } catch (error) {
+      // Log but don't fail - gracefully continue to fallback
+      console.error('AI categorization failed, falling back:', error);
+    }
+  }
+
+  // 6. Fallback based on direction
   return getFallbackCategory(tx.direction);
 }
 
@@ -153,23 +174,24 @@ function matchRegexRule(
 
 /**
  * Get fallback category based on transaction direction
+ * Returns null categoryId - the API layer will determine the actual category from the database
  */
 function getFallbackCategory(direction: string): CategorizationResult {
   if (direction === 'income') {
     return {
-      categoryId: DEFAULT_CATEGORIES.OTHER_INCOME,
+      categoryId: null,
       confidence: 0.5,
       source: 'fallback',
-      reason: 'No matching rules found, using default income category',
+      reason: 'No matching rules found, needs default income category',
       matchedRule: null,
     };
   }
 
   return {
-    categoryId: DEFAULT_CATEGORIES.VARYING_EXPENSES,
+    categoryId: null,
     confidence: 0.5,
     source: 'fallback',
-    reason: 'No matching rules found, using varying expenses category',
+    reason: 'No matching rules found, needs varying expenses category',
     matchedRule: null,
   };
 }
@@ -208,14 +230,20 @@ export function suggestRuleFromCorrection(
 /**
  * Batch categorize multiple transactions
  */
-export function categorizeTransactions(
+export async function categorizeTransactions(
   transactions: TransactionInput[],
-  rules: CategoryRule[]
-): Map<TransactionInput, CategorizationResult> {
+  rules: CategoryRule[],
+  categories?: CategoryForCategorization[],
+  options?: {
+    enableAI?: boolean;
+    ollamaBaseUrl?: string;
+  }
+): Promise<Map<TransactionInput, CategorizationResult>> {
   const results = new Map<TransactionInput, CategorizationResult>();
 
   for (const tx of transactions) {
-    results.set(tx, categorizeTransaction(tx, rules));
+    const result = await categorizeTransaction(tx, rules, categories, options);
+    results.set(tx, result);
   }
 
   return results;

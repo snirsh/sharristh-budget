@@ -6,6 +6,9 @@ import {
   recurringRouter,
   rulesRouter,
   dashboardRouter,
+  bankConnectionsRouter,
+  accountsRouter,
+  demoRouter,
 } from './routers';
 
 /**
@@ -18,6 +21,9 @@ export const appRouter = router({
   recurring: recurringRouter,
   rules: rulesRouter,
   dashboard: dashboardRouter,
+  bankConnections: bankConnectionsRouter,
+  accounts: accountsRouter,
+  demo: demoRouter,
 });
 
 /**

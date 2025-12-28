@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
-import { Search, Filter, Check, X, ChevronDown } from 'lucide-react';
+import { Search, Filter, Check, X, ChevronDown, Plus, Wand2 } from 'lucide-react';
+import { TransactionSummary } from './TransactionSummary';
+import { AddTransactionDialog } from './AddTransactionDialog';
+import { AICategoryBadgeCompact } from './AICategoryBadge';
 
 interface Category {
   id: string;
@@ -25,6 +28,7 @@ export function TransactionsContent({
   const [needsReviewFilter, setNeedsReviewFilter] = useState(initialNeedsReview);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [editingTransaction, setEditingTransaction] = useState<string | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -40,6 +44,13 @@ export function TransactionsContent({
     onSuccess: () => {
       utils.transactions.list.invalidate();
       setEditingTransaction(null);
+    },
+  });
+
+  const applyCategorizationMutation = trpc.transactions.applyCategorization.useMutation({
+    onSuccess: (data) => {
+      utils.transactions.list.invalidate();
+      alert(data.message);
     },
   });
 
@@ -64,7 +75,17 @@ export function TransactionsContent({
             {needsReviewFilter && ' needing review'}
           </p>
         </div>
+        <button
+          onClick={() => setIsAddDialogOpen(true)}
+          className="btn btn-primary"
+        >
+          <Plus className="h-4 w-4" />
+          Add Transaction
+        </button>
       </div>
+
+      {/* Transaction Summary */}
+      <TransactionSummary transactions={transactions} />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
@@ -101,6 +122,16 @@ export function TransactionsContent({
         >
           <Filter className="h-4 w-4 mr-2" />
           Needs Review
+        </button>
+
+        <button
+          onClick={() => applyCategorizationMutation.mutate()}
+          disabled={applyCategorizationMutation.isPending}
+          className="btn btn-outline"
+          title="Apply categorization rules to uncategorized transactions"
+        >
+          <Wand2 className="h-4 w-4 mr-2" />
+          {applyCategorizationMutation.isPending ? 'Applying...' : 'Auto-Categorize'}
         </button>
       </div>
 
@@ -162,19 +193,25 @@ export function TransactionsContent({
                       onCancel={() => setEditingTransaction(null)}
                     />
                   ) : (
-                    <button
-                      onClick={() => setEditingTransaction(tx.id)}
-                      className={cn(
-                        'inline-flex items-center gap-1 px-2 py-1 rounded text-sm',
-                        tx.category
-                          ? 'text-gray-700 hover:bg-gray-100'
-                          : 'text-warning-700 bg-warning-100 hover:bg-warning-200'
-                      )}
-                    >
-                      <span>{tx.category?.icon || '❓'}</span>
-                      <span>{tx.category?.name || 'Uncategorized'}</span>
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEditingTransaction(tx.id)}
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2 py-1 rounded text-sm',
+                          tx.category
+                            ? 'text-gray-700 hover:bg-gray-100'
+                            : 'text-warning-700 bg-warning-100 hover:bg-warning-200'
+                        )}
+                      >
+                        <span>{tx.category?.icon || '❓'}</span>
+                        <span>{tx.category?.name || 'Uncategorized'}</span>
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                      <AICategoryBadgeCompact
+                        source={tx.categorizationSource}
+                        confidence={tx.confidence}
+                      />
+                    </div>
                   )}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-500">
@@ -212,6 +249,14 @@ export function TransactionsContent({
           </tbody>
         </table>
       </div>
+
+      {/* Add Transaction Dialog */}
+      <AddTransactionDialog
+        categories={categories}
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSuccess={() => utils.transactions.list.invalidate()}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@
 export type TransactionDirection = 'income' | 'expense' | 'transfer';
 export type CategoryType = 'income' | 'expected' | 'varying';
 export type LimitType = 'soft' | 'hard';
-export type CategorizationSource = 'manual' | 'rule_merchant' | 'rule_keyword' | 'rule_regex' | 'fallback';
+export type CategorizationSource = 'manual' | 'rule_merchant' | 'rule_keyword' | 'rule_regex' | 'ai_suggestion' | 'fallback';
 export type RuleType = 'merchant' | 'keyword' | 'regex';
 export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export type BudgetStatus = 'ok' | 'nearing_limit' | 'exceeded_soft' | 'exceeded_hard';
@@ -61,6 +61,16 @@ export interface Category {
 
 export interface CategoryWithChildren extends Category {
   children: CategoryWithChildren[];
+}
+
+/**
+ * Minimal category interface for categorization
+ * Used when only id, name, and type are needed (e.g., AI categorization)
+ */
+export interface CategoryForCategorization {
+  id: string;
+  name: string;
+  type: CategoryType;
 }
 
 // ============================================

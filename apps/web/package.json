@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
+    "dev:demo": "rm -f ../../packages/db/prisma/demo.db* && cp .env.demo .env.local && cp .env.demo ../../packages/db/.env && pnpm --filter @sfam/db db:push && pnpm tsx scripts/seed-demo.ts && next dev --port 3000",
+    "db:push": "cd ../../packages/db && pnpm prisma db push",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -15,6 +17,7 @@
     "@sfam/api": "workspace:*",
     "@sfam/db": "workspace:*",
     "@sfam/domain": "workspace:*",
+    "@sfam/scraper": "workspace:*",
     "@simplewebauthn/browser": "9",
     "@simplewebauthn/server": "9",
     "@simplewebauthn/types": "9",
@@ -27,6 +30,7 @@
     "lucide-react": "^0.469.0",
     "next": "^15.1.3",
     "next-auth": "5.0.0-beta.30",
+    "node-cron": "^3.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
@@ -37,11 +41,15 @@
   "devDependencies": {
     "@sfam/config": "workspace:*",
     "@types/node": "^22.10.2",
+    "@types/node-cron": "^3.0.11",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
     "autoprefixer": "^10.4.20",
+    "bufferutil": "^4.1.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "utf-8-validate": "^6.0.6"
   }
 }

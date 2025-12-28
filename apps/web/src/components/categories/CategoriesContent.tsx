@@ -18,6 +18,7 @@ import {
   FileText,
   Calculator,
   Wand2,
+  Sparkles,
 } from 'lucide-react';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@sfam/api';
@@ -100,6 +101,12 @@ export function CategoriesContent() {
     onSuccess: () => {
       utils.categories.list.invalidate();
       setDeleteState(null);
+    },
+  });
+
+  const seedMutation = trpc.categories.seedDefaults.useMutation({
+    onSuccess: () => {
+      utils.categories.list.invalidate();
     },
   });
 
@@ -238,6 +245,16 @@ export function CategoriesContent() {
           <p className="text-gray-500">Organize your income and expenses</p>
         </div>
         <div className="flex items-center gap-3">
+          {categories.length === 0 && (
+            <button
+              onClick={() => seedMutation.mutate()}
+              disabled={seedMutation.isPending}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              {seedMutation.isPending ? 'Creating...' : 'Create Default Categories'}
+            </button>
+          )}
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <input
               type="checkbox"
@@ -249,6 +266,16 @@ export function CategoriesContent() {
           </label>
         </div>
       </div>
+
+      {/* Seed Success Message */}
+      {seedMutation.isSuccess && seedMutation.data?.success && (
+        <div className="card p-4 bg-success-50 border-success-200 text-success-800">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            <p className="font-medium">{seedMutation.data.message}</p>
+          </div>
+        </div>
+      )}
 
       {/* Category Groups */}
       {(Object.entries(groupedCategories) as [keyof typeof typeLabels, Category[]][]).map(

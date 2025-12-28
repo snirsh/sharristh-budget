@@ -5,6 +5,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "dev:web": "turbo dev --filter=@sfam/web",
+    "dev:web:demo": "pnpm --filter @sfam/web dev:demo",
     "dev:mobile": "turbo dev --filter=@sfam/mobile",
     "lint": "turbo lint",
     "test": "turbo test",

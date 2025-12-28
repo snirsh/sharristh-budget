@@ -64,13 +64,14 @@ model Household {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members      HouseholdMember[]
-  accounts     Account[]
-  categories   Category[]
-  transactions Transaction[]
-  budgets      Budget[]
-  rules        CategoryRule[]
-  recurring    RecurringTransactionTemplate[]
+  members         HouseholdMember[]
+  accounts        Account[]
+  categories      Category[]
+  transactions    Transaction[]
+  budgets         Budget[]
+  rules           CategoryRule[]
+  recurring       RecurringTransactionTemplate[]
+  bankConnections BankConnection[]
 
   @@map("households")
 }
@@ -115,22 +116,24 @@ model HouseholdMember {
 // ============================================
 
 model Account {
-  id           String   @id @default(cuid())
-  householdId  String
-  name         String
-  type         String // checking | savings | credit | cash
-  currency     String   @default("ILS")
-  balance      Float    @default(0)
-  isActive     Boolean  @default(true)
-  institutionName String?
-  lastSyncedAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String    @id @default(cuid())
+  householdId       String
+  name              String
+  type              String    // checking | savings | credit | cash
+  currency          String    @default("ILS")
+  balance           Float     @default(0)
+  isActive          Boolean   @default(true)
+  institutionName   String?
+  externalAccountId String?   // External account ID from bank scraper for mapping
+  lastSyncedAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   @@index([householdId])
+  @@index([externalAccountId])
   @@map("accounts")
 }
 
@@ -182,13 +185,14 @@ model Transaction {
   merchant              String?
   amount                Float
   direction             String    // income | expense | transfer
-  categorizationSource  String?   // manual | rule_merchant | rule_keyword | rule_regex | fallback
+  categorizationSource  String?   // manual | rule_merchant | rule_keyword | rule_regex | fallback | imported
   confidence            Float?
   notes                 String?
   needsReview           Boolean   @default(false)
   isRecurringInstance   Boolean   @default(false)
   recurringTemplateId   String?
   recurringInstanceKey  String?   // templateId_YYYY-MM-DD for uniqueness
+  externalId            String?   // External ID from bank scraper for deduplication
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -200,12 +204,14 @@ model Transaction {
   corrections UserCorrection[]
 
   @@unique([recurringTemplateId, recurringInstanceKey])
+  @@unique([accountId, externalId])
   @@index([householdId])
   @@index([accountId])
   @@index([categoryId])
   @@index([date])
   @@index([householdId, date])
   @@index([recurringTemplateId])
+  @@index([externalId])
   @@map("transactions")
 }
 
@@ -337,5 +343,50 @@ model RecurringOverride {
   @@unique([templateId, instanceKey])
   @@index([templateId])
   @@map("recurring_overrides")
+}
+
+// ============================================
+// BANK CONNECTIONS (for israeli-bank-scrapers)
+// ============================================
+
+model BankConnection {
+  id              String    @id @default(cuid())
+  householdId     String
+  provider        String    // "onezero" | "isracard"
+  displayName     String    // User-friendly name
+  encryptedCreds  String    // AES-256-GCM encrypted JSON
+  longTermToken   String?   // For 2FA (encrypted)
+  accountMappings String?   // JSON: external account IDs -> internal Account IDs
+  lastSyncAt      DateTime?
+  lastSyncStatus  String?   // "success" | "error" | "pending"
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  syncJobs  SyncJob[]
+
+  @@index([householdId])
+  @@index([isActive])
+  @@map("bank_connections")
+}
+
+model SyncJob {
+  id                String    @id @default(cuid())
+  connectionId      String
+  status            String    // "pending" | "running" | "success" | "error"
+  startedAt         DateTime?
+  completedAt       DateTime?
+  transactionsFound Int       @default(0)
+  transactionsNew   Int       @default(0)
+  errorMessage      String?
+  createdAt         DateTime  @default(now())
+
+  connection BankConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("sync_jobs")
 }
 

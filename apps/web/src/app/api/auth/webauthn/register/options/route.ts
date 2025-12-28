@@ -28,17 +28,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify invite code
+    // Verify invite code (only database-stored codes are valid)
     const hashedCode = hashInviteCode(inviteCode);
     const storedInvite = await prisma.inviteCode.findUnique({
       where: { code: hashedCode },
     });
 
-    // Check against environment variable for initial setup
-    const adminInviteCode = process.env.ADMIN_INVITE_CODE;
-    const isValidAdminCode = adminInviteCode && inviteCode === adminInviteCode;
-
-    if (!storedInvite && !isValidAdminCode) {
+    if (!storedInvite) {
       return NextResponse.json(
         { error: 'Invalid invite code' },
         { status: 403 }

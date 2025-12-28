@@ -10,7 +10,8 @@ import {
   getStatusLabel,
   cn,
 } from '@/lib/utils';
-import { Edit2, Save, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit2, Save, X, ChevronLeft, ChevronRight, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { AddBudgetDialog } from './AddBudgetDialog';
 
 interface BudgetContentProps {
   month: string;
@@ -24,15 +25,22 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
     limitAmount: number | null;
     limitType: string | null;
   }>({ plannedAmount: 0, limitAmount: null, limitType: null });
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const utils = trpc.useUtils();
 
-  const { data: budgets = [] } = trpc.budgets.forMonth.useQuery(currentMonth);
+  const { data: budgets = [], isLoading, isError, error } = trpc.budgets.forMonth.useQuery(currentMonth);
 
   const upsertMutation = trpc.budgets.upsert.useMutation({
     onSuccess: () => {
       utils.budgets.forMonth.invalidate(currentMonth);
       setEditingBudget(null);
+    },
+  });
+
+  const deleteMutation = trpc.budgets.delete.useMutation({
+    onSuccess: () => {
+      utils.budgets.forMonth.invalidate(currentMonth);
     },
   });
 
@@ -64,67 +72,105 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
     });
   };
 
+  const handleDelete = (budgetId: string) => {
+    if (confirm('Are you sure you want to delete this budget?')) {
+      deleteMutation.mutate(budgetId);
+    }
+  };
+
   const totalPlanned = budgets.reduce((sum, b) => sum + b.budget.plannedAmount, 0);
   const totalActual = budgets.reduce((sum, b) => sum + b.actualAmount, 0);
 
   return (
     <div className="space-y-6 animate-in">
       {/* Header with Month Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Budget</h1>
           <p className="text-gray-500">Manage your monthly spending limits</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => navigateMonth('prev')}
-            className="btn-outline btn-sm"
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="btn btn-primary"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
+            Add Budget
           </button>
-          <span className="text-lg font-medium min-w-[160px] text-center">
-            {formatMonth(currentMonth)}
-          </span>
-          <button
-            onClick={() => navigateMonth('next')}
-            className="btn-outline btn-sm"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="btn-outline btn-sm"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-lg font-medium min-w-[160px] text-center">
+              {formatMonth(currentMonth)}
+            </span>
+            <button
+              onClick={() => navigateMonth('next')}
+              className="btn-outline btn-sm"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <span className="ml-2 text-gray-500">Loading budgets...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="card bg-danger-50 border-danger-200">
+          <div className="flex items-center gap-2 text-danger-700">
+            <AlertCircle className="h-5 w-5" />
+            <p className="font-medium">Failed to load budgets</p>
+          </div>
+          <p className="text-sm text-danger-600 mt-1">
+            {error?.message || 'An error occurred while loading budgets'}
+          </p>
+        </div>
+      )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="card">
-          <p className="text-sm text-gray-500">Total Planned</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatCurrency(totalPlanned)}
-          </p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-gray-500">Total Spent</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatCurrency(totalActual)}
-          </p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-gray-500">Remaining</p>
-          <p
-            className={cn(
-              'text-2xl font-bold',
-              totalPlanned - totalActual >= 0
-                ? 'text-success-600'
-                : 'text-danger-600'
-            )}
-          >
-            {formatCurrency(totalPlanned - totalActual)}
-          </p>
-        </div>
-      </div>
+      {!isLoading && !isError && (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="card">
+              <p className="text-sm text-gray-500">Total Planned</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatCurrency(totalPlanned)}
+              </p>
+            </div>
+            <div className="card">
+              <p className="text-sm text-gray-500">Total Spent</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatCurrency(totalActual)}
+              </p>
+            </div>
+            <div className="card">
+              <p className="text-sm text-gray-500">Remaining</p>
+              <p
+                className={cn(
+                  'text-2xl font-bold',
+                  totalPlanned - totalActual >= 0
+                    ? 'text-success-600'
+                    : 'text-danger-600'
+                )}
+              >
+                {formatCurrency(totalPlanned - totalActual)}
+              </p>
+            </div>
+          </div>
 
-      {/* Budget List */}
-      <div className="card p-0 overflow-hidden">
+          {/* Budget List */}
+          <div className="card p-0 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -242,12 +288,10 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',
-                          evaluation.status === 'exceeded_hard'
-                            ? 'bg-danger-500'
-                            : evaluation.status === 'exceeded_soft' ||
-                              evaluation.status === 'nearing_limit'
-                            ? 'bg-warning-500'
-                            : 'bg-success-500'
+                          // Green for 0-100%, red only when exceeded (>100%)
+                          evaluation.percentUsed <= 1.0
+                            ? 'bg-success-500'
+                            : 'bg-danger-500'
                         )}
                         style={{ width: `${progressWidth}%` }}
                       />
@@ -283,12 +327,22 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => startEditing(evaluation)}
-                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => startEditing(evaluation)}
+                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                          title="Edit budget"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(evaluation.budget.id)}
+                          className="p-1 text-danger-400 hover:text-danger-600 hover:bg-danger-50 rounded"
+                          title="Delete budget"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -303,8 +357,16 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
             )}
           </tbody>
         </table>
-      </div>
+          </div>
+        </>
+      )}
+
+      {/* Add Budget Dialog */}
+      <AddBudgetDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        currentMonth={currentMonth}
+      />
     </div>
   );
 }
-

@@ -427,5 +427,78 @@ export const categoriesRouter = router({
 
     return { success: true, deletedCount: allCategoryIds.length };
   }),
+
+  /**
+   * Seed default system categories for a new household
+   */
+  seedDefaults: protectedProcedure.mutation(async ({ ctx }) => {
+    // Check if categories already exist
+    const existingCount = await ctx.prisma.category.count({
+      where: { householdId: ctx.householdId },
+    });
+
+    if (existingCount > 0) {
+      return {
+        success: false,
+        message: 'Categories already exist for this household',
+        categoriesCreated: 0,
+      };
+    }
+
+    // Default categories for Israeli household budgeting (Bilingual: English (עברית))
+    const defaultCategories = [
+      // Income categories
+      { name: 'Salary (משכורת)', type: 'income', icon: '💼', sortOrder: 1 },
+      { name: 'Freelance (פרילנס)', type: 'income', icon: '💻', sortOrder: 2 },
+      { name: 'Gifts (מתנות)', type: 'income', icon: '🎁', sortOrder: 3 },
+      { name: 'Other Income (הכנסה אחרת)', type: 'income', icon: '💰', sortOrder: 4 },
+
+      // Expected (Fixed) expenses
+      { name: 'Rent (שכר דירה)', type: 'expected', icon: '🏠', sortOrder: 1 },
+      { name: 'Electricity & Water (חשמל ומים)', type: 'expected', icon: '💡', sortOrder: 2 },
+      { name: 'Insurance (ביטוחים)', type: 'expected', icon: '🛡️', sortOrder: 3 },
+      { name: 'Phone & Internet (טלפון ואינטרנט)', type: 'expected', icon: '📱', sortOrder: 4 },
+      { name: 'Loan Repayment (החזר הלוואה)', type: 'expected', icon: '🏦', sortOrder: 5 },
+      { name: 'Income Tax (מס הכנסה)', type: 'expected', icon: '📊', sortOrder: 6 },
+      { name: 'National Insurance (ביטוח לאומי)', type: 'expected', icon: '🏥', sortOrder: 7 },
+
+      // Varying expenses
+      { name: 'Groceries (מכולת)', type: 'varying', icon: '🛒', sortOrder: 1 },
+      { name: 'Restaurants (מסעדות)', type: 'varying', icon: '🍽️', sortOrder: 2 },
+      { name: 'Transportation (תחבורה)', type: 'varying', icon: '🚗', sortOrder: 3 },
+      { name: 'Shopping (קניות)', type: 'varying', icon: '👕', sortOrder: 4 },
+      { name: 'Entertainment (בילויים)', type: 'varying', icon: '🎬', sortOrder: 5 },
+      { name: 'Healthcare (בריאות)', type: 'varying', icon: '💊', sortOrder: 6 },
+      { name: 'Education (חינוך)', type: 'varying', icon: '📚', sortOrder: 7 },
+      { name: 'Sports (ספורט)', type: 'varying', icon: '⚽', sortOrder: 8 },
+      { name: 'Beauty & Care (טיפוח)', type: 'varying', icon: '💅', sortOrder: 9 },
+      { name: 'Gifts & Events (מתנות ואירועים)', type: 'varying', icon: '🎉', sortOrder: 10 },
+      { name: 'Pets (חיות מחמד)', type: 'varying', icon: '🐕', sortOrder: 11 },
+      { name: 'Repairs (תיקונים)', type: 'varying', icon: '🔧', sortOrder: 12 },
+      { name: 'Other (אחר)', type: 'varying', icon: '📦', sortOrder: 13 },
+    ];
+
+    // Create all categories
+    const created = await Promise.all(
+      defaultCategories.map((cat) =>
+        ctx.prisma.category.create({
+          data: {
+            householdId: ctx.householdId,
+            name: cat.name,
+            type: cat.type as 'income' | 'expected' | 'varying',
+            icon: cat.icon,
+            sortOrder: cat.sortOrder,
+            isSystem: true, // Mark as system-created
+          },
+        })
+      )
+    );
+
+    return {
+      success: true,
+      message: `Created ${created.length} default categories`,
+      categoriesCreated: created.length,
+    };
+  }),
 });
 
