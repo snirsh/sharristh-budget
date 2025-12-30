@@ -89,7 +89,7 @@ export const dashboardRouter = router({
       },
     });
 
-    const budgetEvaluations = budgets.map((budget) => {
+    const budgetEvaluations = budgets.map((budget: typeof budgets[number]) => {
       const actualAmount = calculateCategorySpending(
         domainTransactions,
         budget.categoryId,
@@ -114,7 +114,7 @@ export const dashboardRouter = router({
     });
 
     const varyingExpenses = transactions.filter(
-      (t) =>
+      (t: typeof transactions[number]) =>
         t.direction === 'expense' &&
         (t.categoryId === varyingCategory?.id || t.categoryId === null)
     );
@@ -132,14 +132,14 @@ export const dashboardRouter = router({
       kpis,
       budgetSummary: {
         total: budgetEvaluations.length,
-        onTrack: budgetEvaluations.filter((e) => e.status === 'ok').length,
-        nearingLimit: budgetEvaluations.filter((e) => e.status === 'nearing_limit').length,
-        exceededSoft: budgetEvaluations.filter((e) => e.status === 'exceeded_soft').length,
-        exceededHard: budgetEvaluations.filter((e) => e.status === 'exceeded_hard').length,
+        onTrack: budgetEvaluations.filter((e: typeof budgetEvaluations[number]) => e.status === 'ok').length,
+        nearingLimit: budgetEvaluations.filter((e: typeof budgetEvaluations[number]) => e.status === 'nearing_limit').length,
+        exceededSoft: budgetEvaluations.filter((e: typeof budgetEvaluations[number]) => e.status === 'exceeded_soft').length,
+        exceededHard: budgetEvaluations.filter((e: typeof budgetEvaluations[number]) => e.status === 'exceeded_hard').length,
       },
       alerts: alerts.map((a) => ({
         categoryId: a.budget.categoryId,
-        categoryName: budgets.find((b) => b.categoryId === a.budget.categoryId)?.category.name,
+        categoryName: budgets.find((b: typeof budgets[number]) => b.categoryId === a.budget.categoryId)?.category.name,
         status: a.status,
         percentUsed: a.percentUsed,
         actualAmount: a.actualAmount,
@@ -148,7 +148,7 @@ export const dashboardRouter = router({
       })),
       varyingExpenses: {
         count: varyingExpenses.length,
-        total: varyingExpenses.reduce((sum, t) => sum + t.amount, 0),
+        total: varyingExpenses.reduce((sum: number, t: typeof varyingExpenses[number]) => sum + t.amount, 0),
       },
       needsReviewCount,
     };
@@ -187,9 +187,9 @@ export const dashboardRouter = router({
       },
     });
 
-    return categories.map((category) => {
-      const categoryTransactions = transactions.filter((t) => t.categoryId === category.id);
-      const actualAmount = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
+    return categories.map((category: typeof categories[number]) => {
+      const categoryTransactions = transactions.filter((t: typeof transactions[number]) => t.categoryId === category.id);
+      const actualAmount = categoryTransactions.reduce((sum: number, t: typeof categoryTransactions[number]) => sum + t.amount, 0);
       const budget = category.budgets[0];
 
       let status = 'ok';
@@ -308,7 +308,7 @@ export const dashboardRouter = router({
       orderBy: { name: 'asc' },
     });
 
-    const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+    const totalBalance = accounts.reduce((sum: number, a: typeof accounts[number]) => sum + a.balance, 0);
 
     return {
       accounts,
