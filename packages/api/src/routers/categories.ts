@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { createCategorySchema, updateCategorySchema } from '@sfam/domain/schemas';
+import type { PrismaClient } from '@sfam/db';
 
 export const categoriesRouter = router({
   /**
@@ -376,7 +377,7 @@ export const categoriesRouter = router({
     const allCategoryIds = [input, ...descendantIds];
 
     // Use a transaction to ensure atomicity
-    await ctx.prisma.$transaction(async (tx) => {
+    await ctx.prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>) => {
       // Unassign transactions (set categoryId to null)
       await tx.transaction.updateMany({
         where: {
