@@ -22,7 +22,8 @@
       "Bash(lsof:*)",
       "Bash(xargs:*)",
       "Bash(pnpm --filter @sfam/domain build:*)",
-      "Bash(du:*)"
+      "Bash(du:*)",
+      "Bash(pnpm install)"
     ],
     "deny": [],
     "ask": []
