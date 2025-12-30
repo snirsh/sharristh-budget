@@ -103,10 +103,10 @@ export function AddTransactionDialog({
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Add Transaction</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction</h2>
           <button
             onClick={handleClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
           >
             <X className="h-5 w-5" />
           </button>
@@ -116,7 +116,7 @@ export function AddTransactionDialog({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Direction Toggle */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Type
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -127,7 +127,7 @@ export function AddTransactionDialog({
                   'px-4 py-2 rounded-lg font-medium transition-colors',
                   direction === 'expense'
                     ? 'bg-danger-100 text-danger-700 border-2 border-danger-500'
-                    : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-700 dark:text-gray-200 border-2 border-transparent hover:bg-gray-200'
                 )}
               >
                 Expense
@@ -139,7 +139,7 @@ export function AddTransactionDialog({
                   'px-4 py-2 rounded-lg font-medium transition-colors',
                   direction === 'income'
                     ? 'bg-success-100 text-success-700 border-2 border-success-500'
-                    : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-700 dark:text-gray-200 border-2 border-transparent hover:bg-gray-200'
                 )}
               >
                 Income
@@ -149,7 +149,7 @@ export function AddTransactionDialog({
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Date *
             </label>
             <input
@@ -163,7 +163,7 @@ export function AddTransactionDialog({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Description *
             </label>
             <input
@@ -178,7 +178,7 @@ export function AddTransactionDialog({
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Amount (₪) *
             </label>
             <input
@@ -195,7 +195,7 @@ export function AddTransactionDialog({
 
           {/* Account */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Account *
             </label>
             <select
@@ -215,7 +215,7 @@ export function AddTransactionDialog({
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Category
             </label>
             <select
@@ -230,14 +230,14 @@ export function AddTransactionDialog({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Leave blank to auto-categorize based on rules
             </p>
           </div>
 
           {/* Merchant (optional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Merchant
             </label>
             <input
@@ -251,7 +251,7 @@ export function AddTransactionDialog({
 
           {/* Notes (optional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Notes
             </label>
             <textarea

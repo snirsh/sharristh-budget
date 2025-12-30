@@ -86,8 +86,8 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
       {/* Header with Month Navigation */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Budget</h1>
-          <p className="text-gray-500">Manage your monthly spending limits</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Budget</h1>
+          <p className="text-gray-500 dark:text-gray-400">Manage your monthly spending limits</p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -120,8 +120,8 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          <span className="ml-2 text-gray-500">Loading budgets...</span>
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400 dark:text-gray-500" />
+          <span className="ml-2 text-gray-500 dark:text-gray-400">Loading budgets...</span>
         </div>
       )}
 
@@ -143,19 +143,19 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="card">
-              <p className="text-sm text-gray-500">Total Planned</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Planned</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(totalPlanned)}
               </p>
             </div>
             <div className="card">
-              <p className="text-sm text-gray-500">Total Spent</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Spent</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(totalActual)}
               </p>
             </div>
             <div className="card">
-              <p className="text-sm text-gray-500">Remaining</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Remaining</p>
               <p
                 className={cn(
                   'text-2xl font-bold',
@@ -174,25 +174,25 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Category
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Planned
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Limit
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Spent
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-48">
                 Progress
               </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -209,7 +209,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                       <span className="text-lg">
                         {evaluation.category?.icon || '📁'}
                       </span>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-gray-900 dark:text-white">
                         {evaluation.category?.name || 'Unknown'}
                       </span>
                     </div>
@@ -228,7 +228,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                         className="input text-right w-28 py-1"
                       />
                     ) : (
-                      <span className="text-gray-900">
+                      <span className="text-gray-900 dark:text-white">
                         {formatCurrency(evaluation.budget.plannedAmount)}
                       </span>
                     )}
@@ -266,7 +266,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                         </select>
                       </div>
                     ) : (
-                      <span className="text-gray-500">
+                      <span className="text-gray-500 dark:text-gray-400">
                         {evaluation.budget.limitAmount
                           ? `${formatCurrency(evaluation.budget.limitAmount)} (${evaluation.budget.limitType})`
                           : '—'}
@@ -296,7 +296,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                         style={{ width: `${progressWidth}%` }}
                       />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {formatPercent(evaluation.percentUsed)} used
                     </p>
                   </td>
@@ -350,7 +350,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
             })}
             {budgets.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                   No budgets set for this month
                 </td>
               </tr>

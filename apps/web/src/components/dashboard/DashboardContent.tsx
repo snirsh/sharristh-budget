@@ -78,8 +78,8 @@ export function DashboardContent({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500">{formatMonth(month)}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400">{formatMonth(month)}</p>
         </div>
         <div className="flex gap-2">
           <Link href="/transactions" className="btn-secondary btn-sm">
@@ -131,7 +131,7 @@ export function DashboardContent({
               <div className="mt-3 space-y-2">
                 {alerts.slice(0, 3).map((alert) => (
                   <div key={alert.categoryId} className="flex items-center justify-between text-sm">
-                    <span className="text-warning-800">{alert.categoryName}</span>
+                    <span className="text-warning-800 dark:text-gray-200">{alert.categoryName}</span>
                     <span className={cn('badge', getStatusBadgeClass(alert.status))}>
                       {getStatusLabel(alert.status)} • {formatPercent(alert.percentUsed)}
                     </span>
@@ -189,7 +189,7 @@ export function DashboardContent({
                 <CategoryRow key={item.category.id} item={item} />
               ))}
             {categoryBreakdown.filter((c) => c.actualAmount > 0).length === 0 && (
-              <p className="text-center text-gray-500 py-8">No expenses this month yet</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">No expenses this month yet</p>
             )}
           </div>
         </div>
@@ -208,10 +208,10 @@ export function DashboardContent({
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{tx.category?.icon || '📝'}</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
                       {tx.description}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatDate(tx.date)}
                     </p>
                   </div>
@@ -219,7 +219,7 @@ export function DashboardContent({
                 <span
                   className={cn(
                     'font-medium',
-                    tx.direction === 'income' ? 'text-success-600' : 'text-gray-900'
+                    tx.direction === 'income' ? 'text-success-600' : 'text-gray-900 dark:text-white'
                   )}
                 >
                   {tx.direction === 'income' ? '+' : '-'}
@@ -228,7 +228,7 @@ export function DashboardContent({
               </div>
             ))}
             {recentTransactions.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No transactions yet</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">No transactions yet</p>
             )}
           </div>
         </div>
@@ -271,11 +271,11 @@ function KPICard({
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-gray-500">{title}</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{title}</span>
         <span className={trendColors[trend]}>{icon}</span>
       </div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+      {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
     </div>
   );
 }
@@ -298,13 +298,13 @@ function CategoryRow({
       <span className="text-xl">{item.category.icon || '📁'}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium text-gray-900 truncate">
+          <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
             {item.category.name}
           </span>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {formatCurrency(item.actualAmount)}
             {item.plannedAmount > 0 && (
-              <span className="text-gray-400"> / {formatCurrency(item.plannedAmount)}</span>
+              <span className="text-gray-400 dark:text-gray-500"> / {formatCurrency(item.plannedAmount)}</span>
             )}
           </span>
         </div>
@@ -345,12 +345,12 @@ function StatBox({
           color === 'success' && 'text-success-600',
           color === 'warning' && 'text-warning-600',
           color === 'danger' && 'text-danger-600',
-          !color && 'text-gray-900'
+          !color && 'text-gray-900 dark:text-white'
         )}
       >
         {value}
       </p>
-      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
     </div>
   );
 }

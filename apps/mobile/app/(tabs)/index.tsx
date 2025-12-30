@@ -46,14 +46,14 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-gray-50 dark:bg-gray-900"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
       <View className="p-4">
         {/* Month Header */}
-        <Text className="text-2xl font-bold text-gray-900 mb-4">
+        <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           {mockData.month}
         </Text>
 
@@ -82,17 +82,17 @@ export default function DashboardScreen() {
 
         {/* Alerts */}
         {alerts.length > 0 && (
-          <View className="bg-warning-50 border border-warning-200 rounded-xl p-4 mb-6">
+          <View className="bg-warning-50 dark:bg-warning-900/30 border border-warning-200 dark:border-warning-700 rounded-xl p-4 mb-6">
             <View className="flex-row items-center mb-2">
               <Ionicons name="alert-circle" size={20} color="#f59e0b" />
-              <Text className="ml-2 font-semibold text-warning-800">
+              <Text className="ml-2 font-semibold text-warning-800 dark:text-warning-400">
                 Budget Alerts
               </Text>
             </View>
             {alerts.map((alert, index) => (
               <View key={index} className="flex-row justify-between py-1">
-                <Text className="text-warning-700">{alert.category}</Text>
-                <Text className="text-warning-800 font-medium">
+                <Text className="text-warning-700 dark:text-warning-400">{alert.category}</Text>
+                <Text className="text-warning-800 dark:text-warning-300 font-medium">
                   {alert.percent}%
                 </Text>
               </View>
@@ -101,21 +101,21 @@ export default function DashboardScreen() {
         )}
 
         {/* Category Progress */}
-        <View className="bg-white rounded-xl p-4 shadow-sm mb-6">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
+        <View className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-6">
+          <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Expense Categories
           </Text>
           {categories.map((cat, index) => (
             <View key={index} className="mb-4 last:mb-0">
               <View className="flex-row justify-between mb-1">
-                <Text className="text-gray-700">
+                <Text className="text-gray-700 dark:text-gray-300">
                   {cat.icon} {cat.name}
                 </Text>
-                <Text className="text-gray-500">
+                <Text className="text-gray-500 dark:text-gray-400">
                   {formatCurrency(cat.actual)} / {formatCurrency(cat.planned)}
                 </Text>
               </View>
-              <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <View className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                 <View
                   className={`h-full rounded-full ${
                     cat.percent >= 100
@@ -132,25 +132,25 @@ export default function DashboardScreen() {
         </View>
 
         {/* Recent Transactions */}
-        <View className="bg-white rounded-xl p-4 shadow-sm">
-          <Text className="text-lg font-semibold text-gray-900 mb-4">
+        <View className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+          <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Recent Transactions
           </Text>
           {recentTransactions.map((tx) => (
             <View
               key={tx.id}
-              className="flex-row items-center justify-between py-3 border-b border-gray-100 last:border-0"
+              className="flex-row items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700 last:border-0"
             >
               <View className="flex-row items-center">
                 <Text className="text-xl mr-3">{tx.category}</Text>
                 <View>
-                  <Text className="font-medium text-gray-900">
+                  <Text className="font-medium text-gray-900 dark:text-white">
                     {tx.description}
                   </Text>
-                  <Text className="text-xs text-gray-500">{tx.date}</Text>
+                  <Text className="text-xs text-gray-500 dark:text-gray-400">{tx.date}</Text>
                 </View>
               </View>
-              <Text className="font-medium text-gray-900">
+              <Text className="font-medium text-gray-900 dark:text-white">
                 -{formatCurrency(tx.amount)}
               </Text>
             </View>
@@ -175,14 +175,14 @@ function KPICard({
   subtitle?: string;
 }) {
   return (
-    <View className="flex-1 min-w-[140px] bg-white rounded-xl p-4 shadow-sm">
+    <View className="flex-1 min-w-[140px] bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
       <View className="flex-row items-center justify-between mb-1">
-        <Text className="text-sm text-gray-500">{title}</Text>
+        <Text className="text-sm text-gray-500 dark:text-gray-400">{title}</Text>
         <Ionicons name={icon} size={18} color={color} />
       </View>
-      <Text className="text-xl font-bold text-gray-900">{value}</Text>
+      <Text className="text-xl font-bold text-gray-900 dark:text-white">{value}</Text>
       {subtitle && (
-        <Text className="text-xs text-gray-500 mt-1">{subtitle}</Text>
+        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">{subtitle}</Text>
       )}
     </View>
   );

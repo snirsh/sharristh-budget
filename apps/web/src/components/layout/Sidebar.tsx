@@ -13,8 +13,11 @@ import {
   Sparkles,
   LogOut,
   Link2,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTheme } from '@/lib/theme';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -30,6 +33,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { theme, toggleTheme, mounted } = useTheme();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -45,16 +49,16 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden w-64 border-r border-gray-200 bg-white lg:block">
+    <aside className="hidden w-64 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 lg:block">
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-6">
+        <div className="flex h-16 items-center gap-2 border-b border-gray-200 dark:border-gray-700 px-6">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-500">
             <span className="text-lg font-bold text-white">S</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Sharristh</h1>
-            <p className="text-xs text-gray-500">Budget Tracker</p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Sharristh</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Budget Tracker</p>
           </div>
         </div>
 
@@ -72,8 +76,8 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -84,10 +88,26 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4 space-y-1">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-1">
+          <button
+            onClick={toggleTheme}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            {mounted && theme === 'dark' ? (
+              <>
+                <Sun className="h-5 w-5" />
+                Light Mode
+              </>
+            ) : (
+              <>
+                <Moon className="h-5 w-5" />
+                Dark Mode
+              </>
+            )}
+          </button>
           <Link
             href="/settings"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
           >
             <Settings className="h-5 w-5" />
             Settings
@@ -95,7 +115,7 @@ export function Sidebar() {
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50 transition-colors"
           >
             <LogOut className="h-5 w-5" />
             {isLoggingOut ? 'Signing out...' : 'Sign out'}

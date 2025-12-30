@@ -68,11 +68,11 @@ export function RecurringContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Recurring Transactions</h1>
-          <p className="text-gray-500">Manage recurring income and expenses</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recurring Transactions</h1>
+          <p className="text-gray-500 dark:text-gray-400">Manage recurring income and expenses</p>
         </div>
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-gray-600">
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
             <input
               type="checkbox"
               checked={showInactive}
@@ -112,8 +112,8 @@ export function RecurringContent() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Recurring Income</h2>
-            <p className="text-sm text-gray-500">Regular money coming in</p>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recurring Income</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Regular money coming in</p>
           </div>
           <span className="badge badge-success">{incomeTemplates.length} active</span>
         </div>
@@ -132,7 +132,7 @@ export function RecurringContent() {
             />
           ))}
           {incomeTemplates.length === 0 && (
-            <p className="py-4 text-center text-gray-400">
+            <p className="py-4 text-center text-gray-400 dark:text-gray-500">
               No recurring income set up
             </p>
           )}
@@ -143,8 +143,8 @@ export function RecurringContent() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Recurring Expenses</h2>
-            <p className="text-sm text-gray-500">Regular bills and payments</p>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recurring Expenses</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Regular bills and payments</p>
           </div>
           <span className="badge badge-warning">{expenseTemplates.length} active</span>
         </div>
@@ -163,7 +163,7 @@ export function RecurringContent() {
             />
           ))}
           {expenseTemplates.length === 0 && (
-            <p className="py-4 text-center text-gray-400">
+            <p className="py-4 text-center text-gray-400 dark:text-gray-500">
               No recurring expenses set up
             </p>
           )}
@@ -207,8 +207,8 @@ function TemplateRow({
       <div className="flex items-center gap-3 flex-1">
         <span className="text-xl">{template.category?.icon || '📝'}</span>
         <div>
-          <p className="font-medium text-gray-900">{template.name}</p>
-          <p className="text-sm text-gray-500">
+          <p className="font-medium text-gray-900 dark:text-white">{template.name}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {template.category?.name || 'Uncategorized'}
           </p>
         </div>
@@ -221,18 +221,18 @@ function TemplateRow({
             'font-semibold',
             template.direction === 'income'
               ? 'text-success-600'
-              : 'text-gray-900'
+              : 'text-gray-900 dark:text-white'
           )}
         >
           {template.direction === 'income' ? '+' : '-'}
           {formatCurrency(template.amount)}
         </p>
-        <p className="text-xs text-gray-500">{template.scheduleDescription}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{template.scheduleDescription}</p>
       </div>
 
       {/* Next Run */}
       <div className="text-right min-w-[100px]">
-        <div className="flex items-center justify-end gap-1 text-sm text-gray-500">
+        <div className="flex items-center justify-end gap-1 text-sm text-gray-500 dark:text-gray-400">
           <Calendar className="h-3 w-3" />
           {template.nextRunAt ? (
             <span>{formatDate(template.nextRunAt)}</span>
@@ -240,14 +240,14 @@ function TemplateRow({
             <span>—</span>
           )}
         </div>
-        <p className="text-xs text-gray-400">Next occurrence</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">Next occurrence</p>
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-1">
         <button
           onClick={onToggle}
-          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"
         >
           {template.isActive ? (
             <ToggleRight className="h-5 w-5 text-success-500" />
@@ -257,7 +257,7 @@ function TemplateRow({
         </button>
         <button
           onClick={onDelete}
-          className="p-1.5 text-gray-400 hover:text-danger-600 hover:bg-danger-50 rounded"
+          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-danger-600 hover:bg-danger-50 rounded"
         >
           <Trash2 className="h-4 w-4" />
         </button>

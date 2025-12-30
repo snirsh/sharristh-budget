@@ -241,8 +241,8 @@ export function CategoriesContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-          <p className="text-gray-500">Organize your income and expenses</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Categories</h1>
+          <p className="text-gray-500 dark:text-gray-400">Organize your income and expenses</p>
         </div>
         <div className="flex items-center gap-3">
           {categories.length === 0 && (
@@ -255,7 +255,7 @@ export function CategoriesContent() {
               {seedMutation.isPending ? 'Creating...' : 'Create Default Categories'}
             </button>
           )}
-          <label className="flex items-center gap-2 text-sm text-gray-600">
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
             <input
               type="checkbox"
               checked={showInactive}
@@ -283,14 +283,14 @@ export function CategoriesContent() {
           <div key={type} className={cn('card border', typeLabels[type].color)}>
             <div className="mb-4 flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {typeLabels[type].title}
                 </h2>
-                <p className="text-sm text-gray-500">{typeLabels[type].description}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{typeLabels[type].description}</p>
               </div>
               <button
                 onClick={() => openCreateModal(type)}
-                className="btn-ghost btn-sm flex items-center gap-1.5 text-gray-600 hover:text-gray-900"
+                className="btn-ghost btn-sm flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900"
               >
                 <Plus className="h-4 w-4" />
                 Add Category
@@ -319,7 +319,7 @@ export function CategoriesContent() {
                 />
               ))}
               {cats.length === 0 && (
-                <p className="py-4 text-center text-gray-400">
+                <p className="py-4 text-center text-gray-400 dark:text-gray-500">
                   No categories in this group
                 </p>
               )}
@@ -334,12 +334,12 @@ export function CategoriesContent() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal} />
           <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {editing.isNew ? 'Create Category' : 'Edit Category'}
               </h2>
               <button
                 onClick={closeModal}
-                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -348,7 +348,7 @@ export function CategoriesContent() {
             <div className="space-y-5">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
                   Name
                 </label>
                 <input
@@ -363,7 +363,7 @@ export function CategoriesContent() {
 
               {/* Icon */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
                   Icon (emoji)
                 </label>
                 <input
@@ -378,7 +378,7 @@ export function CategoriesContent() {
 
               {/* Color */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
                   <Palette className="inline h-4 w-4 mr-1" />
                   Color
                 </label>
@@ -410,7 +410,7 @@ export function CategoriesContent() {
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
                   Type
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -422,7 +422,7 @@ export function CategoriesContent() {
                         'px-3 py-2 rounded-lg border text-sm font-medium transition-all',
                         editing.type === option.value
                           ? 'border-primary-500 bg-primary-50 text-primary-700'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                          : 'border-gray-200 bg-white text-gray-600 dark:text-gray-300 hover:border-gray-300'
                       )}
                     >
                       {option.label}
@@ -433,7 +433,7 @@ export function CategoriesContent() {
 
               {/* Parent Category */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
                   <FolderTree className="inline h-4 w-4 mr-1" />
                   Parent Category
                 </label>
@@ -451,7 +451,7 @@ export function CategoriesContent() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Move under another category to create a hierarchy
                 </p>
               </div>
@@ -504,19 +504,19 @@ export function CategoriesContent() {
             </div>
 
             {isLoadingDeleteInfo ? (
-              <div className="py-8 text-center text-gray-500">
+              <div className="py-8 text-center text-gray-500 dark:text-gray-400">
                 Loading...
               </div>
             ) : deleteInfo ? (
               <div className="space-y-4">
-                <p className="text-gray-700">
+                <p className="text-gray-700 dark:text-gray-200">
                   Are you sure you want to delete this category?
                 </p>
 
                 {/* Category Preview */}
                 <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <span className="text-2xl">{deleteInfo.category.icon || '📁'}</span>
-                  <span className="font-semibold text-gray-900">{deleteInfo.category.name}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{deleteInfo.category.name}</span>
                 </div>
 
                 {/* Subcategories Warning */}
@@ -580,7 +580,7 @@ export function CategoriesContent() {
                 )}
 
                 {/* Final Warning */}
-                <p className="text-sm text-gray-500 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
                   This action cannot be undone.
                 </p>
               </div>
@@ -687,27 +687,27 @@ function CategoryRow({
         </div>
 
         {/* Name */}
-        <span className="flex-1 text-gray-900 font-medium">{category.name}</span>
+        <span className="flex-1 text-gray-900 dark:text-white font-medium">{category.name}</span>
 
         {/* Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={onAddChild}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"
             title="Add subcategory"
           >
             <Plus className="h-4 w-4" />
           </button>
           <button
             onClick={onStartEdit}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"
             title="Edit category"
           >
             <Edit2 className="h-4 w-4" />
           </button>
           <button
             onClick={onToggleActive}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"
             title={category.isActive ? 'Disable category' : 'Enable category'}
           >
             {category.isActive ? (
@@ -718,7 +718,7 @@ function CategoryRow({
           </button>
           <button
             onClick={onDelete}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
             title="Delete category"
           >
             <Trash2 className="h-4 w-4" />

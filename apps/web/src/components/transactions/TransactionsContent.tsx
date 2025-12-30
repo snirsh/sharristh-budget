@@ -69,8 +69,8 @@ export function TransactionsContent({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-          <p className="text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
+          <p className="text-gray-500 dark:text-gray-400">
             {transactionsData?.total ?? 0} transactions
             {needsReviewFilter && ' needing review'}
           </p>
@@ -140,22 +140,22 @@ export function TransactionsContent({
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Date
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Description
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Category
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Account
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -169,16 +169,16 @@ export function TransactionsContent({
                   tx.needsReview && 'bg-warning-50'
                 )}
               >
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(tx.date)}
                 </td>
                 <td className="px-4 py-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {tx.description}
                     </p>
                     {tx.merchant && (
-                      <p className="text-xs text-gray-500">{tx.merchant}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{tx.merchant}</p>
                     )}
                   </div>
                 </td>
@@ -199,7 +199,7 @@ export function TransactionsContent({
                         className={cn(
                           'inline-flex items-center gap-1 px-2 py-1 rounded text-sm',
                           tx.category
-                            ? 'text-gray-700 hover:bg-gray-100'
+                            ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-100'
                             : 'text-warning-700 bg-warning-100 hover:bg-warning-200'
                         )}
                       >
@@ -214,7 +214,7 @@ export function TransactionsContent({
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500">
+                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                   {tx.account?.name}
                 </td>
                 <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -223,7 +223,7 @@ export function TransactionsContent({
                       'text-sm font-medium',
                       tx.direction === 'income'
                         ? 'text-success-600'
-                        : 'text-gray-900'
+                        : 'text-gray-900 dark:text-white'
                     )}
                   >
                     {tx.direction === 'income' ? '+' : '-'}
@@ -241,7 +241,7 @@ export function TransactionsContent({
             ))}
             {transactions.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={6} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                   No transactions found
                 </td>
               </tr>
@@ -290,7 +290,7 @@ function CategorySelector({
           </option>
         ))}
       </select>
-      <label className="flex items-center gap-1 text-xs text-gray-500">
+      <label className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
         <input
           type="checkbox"
           checked={createRule}
