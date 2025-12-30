@@ -8,5 +8,7 @@ export default defineConfig((options) => ({
   sourcemap: true,
   clean: true,
   external: ['@prisma/client'],
+  skipNodeModulesBundle: true,
+  treeshake: true,
 }));
 
