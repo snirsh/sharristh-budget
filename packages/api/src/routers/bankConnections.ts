@@ -44,7 +44,7 @@ export const bankConnectionsRouter = router({
       orderBy: { createdAt: 'desc' },
     });
 
-    return connections.map((conn) => ({
+    return connections.map((conn: typeof connections[number]) => ({
       ...conn,
       requiresTwoFactor: scraperService.requiresTwoFactor(conn.provider as BankProvider),
       providerDisplayName: scraperService.getProviderDisplayName(conn.provider as BankProvider),
@@ -284,8 +284,8 @@ export const bankConnectionsRouter = router({
           },
           select: { externalId: true },
         });
-        const existingExternalIds = new Set(
-          existingTransactions.map((t) => t.externalId).filter((id): id is string => id !== null)
+        const existingExternalIds = new Set<string>(
+          existingTransactions.map((t: typeof existingTransactions[number]) => t.externalId).filter((id: string | null): id is string => id !== null)
         );
 
         // Perform the sync
@@ -430,8 +430,8 @@ export const bankConnectionsRouter = router({
             },
             select: { externalId: true },
           });
-          const existingExternalIds = new Set(
-            existingTransactions.map((t) => t.externalId).filter((id): id is string => id !== null)
+          const existingExternalIds = new Set<string>(
+            existingTransactions.map((t: typeof existingTransactions[number]) => t.externalId).filter((id: string | null): id is string => id !== null)
           );
 
           // Perform the sync
