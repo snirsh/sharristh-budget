@@ -7,7 +7,12 @@ export default defineConfig((options) => ({
   splitting: false,
   sourcemap: true,
   clean: true,
-  external: ['@prisma/client'],
+  external: [
+    '@prisma/client',
+    '@sfam/db',
+    '@sfam/domain',
+    '@sfam/scraper',
+  ],
   skipNodeModulesBundle: true,
   treeshake: true,
 }));
