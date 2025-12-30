@@ -95,7 +95,7 @@ export const transactionsRouter = router({
     });
 
     // Map to domain types
-    const rules = rulesRaw.map((r) => ({
+    const rules = rulesRaw.map((r: typeof rulesRaw[number]) => ({
       ...r,
       type: r.type as 'merchant' | 'keyword' | 'regex',
     }));
@@ -106,7 +106,7 @@ export const transactionsRouter = router({
       select: { id: true, name: true, type: true },
     });
 
-    const categories = categoriesRaw.map((c) => ({
+    const categories = categoriesRaw.map((c: typeof categoriesRaw[number]) => ({
       ...c,
       type: c.type as 'income' | 'expected' | 'varying',
     }));
@@ -263,7 +263,7 @@ export const transactionsRouter = router({
     const rulesRaw = await ctx.prisma.categoryRule.findMany({
       where: { householdId: ctx.householdId, isActive: true },
     });
-    const rules = rulesRaw.map((r) => ({
+    const rules = rulesRaw.map((r: typeof rulesRaw[number]) => ({
       ...r,
       type: r.type as 'merchant' | 'keyword' | 'regex',
     }));
@@ -274,7 +274,7 @@ export const transactionsRouter = router({
       select: { id: true, name: true, type: true },
     });
 
-    const categories = categoriesRaw.map((c) => ({
+    const categories = categoriesRaw.map((c: typeof categoriesRaw[number]) => ({
       ...c,
       type: c.type as 'income' | 'expected' | 'varying',
     }));
