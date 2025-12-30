@@ -24,7 +24,7 @@ describe('OneZeroAdapter', () => {
     mockScraper = {
       scrape: vi.fn(),
     };
-    vi.mocked(createScraper).mockReturnValue(mockScraper as ReturnType<typeof createScraper>);
+    vi.mocked(createScraper).mockReturnValue(mockScraper as any);
     mockFetch.mockReset();
   });
 
@@ -144,7 +144,7 @@ describe('OneZeroAdapter', () => {
 
       expect(result.success).toBe(true);
       expect(result.accounts).toHaveLength(1);
-      expect(result.accounts![0].accountNumber).toBe('ONE-12345');
+      expect(result.accounts![0]!.accountNumber).toBe('ONE-12345');
     });
 
     it('should return error on scrape failure', async () => {
@@ -183,7 +183,7 @@ describe('OneZeroAdapter', () => {
 
       // Check that the second call (otp/prepare) used international format
       expect(mockFetch).toHaveBeenCalledTimes(2);
-      const secondCallBody = JSON.parse(mockFetch.mock.calls[1][1].body);
+      const secondCallBody = JSON.parse(mockFetch.mock.calls[1]![1]!.body);
       expect(secondCallBody.factorValue).toBe('+972501234567');
     });
 
@@ -205,7 +205,7 @@ describe('OneZeroAdapter', () => {
 
       await adapter.initTwoFactor(credsWithIntlPhone);
 
-      const secondCallBody = JSON.parse(mockFetch.mock.calls[1][1].body);
+      const secondCallBody = JSON.parse(mockFetch.mock.calls[1]![1]!.body);
       expect(secondCallBody.factorValue).toBe('+972501234567');
     });
 
@@ -348,7 +348,7 @@ describe('OneZeroAdapter', () => {
         })
       );
 
-      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      const callBody = JSON.parse(mockFetch.mock.calls[0]![1]!.body);
       expect(callBody.otpCode).toBe(otpCode);
       expect(callBody.otpContext).toBe('test-otp-context');
     });

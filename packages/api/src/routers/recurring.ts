@@ -96,7 +96,7 @@ export const recurringRouter = router({
         orderBy: { name: 'asc' },
       });
 
-      return templates.map((t) => ({
+      return templates.map((t: typeof templates[number]) => ({
         ...t,
         scheduleDescription: getScheduleDescription(toRecurringTemplate(t)),
       }));
@@ -274,11 +274,11 @@ export const recurringRouter = router({
       });
 
       const existingKeys = new Set(
-        existingTransactions.map((t) => `${t.recurringTemplateId}_${t.recurringInstanceKey}`)
+        existingTransactions.map((t: typeof existingTransactions[number]) => `${t.recurringTemplateId}_${t.recurringInstanceKey}`)
       );
 
       // Expand all templates
-      const allOccurrences = templates.flatMap((template) => {
+      const allOccurrences = templates.flatMap((template: typeof templates[number]) => {
         const occurrences = expandRecurringToMonth(
           toRecurringTemplate(template),
           input.year,
@@ -294,7 +294,7 @@ export const recurringRouter = router({
         }));
       });
 
-      return allOccurrences.sort((a, b) => a.date.getTime() - b.date.getTime());
+      return allOccurrences.sort((a: typeof allOccurrences[number], b: typeof allOccurrences[number]) => a.date.getTime() - b.date.getTime());
     }),
 
   /**
@@ -375,7 +375,7 @@ export const recurringRouter = router({
           },
         });
 
-        const existingKeys = new Set(existing.map((t) => t.recurringInstanceKey));
+        const existingKeys = new Set(existing.map((t: typeof existing[number]) => t.recurringInstanceKey));
 
         // Expand to get all occurrences
         const occurrences = expandRecurringToMonth(
@@ -469,12 +469,12 @@ export const recurringRouter = router({
       // Create set of existing merchants (normalized for comparison)
       const existingMerchants = new Set(
         existingTemplates
-          .filter((t) => t.merchant)
-          .map((t) => normalizeMerchantForComparison(t.merchant!))
+          .filter((t: typeof existingTemplates[number]) => t.merchant)
+          .map((t: typeof existingTemplates[number]) => normalizeMerchantForComparison(t.merchant!))
       );
 
       // Map to domain type
-      const domainTransactions = transactions.map((tx) => ({
+      const domainTransactions = transactions.map((tx: typeof transactions[number]) => ({
         id: tx.id,
         date: tx.date,
         description: tx.description,

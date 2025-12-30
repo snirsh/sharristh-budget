@@ -78,7 +78,7 @@ describe('deduplication', () => {
       const result = filterNewTransactions(transactions, existingIds);
 
       expect(result).toHaveLength(1);
-      expect(result[0].externalId).toBe('ext2');
+      expect(result[0]!.externalId).toBe('ext2');
     });
 
     it('should return all transactions when no existing IDs', () => {

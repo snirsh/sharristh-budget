@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ScraperService } from '../service';
 import { getAdapter } from '../adapters/base';
 
@@ -42,7 +42,7 @@ describe('ScraperService', () => {
       initTwoFactor: vi.fn(),
       completeTwoFactor: vi.fn(),
     };
-    vi.mocked(getAdapter).mockReturnValue(mockAdapter);
+    vi.mocked(getAdapter).mockReturnValue(mockAdapter as any);
   });
 
   afterEach(() => {
@@ -64,13 +64,13 @@ describe('ScraperService', () => {
 
   describe('encryptCredentials / decryptCredentials', () => {
     it('should encrypt credentials', () => {
-      const creds = { email: 'test@example.com', password: 'pass' };
+      const creds = { email: 'test@example.com', password: 'pass', phoneNumber: '555-1234' };
       const encrypted = service.encryptCredentials(creds);
       expect(encrypted).toContain('encrypted:');
     });
 
     it('should decrypt credentials', () => {
-      const creds = { email: 'test@example.com', password: 'pass' };
+      const creds = { email: 'test@example.com', password: 'pass', phoneNumber: '555-1234' };
       const encrypted = service.encryptCredentials(creds);
       const decrypted = service.decryptCredentials<typeof creds>(encrypted);
       expect(decrypted).toEqual(creds);
@@ -255,7 +255,7 @@ describe('ScraperService', () => {
       expect(result.transactionsFound).toBe(2);
       expect(result.transactionsNew).toBe(1);
       expect(transactions).toHaveLength(1);
-      expect(transactions[0].externalId).toBe('ACC123_txn2');
+      expect(transactions[0]!.externalId).toBe('ACC123_txn2');
     });
 
     it('should return error result on scrape failure', async () => {

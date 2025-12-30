@@ -73,7 +73,7 @@ describe('encryption', () => {
       
       // Tamper with the ciphertext
       const parts = encrypted.split('.');
-      parts[1] = 'tampereddata' + parts[1].substring(12);
+      parts[1] = 'tampereddata' + parts[1]!.substring(12);
       const tampered = parts.join('.');
 
       expect(() => decryptCredentials(tampered)).toThrow();

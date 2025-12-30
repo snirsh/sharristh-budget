@@ -20,7 +20,7 @@ describe('IsracardAdapter', () => {
     mockScraper = {
       scrape: vi.fn(),
     };
-    vi.mocked(createScraper).mockReturnValue(mockScraper as ReturnType<typeof createScraper>);
+    vi.mocked(createScraper).mockReturnValue(mockScraper as any);
   });
 
   afterEach(() => {
@@ -109,9 +109,9 @@ describe('IsracardAdapter', () => {
 
       expect(result.success).toBe(true);
       expect(result.accounts).toHaveLength(1);
-      expect(result.accounts![0].accountNumber).toBe('CARD-123456');
-      expect(result.accounts![0].txns).toHaveLength(1);
-      expect(result.accounts![0].txns[0].description).toBe('Test Transaction');
+      expect(result.accounts![0]!.accountNumber).toBe('CARD-123456');
+      expect(result.accounts![0]!.txns).toHaveLength(1);
+      expect(result.accounts![0]!.txns[0]!.description).toBe('Test Transaction');
     });
 
     it('should return error on scrape failure', async () => {
@@ -164,8 +164,8 @@ describe('IsracardAdapter', () => {
 
       const result = await adapter.scrape(startDate, credentials);
 
-      expect(result.accounts![0].txns[0].type).toBe('installments');
-      expect(result.accounts![0].txns[0].installments).toEqual({ number: 1, total: 3 });
+      expect(result.accounts![0]!.txns[0]!.type).toBe('installments');
+      expect(result.accounts![0]!.txns[0]!.installments).toEqual({ number: 1, total: 3 });
     });
 
     it('should map pending transactions correctly', async () => {
@@ -192,7 +192,7 @@ describe('IsracardAdapter', () => {
 
       const result = await adapter.scrape(startDate, credentials);
 
-      expect(result.accounts![0].txns[0].status).toBe('pending');
+      expect(result.accounts![0]!.txns[0]!.status).toBe('pending');
     });
   });
 });

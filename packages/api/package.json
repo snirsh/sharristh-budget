@@ -15,7 +15,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:strict": "tsc --noEmit && tsup --dts-only"
   },
   "dependencies": {
     "@sfam/db": "workspace:*",

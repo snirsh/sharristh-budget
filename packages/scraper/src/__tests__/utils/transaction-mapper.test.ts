@@ -164,8 +164,8 @@ describe('transaction-mapper', () => {
       const result = mapAccountTransactions(accounts);
 
       expect(result).toHaveLength(2);
-      expect(result[0].externalAccountId).toBe('ACC1');
-      expect(result[1].externalAccountId).toBe('ACC2');
+      expect(result[0]!.externalAccountId).toBe('ACC1');
+      expect(result[1]!.externalAccountId).toBe('ACC2');
     });
 
     it('should skip pending transactions', () => {
@@ -202,7 +202,7 @@ describe('transaction-mapper', () => {
       const result = mapAccountTransactions(accounts);
 
       expect(result).toHaveLength(1);
-      expect(result[0].description).toBe('Completed');
+      expect(result[0]!.description).toBe('Completed');
     });
 
     it('should return empty array for empty accounts', () => {

@@ -69,7 +69,7 @@ async function main() {
     },
   });
 
-  const savingsAccount = await prisma.account.create({
+  await prisma.account.create({
     data: {
       id: 'account-savings',
       householdId: household.id,
@@ -112,7 +112,7 @@ async function main() {
     },
   });
 
-  const rentIncomeCategory = await prisma.category.create({
+  await prisma.category.create({
     data: {
       id: 'cat-rent-income',
       householdId: household.id,
@@ -125,7 +125,7 @@ async function main() {
     },
   });
 
-  const fromSavingsCategory = await prisma.category.create({
+  await prisma.category.create({
     data: {
       id: 'cat-from-savings',
       householdId: household.id,
@@ -138,7 +138,7 @@ async function main() {
     },
   });
 
-  const otherIncomeCategory = await prisma.category.create({
+  await prisma.category.create({
     data: {
       id: 'cat-other-income',
       householdId: household.id,
@@ -558,7 +558,7 @@ async function main() {
         categoryId: pattern.categoryId,
         date: new Date(currentYear, currentMonth, transactionDay),
         description: merchant || 'Purchase',
-        merchant: merchant,
+        merchant: merchant || null,
         amount,
         direction: 'expense',
         categorizationSource: merchant ? 'rule_merchant' : 'fallback',

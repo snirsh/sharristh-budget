@@ -42,7 +42,7 @@ describe('categorizeTransaction', () => {
     },
   ];
 
-  it('should return manual source if category is already set', () => {
+  it('should return manual source if category is already set', async () => {
     const tx: TransactionInput = {
       description: 'Test',
       amount: 100,
@@ -50,14 +50,14 @@ describe('categorizeTransaction', () => {
       categoryId: 'cat-manual',
     };
 
-    const result = categorizeTransaction(tx, mockRules);
+    const result = await categorizeTransaction(tx, mockRules);
 
     expect(result.categoryId).toBe('cat-manual');
     expect(result.source).toBe('manual');
     expect(result.confidence).toBe(1.0);
   });
 
-  it('should match merchant rule with high confidence', () => {
+  it('should match merchant rule with high confidence', async () => {
     const tx: TransactionInput = {
       description: 'Weekly groceries',
       merchant: 'Shufersal Deal',
@@ -65,7 +65,7 @@ describe('categorizeTransaction', () => {
       direction: 'expense',
     };
 
-    const result = categorizeTransaction(tx, mockRules);
+    const result = await categorizeTransaction(tx, mockRules);
 
     expect(result.categoryId).toBe('cat-supermarket');
     expect(result.source).toBe('rule_merchant');
@@ -73,35 +73,35 @@ describe('categorizeTransaction', () => {
     expect(result.matchedRule?.id).toBe('rule-1');
   });
 
-  it('should match keyword rule', () => {
+  it('should match keyword rule', async () => {
     const tx: TransactionInput = {
       description: 'Monthly electricity bill payment',
       amount: 450,
       direction: 'expense',
     };
 
-    const result = categorizeTransaction(tx, mockRules);
+    const result = await categorizeTransaction(tx, mockRules);
 
     expect(result.categoryId).toBe('cat-bills');
     expect(result.source).toBe('rule_keyword');
     expect(result.confidence).toBe(0.8);
   });
 
-  it('should match regex rule', () => {
+  it('should match regex rule', async () => {
     const tx: TransactionInput = {
       description: 'Super-Pharm Purchase',
       amount: 150,
       direction: 'expense',
     };
 
-    const result = categorizeTransaction(tx, mockRules);
+    const result = await categorizeTransaction(tx, mockRules);
 
     expect(result.categoryId).toBe('cat-pharmacy');
     expect(result.source).toBe('rule_regex');
     expect(result.confidence).toBe(0.75);
   });
 
-  it('should ignore inactive rules', () => {
+  it('should ignore inactive rules', async () => {
     const tx: TransactionInput = {
       description: 'Purchase at Inactive Merchant',
       merchant: 'Inactive Merchant',
@@ -109,42 +109,42 @@ describe('categorizeTransaction', () => {
       direction: 'expense',
     };
 
-    const result = categorizeTransaction(tx, mockRules);
+    const result = await categorizeTransaction(tx, mockRules);
 
     // Should NOT match the inactive rule
     expect(result.categoryId).not.toBe('cat-inactive');
     expect(result.source).toBe('fallback');
   });
 
-  it('should fallback to varying expenses for unmatched expenses', () => {
+  it('should fallback to varying expenses for unmatched expenses', async () => {
     const tx: TransactionInput = {
       description: 'Random purchase',
       amount: 100,
       direction: 'expense',
     };
 
-    const result = categorizeTransaction(tx, mockRules);
+    const result = await categorizeTransaction(tx, mockRules);
 
     expect(result.categoryId).toBe('cat-varying');
     expect(result.source).toBe('fallback');
     expect(result.confidence).toBe(0.5);
   });
 
-  it('should fallback to other income for unmatched income', () => {
+  it('should fallback to other income for unmatched income', async () => {
     const tx: TransactionInput = {
       description: 'Random income',
       amount: 1000,
       direction: 'income',
     };
 
-    const result = categorizeTransaction(tx, mockRules);
+    const result = await categorizeTransaction(tx, mockRules);
 
     expect(result.categoryId).toBe('cat-other-income');
     expect(result.source).toBe('fallback');
     expect(result.confidence).toBe(0.5);
   });
 
-  it('should prioritize merchant rules over keyword rules', () => {
+  it('should prioritize merchant rules over keyword rules', async () => {
     const tx: TransactionInput = {
       description: 'Shufersal electricity dept',
       merchant: 'Shufersal',
@@ -152,7 +152,7 @@ describe('categorizeTransaction', () => {
       direction: 'expense',
     };
 
-    const result = categorizeTransaction(tx, mockRules);
+    const result = await categorizeTransaction(tx, mockRules);
 
     // Merchant rule should win over keyword
     expect(result.categoryId).toBe('cat-supermarket');

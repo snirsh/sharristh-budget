@@ -14,16 +14,24 @@
     "db:seed": "turbo db:seed",
     "db:studio": "pnpm --filter @sfam/db db:studio",
     "typecheck": "turbo typecheck",
-    "clean": "turbo clean && rm -rf node_modules"
+    "clean": "turbo clean && rm -rf node_modules",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@types/node": "^25.0.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3"
   },
   "packageManager": "pnpm@9.15.1",
   "engines": {
     "node": ">=20"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "pnpm typecheck"
+    ]
   }
 }
