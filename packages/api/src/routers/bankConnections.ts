@@ -689,7 +689,7 @@ async function importTransactions(
   const rulesRaw = await ctx.prisma.categoryRule.findMany({
     where: { householdId: ctx.householdId, isActive: true },
   });
-  const rules = rulesRaw.map((r) => ({
+  const rules = rulesRaw.map((r: typeof rulesRaw[number]) => ({
     ...r,
     type: r.type as 'merchant' | 'keyword' | 'regex',
   }));

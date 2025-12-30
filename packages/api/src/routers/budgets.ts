@@ -87,7 +87,7 @@ export const budgetsRouter = router({
 
     // Evaluate each budget
     const domainTransactions = toTransactions(transactions);
-    const evaluations = budgets.map((budget) => {
+    const evaluations = budgets.map((budget: typeof budgets[number]) => {
       const actualAmount = calculateCategorySpending(
         domainTransactions,
         budget.categoryId,
@@ -133,7 +133,7 @@ export const budgetsRouter = router({
     });
 
     const domainTransactions = toTransactions(transactions);
-    const evaluations = budgets.map((budget) => {
+    const evaluations = budgets.map((budget: typeof budgets[number]) => {
       const actualAmount = calculateCategorySpending(
         domainTransactions,
         budget.categoryId,
@@ -148,7 +148,7 @@ export const budgetsRouter = router({
 
     return getAlertBudgets(evaluations).map((e) => ({
       ...e,
-      category: budgets.find((b) => b.categoryId === e.budget.categoryId)?.category,
+      category: budgets.find((b: typeof budgets[number]) => b.categoryId === e.budget.categoryId)?.category,
     }));
   }),
 
@@ -250,7 +250,7 @@ export const budgetsRouter = router({
 
       // Create budgets for target month (skip if already exists)
       const created = await Promise.all(
-        sourceBudgets.map((budget) =>
+        sourceBudgets.map((budget: typeof sourceBudgets[number]) =>
           ctx.prisma.budget.upsert({
             where: {
               householdId_categoryId_month: {
