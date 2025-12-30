@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "turbo build --filter=@sfam/web",
+  "buildCommand": "pnpm prisma generate && turbo build --filter=@sfam/web",
   "installCommand": "pnpm install",
   "outputDirectory": "apps/web/.next"
 }

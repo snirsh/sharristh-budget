@@ -1,6 +1,212 @@
-# Deployment Guide - Oracle Cloud Free Tier
+# Deployment Guide
 
-This guide will help you deploy SharristhBudget on Oracle Cloud Free Tier for **$0/month**.
+This guide covers two deployment options:
+1. **Vercel + Neon** (Recommended) - Deploy in 5 minutes
+2. **Oracle Cloud Free Tier** - Self-hosted for $0/month
+
+---
+
+## Option 1: Vercel + Neon (Recommended)
+
+**Time:** 5-10 minutes
+**Cost:** $0/month (Vercel Hobby + Neon Free Tier)
+**Best for:** Quick deployment, automatic HTTPS, global CDN
+
+### Prerequisites
+
+- GitHub account
+- Credit card (for Vercel verification - won't be charged on Hobby plan)
+
+### Step 1: Fork/Clone Repository
+
+1. Fork this repository to your GitHub account, or
+2. Push your local repository to GitHub
+
+### Step 2: Create Neon Database
+
+1. Go to [neon.tech](https://neon.tech)
+2. Sign up with GitHub (free)
+3. Create a new project:
+   - Name: `sharristh-budget`
+   - Region: Choose closest to your users
+   - PostgreSQL version: 16 (latest)
+4. Click **Create Project**
+5. Copy the connection strings:
+   - **DATABASE_URL** (pooled connection)
+   - **DATABASE_URL_UNPOOLED** (direct connection)
+
+### Step 3: Deploy to Vercel
+
+1. Go to [vercel.com](https://vercel.com)
+2. Sign up with GitHub
+3. Click **Add New Project**
+4. Import your repository
+5. Configure project:
+   - **Framework Preset:** Next.js (auto-detected)
+   - **Root Directory:** `./` (leave default)
+   - **Build Command:** (leave default - uses vercel.json)
+   - **Output Directory:** (leave default - uses vercel.json)
+
+### Step 4: Configure Environment Variables
+
+In Vercel project settings → Environment Variables, add:
+
+```bash
+# Database (from Neon)
+DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
+POSTGRES_PRISMA_URL=postgresql://user:pass@host/db?pgbouncer=true&sslmode=require
+POSTGRES_URL_NON_POOLING=postgresql://user:pass@host/db?sslmode=require
+
+# Authentication Secret (generate new one)
+AUTH_SECRET=<run: openssl rand -base64 32>
+
+# WebAuthn Configuration (update after deployment)
+AUTH_WEBAUTHN_RP_ID=your-project.vercel.app
+AUTH_WEBAUTHN_RP_ORIGIN=https://your-project.vercel.app
+```
+
+**Important:** For `AUTH_SECRET`, run this locally to generate:
+```bash
+openssl rand -base64 32
+```
+
+### Step 5: Deploy
+
+1. Click **Deploy**
+2. Wait 2-3 minutes for build
+3. Your app will be live at `https://your-project.vercel.app`
+
+### Step 6: Update WebAuthn Settings
+
+After first deployment:
+
+1. Copy your Vercel URL (e.g., `sharristh-budget.vercel.app`)
+2. Update environment variables:
+   ```bash
+   AUTH_WEBAUTHN_RP_ID=sharristh-budget.vercel.app
+   AUTH_WEBAUTHN_RP_ORIGIN=https://sharristh-budget.vercel.app
+   ```
+3. Redeploy (Vercel will auto-redeploy on env change)
+
+### Step 7: Run Database Migrations
+
+You have two options:
+
+**Option A: Using Vercel CLI (Recommended)**
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Login
+vercel login
+
+# Link to your project
+vercel link
+
+# Run migrations
+vercel env pull .env.local
+pnpm prisma generate
+pnpm prisma migrate deploy
+
+# Seed default categories
+pnpm db:seed
+```
+
+**Option B: Using Neon SQL Editor**
+
+1. Go to Neon Console → SQL Editor
+2. Copy the SQL from `packages/db/prisma/migrations/` folders
+3. Run each migration in order
+
+### Step 8: Set Up Custom Domain (Optional)
+
+1. In Vercel project → Settings → Domains
+2. Add your domain (e.g., `budget.yourdomain.com`)
+3. Update DNS records as shown
+4. Update environment variables:
+   ```bash
+   AUTH_WEBAUTHN_RP_ID=budget.yourdomain.com
+   AUTH_WEBAUTHN_RP_ORIGIN=https://budget.yourdomain.com
+   ```
+
+### You're Done! 🎉
+
+Your app is now live at `https://your-project.vercel.app`
+
+**Next Steps:**
+
+1. Register with WebAuthn (Face ID/Touch ID)
+2. Connect Israeli bank accounts
+3. Transactions sync automatically
+
+### Automatic Updates
+
+When you push to `main` branch, Vercel will automatically:
+- Build and deploy new version
+- Run database migrations (if configured)
+- Keep your app updated
+
+### Cost Breakdown
+
+- **Vercel Hobby:** $0/month (unlimited sites)
+- **Neon Free Tier:** $0/month (3GB storage, 192 hours compute)
+- **Custom Domain:** $10-15/year (optional)
+
+**Total: $0-1.25/month** 🎉
+
+### Troubleshooting Vercel
+
+#### Prisma Client Error
+
+If you see: `@prisma/client did not initialize yet`
+
+**Fix:** Already handled in `vercel.json` - runs `prisma generate` before build.
+
+If still failing, check:
+1. `DATABASE_URL` is set in environment variables
+2. Re-deploy to regenerate Prisma client
+
+#### WebAuthn Not Working
+
+**Symptoms:** Can't register/login with Face ID/Touch ID
+
+**Fix:**
+1. Check `AUTH_WEBAUTHN_RP_ID` matches your domain exactly
+2. Check `AUTH_WEBAUTHN_RP_ORIGIN` includes `https://` prefix
+3. No trailing slashes in URLs
+
+#### Build Fails with Type Errors
+
+**Fix:** These should be fixed now, but if you add new code:
+```bash
+# Test build locally first
+pnpm build
+
+# Check for type errors
+pnpm typecheck
+```
+
+#### Environment Variables Not Available
+
+If turbo warns about missing env vars:
+
+**Fix:** Add them to `turbo.json` under `build.env`:
+```json
+{
+  "build": {
+    "env": ["YOUR_NEW_VAR"]
+  }
+}
+```
+
+---
+
+## Option 2: Oracle Cloud Free Tier (Self-Hosted)
+
+**Time:** 1-2 days (mostly waiting for approval)
+**Cost:** $0/month
+**Best for:** Full control, no vendor lock-in, larger databases
 
 ## Overview
 
