@@ -116,3 +116,4 @@ function extractMerchant(description: string): string | null {
   return cleaned.length > 100 ? cleaned.substring(0, 100) : cleaned;
 }
 
+

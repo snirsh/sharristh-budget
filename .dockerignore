@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+.turbo
+dist
+out
+build
+
+# Database files (CRITICAL - do not copy)
+*.db
+*.db-journal
+
+# Environment files
+.env*
+!.env.example
+
+# Testing
+coverage
+playwright-report
+test-results
+
+# Development
+.git
+.github
+.vscode
+.claude
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Misc
+.DS_Store
+*.pem

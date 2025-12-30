@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sharristh-budget
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Database (SQLite file path inside container)
+      DATABASE_URL: file:/app/data/dev.db
+
+      # Authentication - CHANGE THESE
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_WEBAUTHN_RP_ID: ${AUTH_WEBAUTHN_RP_ID}
+      AUTH_WEBAUTHN_RP_NAME: Sharristh Budget
+      AUTH_WEBAUTHN_RP_ORIGIN: ${AUTH_WEBAUTHN_RP_ORIGIN}
+
+      # Production mode
+      NODE_ENV: production
+
+      # Optional: Disable AI for now (can enable later)
+      OLLAMA_ENABLED: false
+      DEMO_MODE: false
+    volumes:
+      # Persist SQLite database
+      - ./data:/app/data
+      # Persist Prisma files (needed for migrations)
+      - ./packages/db/prisma:/app/packages/db/prisma
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Cloudflare Tunnel (will configure with token later)
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - web

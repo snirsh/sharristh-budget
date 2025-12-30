@@ -21,7 +21,8 @@
       "Bash(sqlite3:*)",
       "Bash(lsof:*)",
       "Bash(xargs:*)",
-      "Bash(pnpm --filter @sfam/domain build:*)"
+      "Bash(pnpm --filter @sfam/domain build:*)",
+      "Bash(du:*)"
     ],
     "deny": [],
     "ask": []
