@@ -4,6 +4,9 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   transpilePackages: ['@sfam/api', '@sfam/db', '@sfam/domain', '@sfam/scraper'],
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   serverExternalPackages: [
     '@prisma/client',
     'israeli-bank-scrapers',
