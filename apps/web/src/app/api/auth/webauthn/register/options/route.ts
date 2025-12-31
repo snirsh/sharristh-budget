@@ -4,6 +4,17 @@ import { prisma } from '@sfam/db';
 import { storeChallenge, hashInviteCode, getRPConfig } from '@/lib/webauthn-utils';
 
 /**
+ * GET /api/auth/webauthn/register/options
+ * Return method not allowed for GET requests
+ */
+export async function GET() {
+  return NextResponse.json(
+    { error: 'Method not allowed. Use POST to get registration options.' },
+    { status: 405, headers: { 'Allow': 'POST' } }
+  );
+}
+
+/**
  * POST /api/auth/webauthn/register/options
  * Get WebAuthn registration options for a new user
  */
