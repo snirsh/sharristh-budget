@@ -31,7 +31,12 @@ export async function initScheduler() {
 
   // Auto-sync on startup if connections haven't synced today
   // This is especially useful for local development where cron may not have run
-  await checkAndSyncStaleConnections();
+  // Skip on Vercel to avoid Prisma initialization issues
+  if (process.env.VERCEL !== '1') {
+    await checkAndSyncStaleConnections();
+  } else {
+    console.log('[Scheduler] Skipping auto-sync on startup (Vercel environment)');
+  }
 }
 
 /**
