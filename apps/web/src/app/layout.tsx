@@ -18,6 +18,9 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Sharristh Budget',
   description: 'Family budget tracker for two partners',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
