@@ -35,11 +35,22 @@ export async function POST(request: NextRequest) {
 
     // Re-verify invite code (only database-stored codes are valid)
     const hashedCode = hashInviteCode(inviteCode);
+    console.log('[WebAuthn Verify] Checking invite code:', {
+      hashedCode,
+      inviteCode: inviteCode.substring(0, 4) + '...',
+    });
+
     const storedInvite = await prisma.inviteCode.findUnique({
       where: { code: hashedCode },
     });
 
+    console.log('[WebAuthn Verify] Invite code lookup result:', {
+      found: !!storedInvite,
+      usedAt: storedInvite?.usedAt,
+    });
+
     if (!storedInvite) {
+      console.log('[WebAuthn Verify] Invite code not found in database');
       return NextResponse.json(
         { error: 'Invalid invite code' },
         { status: 403 }

@@ -36,7 +36,15 @@
       "Bash(turbo build:*)",
       "Bash(NODE_ENV=production pnpm exec tsup:*)",
       "Bash(npx husky:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node --loader ts-node/esm check-invites.ts:*)",
+      "Bash(node --import tsx:*)",
+      "Bash(node check-invites.mjs:*)",
+      "Bash(npx prisma db execute:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(openssl rand:*)"
     ],
     "deny": [],
     "ask": []
