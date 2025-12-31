@@ -19,9 +19,18 @@ export async function GET() {
  * Get WebAuthn registration options for a new user
  */
 export async function POST(request: NextRequest) {
+  console.log('[WebAuthn] POST /api/auth/webauthn/register/options called');
+  console.log('[WebAuthn] Environment check:', {
+    hasAuthSecret: !!process.env.AUTH_SECRET,
+    hasRpId: !!process.env.AUTH_WEBAUTHN_RP_ID,
+    hasRpOrigin: !!process.env.AUTH_WEBAUTHN_RP_ORIGIN,
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+  });
+
   try {
     const body = await request.json();
     const { email, inviteCode } = body;
+    console.log('[WebAuthn] Request body parsed:', { email, hasInviteCode: !!inviteCode });
 
     if (!email || !inviteCode) {
       return NextResponse.json(
