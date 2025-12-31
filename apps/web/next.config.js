@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
+  output: 'standalone',
   transpilePackages: ['@sfam/api', '@sfam/db', '@sfam/domain', '@sfam/scraper'],
   typescript: {
     ignoreBuildErrors: true,
