@@ -8,8 +8,10 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+  },
   serverExternalPackages: [
-    '@prisma/client',
     'israeli-bank-scrapers',
     'puppeteer',
     'puppeteer-core',
