@@ -1,3 +1,5 @@
+const { PrismaPlugin } = require('@prisma/nextjs-monorepo-workaround-plugin')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -21,6 +23,9 @@ const nextConfig = {
   ],
   webpack: (config, { isServer }) => {
     if (isServer) {
+      // Add Prisma monorepo workaround plugin
+      config.plugins = [...config.plugins, new PrismaPlugin()]
+
       // Don't bundle native modules on server side
       config.externals = config.externals || [];
       config.externals.push({

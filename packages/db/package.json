@@ -29,11 +29,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^6.1.0"
+    "@prisma/client": "^6.1.0",
+    "prisma": "^6.1.0"
   },
   "devDependencies": {
     "@sfam/config": "workspace:*",
-    "prisma": "^6.1.0",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
