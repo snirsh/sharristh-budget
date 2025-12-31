@@ -8,9 +8,24 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
       "env": [
         "AUTH_SECRET",
+        "AUTH_WEBAUTHN_RP_ID",
+        "AUTH_WEBAUTHN_RP_ORIGIN",
         "DATABASE_URL",
+        "DATABASE_URL_UNPOOLED",
         "POSTGRES_PRISMA_URL",
-        "POSTGRES_URL_NON_POOLING"
+        "POSTGRES_URL_NON_POOLING",
+        "POSTGRES_URL",
+        "POSTGRES_URL_NO_SSL",
+        "POSTGRES_HOST",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DATABASE",
+        "PGHOST",
+        "PGHOST_UNPOOLED",
+        "PGUSER",
+        "PGPASSWORD",
+        "PGDATABASE",
+        "NEON_PROJECT_ID"
       ]
     },
     "dev": {
