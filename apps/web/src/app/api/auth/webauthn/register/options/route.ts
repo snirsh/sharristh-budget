@@ -99,7 +99,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get RP configuration
-    const { rpID, rpName } = getRPConfig();
+    const { rpID, rpName, origin } = getRPConfig();
+    console.log('[WebAuthn Options] RP Configuration:', {
+      rpID,
+      rpName,
+      origin,
+      env_RP_ID: process.env.AUTH_WEBAUTHN_RP_ID,
+      env_RP_ORIGIN: process.env.AUTH_WEBAUTHN_RP_ORIGIN,
+    });
 
     // Generate registration options
     const options = await generateRegistrationOptions({
