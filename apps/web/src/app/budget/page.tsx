@@ -2,7 +2,8 @@ import { Suspense } from 'react';
 import { BudgetContent } from '@/components/budget/BudgetContent';
 import { Loader2 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+// ISR: Revalidate every 5 minutes for budget data (updates less frequently)
+export const revalidate = 300;
 
 const Loading = () => (
   <div className="flex items-center justify-center py-12">

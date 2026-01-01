@@ -4,7 +4,8 @@ import { TransactionsContent } from '@/components/transactions/TransactionsConte
 import { Loader2 } from 'lucide-react';
 import { getCurrentMonth } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
+// ISR: Revalidate every 30 seconds for transaction data
+export const revalidate = 30;
 
 const Loading = () => (
   <div className="flex items-center justify-center py-12">
