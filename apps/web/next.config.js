@@ -10,9 +10,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    outputFileTracingRoot: require('path').join(__dirname, '../../'),
-  },
   serverExternalPackages: [
     'israeli-bank-scrapers',
     'puppeteer',
