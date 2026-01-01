@@ -83,11 +83,11 @@ export function RulesContent({ categories }: { categories: Category[] }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Categorization Rules</h1>
-          <p className="text-gray-500">Automatically categorize transactions</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Categorization Rules</h1>
+          <p className="text-gray-500 dark:text-gray-400">Automatically categorize transactions</p>
         </div>
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-gray-600">
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <input
               type="checkbox"
               checked={showInactive}

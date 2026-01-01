@@ -138,7 +138,7 @@ export function TransactionsContent({
       {/* Transactions List */}
       <div className="card p-0 overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Date
@@ -160,7 +160,7 @@ export function TransactionsContent({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {transactions.map((tx) => (
               <tr
                 key={tx.id}

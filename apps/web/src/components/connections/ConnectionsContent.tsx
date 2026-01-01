@@ -181,8 +181,8 @@ export function ConnectionsContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bank Connections</h1>
-          <p className="text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bank Connections</h1>
+          <p className="text-gray-500 dark:text-gray-400">
             Connect your bank accounts and credit cards for automatic transaction sync
           </p>
         </div>
@@ -484,7 +484,7 @@ export function ConnectionsContent() {
       {/* Connections List */}
       <div className="card p-0 overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Connection
@@ -503,9 +503,9 @@ export function ConnectionsContent() {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {connections?.map((connection) => (
-              <tr key={connection.id} className="hover:bg-gray-50">
+              <tr key={connection.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div
