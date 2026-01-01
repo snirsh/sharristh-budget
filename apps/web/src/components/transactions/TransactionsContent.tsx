@@ -41,7 +41,8 @@ export const TransactionsContent = ({
     const [year, monthNum] = currentMonth.split('-').map(Number);
     return {
       startDate: new Date(year!, monthNum! - 1, 1),
-      endDate: new Date(year!, monthNum!, 0), // Last day of month
+      // End of last day of month (23:59:59.999) to include all transactions on that day
+      endDate: new Date(year!, monthNum!, 0, 23, 59, 59, 999),
     };
   }, [currentMonth]);
 

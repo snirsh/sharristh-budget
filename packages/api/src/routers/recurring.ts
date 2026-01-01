@@ -256,7 +256,7 @@ export const recurringRouter = router({
 
       // Get existing transactions for this month
       const startDate = new Date(input.year, input.month - 1, 1);
-      const endDate = new Date(input.year, input.month, 0);
+      const endDate = new Date(input.year, input.month, 0, 23, 59, 59, 999);
 
       const existingTransactions = await ctx.prisma.transaction.findMany({
         where: {

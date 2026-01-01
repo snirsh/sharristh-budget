@@ -59,7 +59,7 @@ export const dashboardRouter = router({
   overview: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
-    const endDate = new Date(year!, monthNum!, 0);
+    const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
     // Get all transactions for the month (excluding ignored)
     const transactions = await ctx.prisma.transaction.findMany({
@@ -163,7 +163,7 @@ export const dashboardRouter = router({
   categoryBreakdown: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
-    const endDate = new Date(year!, monthNum!, 0);
+    const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
     // Get categories with their transactions
     const categories = await ctx.prisma.category.findMany({
@@ -231,7 +231,7 @@ export const dashboardRouter = router({
   incomeBreakdown: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
-    const endDate = new Date(year!, monthNum!, 0);
+    const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
@@ -299,7 +299,7 @@ export const dashboardRouter = router({
       if (input.month) {
         const [year, monthNum] = input.month.split('-').map(Number);
         const startDate = new Date(year!, monthNum! - 1, 1);
-        const endDate = new Date(year!, monthNum!, 0);
+        const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
         where.date = {
           gte: startDate,
           lte: endDate,

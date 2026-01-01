@@ -73,7 +73,7 @@ export const budgetsRouter = router({
     // Get all transactions for the month to calculate actual spending
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
-    const endDate = new Date(year!, monthNum!, 0);
+    const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
@@ -121,7 +121,7 @@ export const budgetsRouter = router({
 
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
-    const endDate = new Date(year!, monthNum!, 0);
+    const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
