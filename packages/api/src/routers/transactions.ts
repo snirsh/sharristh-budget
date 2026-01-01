@@ -34,6 +34,11 @@ export const transactionsRouter = router({
       householdId: ctx.householdId,
     };
 
+    // Filter out ignored transactions by default
+    if (!input.includeIgnored) {
+      where.isIgnored = false;
+    }
+
     if (input.startDate) {
       where.date = { ...(where.date as Record<string, unknown> || {}), gte: input.startDate };
     }
@@ -471,6 +476,29 @@ export const transactionsRouter = router({
       }
 
       return updated;
+    }),
+
+  /**
+   * Toggle the ignored status of a transaction
+   */
+  toggleIgnore: protectedProcedure
+    .input(
+      z.object({
+        transactionId: z.string(),
+        isIgnored: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.transaction.update({
+        where: { id: input.transactionId, householdId: ctx.householdId },
+        data: {
+          isIgnored: input.isIgnored,
+        },
+        include: {
+          category: true,
+          account: true,
+        },
+      });
     }),
 });
 

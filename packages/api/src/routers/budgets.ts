@@ -43,6 +43,7 @@ function toTransactions(txs: Array<{
   amount: number;
   direction: string;
   needsReview: boolean;
+  isIgnored: boolean;
   isRecurringInstance: boolean;
   recurringTemplateId?: string | null;
   recurringInstanceKey?: string | null;
@@ -77,6 +78,7 @@ export const budgetsRouter = router({
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
         householdId: ctx.householdId,
+        isIgnored: false,
         date: {
           gte: startDate,
           lte: endDate,
@@ -124,6 +126,7 @@ export const budgetsRouter = router({
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
         householdId: ctx.householdId,
+        isIgnored: false,
         date: {
           gte: startDate,
           lte: endDate,

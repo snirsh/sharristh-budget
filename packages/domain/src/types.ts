@@ -29,6 +29,7 @@ export interface Transaction {
   confidence?: number | null;
   notes?: string | null;
   needsReview: boolean;
+  isIgnored: boolean;
   isRecurringInstance: boolean;
   recurringTemplateId?: string | null;
   recurringInstanceKey?: string | null;

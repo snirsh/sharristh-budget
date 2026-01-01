@@ -191,6 +191,7 @@ model Transaction {
   confidence            Float?
   notes                 String?
   needsReview           Boolean   @default(false)
+  isIgnored             Boolean   @default(false)
   isRecurringInstance   Boolean   @default(false)
   recurringTemplateId   String?
   recurringInstanceKey  String?   // templateId_YYYY-MM-DD for uniqueness

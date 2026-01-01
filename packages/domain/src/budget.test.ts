@@ -98,6 +98,7 @@ describe('calculateCategorySpending', () => {
       direction: 'expense',
       needsReview: false,
       isRecurringInstance: false,
+      isIgnored: false,
     },
     {
       id: 't2',
@@ -110,6 +111,7 @@ describe('calculateCategorySpending', () => {
       direction: 'expense',
       needsReview: false,
       isRecurringInstance: false,
+      isIgnored: false,
     },
     {
       id: 't3',
@@ -122,6 +124,7 @@ describe('calculateCategorySpending', () => {
       direction: 'expense',
       needsReview: false,
       isRecurringInstance: false,
+      isIgnored: false,
     },
     {
       id: 't4',
@@ -134,6 +137,7 @@ describe('calculateCategorySpending', () => {
       direction: 'income',
       needsReview: false,
       isRecurringInstance: false,
+      isIgnored: false,
     },
   ];
 
@@ -175,6 +179,7 @@ describe('calculateMonthlyKPIs', () => {
       direction: 'income',
       needsReview: false,
       isRecurringInstance: false,
+      isIgnored: false,
     },
     {
       id: 't2',
@@ -187,6 +192,7 @@ describe('calculateMonthlyKPIs', () => {
       direction: 'expense',
       needsReview: false,
       isRecurringInstance: false,
+      isIgnored: false,
     },
     {
       id: 't3',
@@ -199,6 +205,7 @@ describe('calculateMonthlyKPIs', () => {
       direction: 'expense',
       needsReview: false,
       isRecurringInstance: false,
+      isIgnored: false,
     },
   ];
 

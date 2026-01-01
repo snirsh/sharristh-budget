@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -20,20 +20,31 @@ import { useState } from 'react';
 import { useTheme } from '@/lib/theme';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Transactions', href: '/transactions', icon: Receipt },
-  { name: 'Budget', href: '/budget', icon: PieChart },
-  { name: 'Categories', href: '/categories', icon: FolderTree },
-  { name: 'Rules', href: '/rules', icon: Sparkles },
-  { name: 'Recurring', href: '/recurring', icon: Repeat },
-  { name: 'Connections', href: '/connections', icon: Link2 },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard, preserveMonth: true },
+  { name: 'Transactions', href: '/transactions', icon: Receipt, preserveMonth: true },
+  { name: 'Budget', href: '/budget', icon: PieChart, preserveMonth: true },
+  { name: 'Categories', href: '/categories', icon: FolderTree, preserveMonth: false },
+  { name: 'Rules', href: '/rules', icon: Sparkles, preserveMonth: false },
+  { name: 'Recurring', href: '/recurring', icon: Repeat, preserveMonth: false },
+  { name: 'Connections', href: '/connections', icon: Link2, preserveMonth: false },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { theme, toggleTheme, mounted } = useTheme();
+
+  const getHref = (item: typeof navigation[number]) => {
+    if (item.preserveMonth) {
+      const month = searchParams.get('month');
+      if (month) {
+        return `${item.href}?month=${month}`;
+      }
+    }
+    return item.href;
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -72,7 +83,7 @@ export function Sidebar() {
             return (
               <Link
                 key={item.name}
-                href={item.href}
+                href={getHref(item)}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                   isActive

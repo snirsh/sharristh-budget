@@ -5,20 +5,17 @@ import { trpc } from '@/lib/trpc/client';
 import {
   formatCurrency,
   formatPercent,
-  formatMonth,
   getStatusBadgeClass,
   getStatusLabel,
   cn,
 } from '@/lib/utils';
-import { Edit2, Save, X, ChevronLeft, ChevronRight, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Edit2, Save, X, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { AddBudgetDialog } from './AddBudgetDialog';
+import { MonthSelector } from '@/components/layout/MonthSelector';
+import { useMonth } from '@/lib/useMonth';
 
-interface BudgetContentProps {
-  month: string;
-}
-
-export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
-  const [currentMonth, setCurrentMonth] = useState(initialMonth);
+export const BudgetContent = () => {
+  const { currentMonth } = useMonth();
   const [editingBudget, setEditingBudget] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{
     plannedAmount: number;
@@ -43,15 +40,6 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
       utils.budgets.forMonth.invalidate(currentMonth);
     },
   });
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const [year, monthNum] = currentMonth.split('-').map(Number);
-    const date = new Date(year!, monthNum! - 1);
-    date.setMonth(date.getMonth() + (direction === 'next' ? 1 : -1));
-    setCurrentMonth(
-      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-    );
-  };
 
   const startEditing = (evaluation: (typeof budgets)[number]) => {
     setEditingBudget(evaluation.budget.categoryId);
@@ -98,23 +86,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
             <Plus className="h-4 w-4" />
             Add Budget
           </button>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigateMonth('prev')}
-              className="btn-outline btn-sm"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="text-lg font-medium min-w-[160px] text-center">
-              {formatMonth(currentMonth)}
-            </span>
-            <button
-              onClick={() => navigateMonth('next')}
-              className="btn-outline btn-sm"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          <MonthSelector />
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCurrency, formatPercent, formatMonth, getStatusBadgeClass, getStatusLabel, cn, formatDate } from '@/lib/utils';
+import { formatCurrency, formatPercent, getStatusBadgeClass, getStatusLabel, cn, formatDate } from '@/lib/utils';
 import {
   TrendingUp,
   TrendingDown,
@@ -10,81 +10,39 @@ import {
   Receipt,
 } from 'lucide-react';
 import Link from 'next/link';
+import { MonthSelector } from '@/components/layout/MonthSelector';
+import { useMonth } from '@/lib/useMonth';
+import { trpc } from '@/lib/trpc/client';
 
-interface DashboardContentProps {
-  month: string;
-  overview: {
-    kpis: {
-      totalIncome: number;
-      totalExpenses: number;
-      netSavings: number;
-      savingsRate: number;
-    };
-    budgetSummary: {
-      total: number;
-      onTrack: number;
-      nearingLimit: number;
-      exceededSoft: number;
-      exceededHard: number;
-    };
-    alerts: Array<{
-      categoryId: string;
-      categoryName?: string;
-      status: string;
-      percentUsed: number;
-      actualAmount: number;
-      plannedAmount: number;
-      limitAmount?: number | null;
-    }>;
-    varyingExpenses: {
-      count: number;
-      total: number;
-    };
-    needsReviewCount: number;
-  };
-  categoryBreakdown: Array<{
-    category: {
-      id: string;
-      name: string;
-      icon?: string | null;
-      color?: string | null;
-      type: string;
-    };
-    plannedAmount: number;
-    actualAmount: number;
-    percentUsed: number;
-    status: string;
-  }>;
-  recentTransactions: Array<{
-    id: string;
-    date: Date;
-    description: string;
-    amount: number;
-    direction: string;
-    category?: { name: string; icon?: string | null } | null;
-  }>;
-}
+export const DashboardContent = () => {
+  const { currentMonth } = useMonth();
 
-export function DashboardContent({
-  month,
-  overview,
-  categoryBreakdown,
-  recentTransactions,
-}: DashboardContentProps) {
-  const { kpis, budgetSummary, alerts, varyingExpenses, needsReviewCount } = overview;
+  const { data: overview } = trpc.dashboard.overview.useQuery(currentMonth);
+  const { data: categoryBreakdown = [] } = trpc.dashboard.categoryBreakdown.useQuery(currentMonth);
+  const { data: recentTransactions = [] } = trpc.dashboard.recentTransactions.useQuery({ 
+    limit: 5,
+    month: currentMonth,
+  });
+
+  const kpis = overview?.kpis ?? { totalIncome: 0, totalExpenses: 0, netSavings: 0, savingsRate: 0 };
+  const budgetSummary = overview?.budgetSummary ?? { total: 0, onTrack: 0, nearingLimit: 0, exceededSoft: 0, exceededHard: 0 };
+  const alerts = overview?.alerts ?? [];
+  const varyingExpenses = overview?.varyingExpenses ?? { count: 0, total: 0 };
+  const needsReviewCount = overview?.needsReviewCount ?? 0;
 
   return (
     <div className="space-y-6 animate-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header with Month Navigation */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-500 dark:text-gray-400">{formatMonth(month)}</p>
+          <p className="text-gray-500 dark:text-gray-400">Overview for the selected month</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/transactions" className="btn-secondary btn-sm">
+        <div className="flex items-center gap-3">
+          <Link href={`/transactions?month=${currentMonth}`} className="btn-secondary btn-sm">
             View All Transactions
           </Link>
+          <MonthSelector />
         </div>
       </div>
 
@@ -139,7 +97,7 @@ export function DashboardContent({
                 ))}
               </div>
               {alerts.length > 3 && (
-                <Link href="/budget" className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-warning-700 dark:text-warning-400 hover:text-warning-800 dark:hover:text-warning-300">
+                <Link href={`/budget?month=${currentMonth}`} className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-warning-700 dark:text-warning-400 hover:text-warning-800 dark:hover:text-warning-300">
                   View all alerts <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
@@ -150,7 +108,7 @@ export function DashboardContent({
 
       {/* Needs Review Banner */}
       {needsReviewCount > 0 && (
-        <Link href="/transactions?needsReview=true" className="block">
+        <Link href={`/transactions?month=${currentMonth}&needsReview=true`} className="block">
           <div className="card border-l-4 border-primary-500 bg-primary-50 dark:bg-primary-900/30 hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -176,7 +134,7 @@ export function DashboardContent({
         <div className="card lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Expense Categories</h2>
-            <Link href="/budget" className="text-sm text-primary-600 hover:text-primary-700">
+            <Link href={`/budget?month=${currentMonth}`} className="text-sm text-primary-600 hover:text-primary-700">
               Manage budgets
             </Link>
           </div>
@@ -198,7 +156,7 @@ export function DashboardContent({
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Recent Transactions</h2>
-            <Link href="/transactions" className="text-sm text-primary-600 hover:text-primary-700">
+            <Link href={`/transactions?month=${currentMonth}`} className="text-sm text-primary-600 hover:text-primary-700">
               View all
             </Link>
           </div>

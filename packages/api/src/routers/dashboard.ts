@@ -40,6 +40,7 @@ function toTransactions<T extends {
   amount: number;
   direction: string;
   needsReview: boolean;
+  isIgnored: boolean;
   isRecurringInstance: boolean;
   recurringTemplateId?: string | null;
   recurringInstanceKey?: string | null;
@@ -60,10 +61,11 @@ export const dashboardRouter = router({
     const startDate = new Date(year!, monthNum! - 1, 1);
     const endDate = new Date(year!, monthNum!, 0);
 
-    // Get all transactions for the month
+    // Get all transactions for the month (excluding ignored)
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
         householdId: ctx.householdId,
+        isIgnored: false,
         date: {
           gte: startDate,
           lte: endDate,
@@ -119,11 +121,12 @@ export const dashboardRouter = router({
         (t.categoryId === varyingCategory?.id || t.categoryId === null)
     );
 
-    // Get transactions needing review
+    // Get transactions needing review (excluding ignored)
     const needsReviewCount = await ctx.prisma.transaction.count({
       where: {
         householdId: ctx.householdId,
         needsReview: true,
+        isIgnored: false,
       },
     });
 
@@ -179,6 +182,7 @@ export const dashboardRouter = router({
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
         householdId: ctx.householdId,
+        isIgnored: false,
         date: {
           gte: startDate,
           lte: endDate,
@@ -232,6 +236,7 @@ export const dashboardRouter = router({
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
         householdId: ctx.householdId,
+        isIgnored: false,
         date: {
           gte: startDate,
           lte: endDate,
@@ -278,15 +283,31 @@ export const dashboardRouter = router({
   }),
 
   /**
-   * Get recent transactions
+   * Get recent transactions for a month
    */
   recentTransactions: protectedProcedure
-    .input(z.object({ limit: z.number().default(10) }))
+    .input(z.object({ 
+      limit: z.number().default(10),
+      month: monthSchema.optional(),
+    }))
     .query(async ({ ctx, input }) => {
+      const where: Record<string, unknown> = {
+        householdId: ctx.householdId,
+        isIgnored: false,
+      };
+
+      if (input.month) {
+        const [year, monthNum] = input.month.split('-').map(Number);
+        const startDate = new Date(year!, monthNum! - 1, 1);
+        const endDate = new Date(year!, monthNum!, 0);
+        where.date = {
+          gte: startDate,
+          lte: endDate,
+        };
+      }
+
       return ctx.prisma.transaction.findMany({
-        where: {
-          householdId: ctx.householdId,
-        },
+        where,
         include: {
           category: true,
           account: true,

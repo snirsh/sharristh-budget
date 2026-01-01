@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Suspense } from 'react';
 import './globals.css';
 import { TRPCProvider } from '@/lib/trpc/provider';
 import { ThemeProvider } from '@/lib/theme';
@@ -49,7 +50,9 @@ export default function RootLayout({
         <ThemeProvider>
           <TRPCProvider>
             <div className="flex min-h-screen">
-              <Sidebar />
+              <Suspense>
+                <Sidebar />
+              </Suspense>
               <main className="flex-1 overflow-auto">
                 <div className="container mx-auto max-w-7xl p-6">
                   {children}

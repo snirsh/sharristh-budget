@@ -3,21 +3,25 @@
 import { formatCurrency } from '@/lib/utils';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
-interface Transaction {
+type Transaction = {
   amount: number;
   direction: string;
-}
+  isIgnored?: boolean;
+};
 
-interface TransactionSummaryProps {
+type TransactionSummaryProps = {
   transactions: Transaction[];
-}
+};
 
-export function TransactionSummary({ transactions }: TransactionSummaryProps) {
-  const totalIncome = transactions
+export const TransactionSummary = ({ transactions }: TransactionSummaryProps) => {
+  // Filter out ignored transactions from summary calculations
+  const activeTransactions = transactions.filter((t) => !t.isIgnored);
+  
+  const totalIncome = activeTransactions
     .filter((t) => t.direction === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions
+  const totalExpenses = activeTransactions
     .filter((t) => t.direction === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 

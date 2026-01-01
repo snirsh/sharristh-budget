@@ -37,6 +37,7 @@ export const transactionSchema = z.object({
   confidence: z.number().min(0).max(1).nullable().optional(),
   notes: z.string().nullable().optional(),
   needsReview: z.boolean().default(false),
+  isIgnored: z.boolean().default(false),
   isRecurringInstance: z.boolean().default(false),
   recurringTemplateId: z.string().nullable().optional(),
   recurringInstanceKey: z.string().nullable().optional(),
@@ -60,6 +61,7 @@ export const updateTransactionSchema = z.object({
   amount: z.number().positive().optional(),
   notes: z.string().nullable().optional(),
   needsReview: z.boolean().optional(),
+  isIgnored: z.boolean().optional(),
 });
 
 // ============================================
@@ -226,6 +228,7 @@ export const transactionFiltersSchema = z.object({
   accountId: z.string().optional(),
   direction: transactionDirectionSchema.optional(),
   needsReview: z.boolean().optional(),
+  includeIgnored: z.boolean().optional(),
   search: z.string().optional(),
   limit: z.number().int().positive().max(100).default(50),
   offset: z.number().int().min(0).default(0),
