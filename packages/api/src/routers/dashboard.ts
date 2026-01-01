@@ -61,35 +61,54 @@ export const dashboardRouter = router({
     const startDate = new Date(year!, monthNum! - 1, 1);
     const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
-    // Get all transactions for the month (excluding ignored)
-    const transactions = await ctx.prisma.transaction.findMany({
-      where: {
-        householdId: ctx.householdId,
-        isIgnored: false,
-        date: {
-          gte: startDate,
-          lte: endDate,
+    // Parallelize all independent database queries
+    const [transactions, budgets, varyingCategory, needsReviewCount] = await Promise.all([
+      // Get all transactions for the month (excluding ignored)
+      ctx.prisma.transaction.findMany({
+        where: {
+          householdId: ctx.householdId,
+          isIgnored: false,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
         },
-      },
-      include: {
-        category: true,
-      },
-    });
+        include: {
+          category: {
+            select: { id: true, name: true, icon: true, color: true, type: true },
+          },
+        },
+      }),
+      // Get budgets with evaluations
+      ctx.prisma.budget.findMany({
+        where: {
+          householdId: ctx.householdId,
+          month: input,
+        },
+        include: {
+          category: true,
+        },
+      }),
+      // Get varying category
+      ctx.prisma.category.findFirst({
+        where: {
+          householdId: ctx.householdId,
+          type: 'varying',
+        },
+      }),
+      // Get transactions needing review count
+      ctx.prisma.transaction.count({
+        where: {
+          householdId: ctx.householdId,
+          needsReview: true,
+          isIgnored: false,
+        },
+      }),
+    ]);
 
     // Calculate KPIs
     const domainTransactions = toTransactions(transactions);
     const kpis = calculateMonthlyKPIs(domainTransactions, input);
-
-    // Get budgets with evaluations
-    const budgets = await ctx.prisma.budget.findMany({
-      where: {
-        householdId: ctx.householdId,
-        month: input,
-      },
-      include: {
-        category: true,
-      },
-    });
 
     const budgetEvaluations = budgets.map((budget: typeof budgets[number]) => {
       const actualAmount = calculateCategorySpending(
@@ -108,27 +127,11 @@ export const dashboardRouter = router({
     const alerts = getAlertBudgets(budgetEvaluations);
 
     // Get varying expenses (uncategorized or varying category)
-    const varyingCategory = await ctx.prisma.category.findFirst({
-      where: {
-        householdId: ctx.householdId,
-        type: 'varying',
-      },
-    });
-
     const varyingExpenses = transactions.filter(
       (t: typeof transactions[number]) =>
         t.direction === 'expense' &&
         (t.categoryId === varyingCategory?.id || t.categoryId === null)
     );
-
-    // Get transactions needing review (excluding ignored)
-    const needsReviewCount = await ctx.prisma.transaction.count({
-      where: {
-        householdId: ctx.householdId,
-        needsReview: true,
-        isIgnored: false,
-      },
-    });
 
     return {
       month: input,
@@ -165,31 +168,34 @@ export const dashboardRouter = router({
     const startDate = new Date(year!, monthNum! - 1, 1);
     const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
-    // Get categories with their transactions
-    const categories = await ctx.prisma.category.findMany({
-      where: {
-        householdId: ctx.householdId,
-        isActive: true,
-        type: { in: ['expected', 'varying'] },
-      },
-      include: {
-        budgets: {
-          where: { month: input },
+    // Parallelize independent queries
+    const [categories, transactions] = await Promise.all([
+      // Get categories with their budgets
+      ctx.prisma.category.findMany({
+        where: {
+          householdId: ctx.householdId,
+          isActive: true,
+          type: { in: ['expected', 'varying'] },
         },
-      },
-    });
-
-    const transactions = await ctx.prisma.transaction.findMany({
-      where: {
-        householdId: ctx.householdId,
-        isIgnored: false,
-        date: {
-          gte: startDate,
-          lte: endDate,
+        include: {
+          budgets: {
+            where: { month: input },
+          },
         },
-        direction: 'expense',
-      },
-    });
+      }),
+      // Get transactions for the month
+      ctx.prisma.transaction.findMany({
+        where: {
+          householdId: ctx.householdId,
+          isIgnored: false,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+          direction: 'expense',
+        },
+      }),
+    ]);
 
     return categories.map((category: typeof categories[number]) => {
       const categoryTransactions = transactions.filter((t: typeof transactions[number]) => t.categoryId === category.id);
@@ -244,7 +250,9 @@ export const dashboardRouter = router({
         direction: 'income',
       },
       include: {
-        category: true,
+        category: {
+          select: { id: true, name: true, icon: true, color: true },
+        },
       },
     });
 
@@ -309,8 +317,12 @@ export const dashboardRouter = router({
       return ctx.prisma.transaction.findMany({
         where,
         include: {
-          category: true,
-          account: true,
+          category: {
+            select: { id: true, name: true, icon: true, color: true, type: true },
+          },
+          account: {
+            select: { id: true, name: true, icon: true },
+          },
         },
         orderBy: { date: 'desc' },
         take: input.limit,

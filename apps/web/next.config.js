@@ -47,6 +47,26 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Cache static assets aggressively
+        source: '/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        // Cache API responses for 5 minutes with stale-while-revalidate
+        source: '/api/trpc/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=300, stale-while-revalidate=600',
+          },
+        ],
+      },
     ];
   },
 };

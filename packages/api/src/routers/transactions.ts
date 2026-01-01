@@ -68,8 +68,12 @@ export const transactionsRouter = router({
       ctx.prisma.transaction.findMany({
         where,
         include: {
-          category: true,
-          account: true,
+          category: {
+            select: { id: true, name: true, icon: true, color: true, type: true },
+          },
+          account: {
+            select: { id: true, name: true, icon: true },
+          },
         },
         orderBy: { date: 'desc' },
         take: input.limit,
@@ -103,31 +107,32 @@ export const transactionsRouter = router({
    * Create a new transaction
    */
   create: protectedProcedure.input(createTransactionSchema).mutation(async ({ ctx, input }) => {
-    // Validate account exists and belongs to household
-    const account = await ctx.prisma.account.findFirst({
-      where: { id: input.accountId, householdId: ctx.householdId },
-    });
+    // Parallelize all initial database queries
+    const [account, rulesRaw, categoriesRaw] = await Promise.all([
+      // Validate account exists and belongs to household
+      ctx.prisma.account.findFirst({
+        where: { id: input.accountId, householdId: ctx.householdId },
+      }),
+      // Get rules for auto-categorization
+      ctx.prisma.categoryRule.findMany({
+        where: { householdId: ctx.householdId, isActive: true },
+      }),
+      // Get categories for AI categorization
+      ctx.prisma.category.findMany({
+        where: { householdId: ctx.householdId, isActive: true },
+        select: { id: true, name: true, type: true },
+      }),
+    ]);
 
     if (!account) {
       throw new Error('Account not found or does not belong to your household');
     }
-
-    // Get rules for auto-categorization
-    const rulesRaw = await ctx.prisma.categoryRule.findMany({
-      where: { householdId: ctx.householdId, isActive: true },
-    });
 
     // Map to domain types
     const rules = rulesRaw.map((r: typeof rulesRaw[number]) => ({
       ...r,
       type: r.type as 'merchant' | 'keyword' | 'regex',
     }));
-
-    // Get categories for AI categorization
-    const categoriesRaw = await ctx.prisma.category.findMany({
-      where: { householdId: ctx.householdId, isActive: true },
-      select: { id: true, name: true, type: true },
-    });
 
     const categories = categoriesRaw.map((c: typeof categoriesRaw[number]) => ({
       ...c,
@@ -285,8 +290,12 @@ export const transactionsRouter = router({
         needsReview: true,
       },
       include: {
-        category: true,
-        account: true,
+        category: {
+          select: { id: true, name: true, icon: true, color: true, type: true },
+        },
+        account: {
+          select: { id: true, name: true, icon: true },
+        },
       },
       orderBy: { date: 'desc' },
       take: 50,
@@ -334,20 +343,23 @@ export const transactionsRouter = router({
       return { updated: 0, message: 'No transactions need categorization' };
     }
 
-    // Get active rules
-    const rulesRaw = await ctx.prisma.categoryRule.findMany({
-      where: { householdId: ctx.householdId, isActive: true },
-    });
+    // Parallelize getting rules and categories
+    const [rulesRaw, categoriesRaw] = await Promise.all([
+      // Get active rules
+      ctx.prisma.categoryRule.findMany({
+        where: { householdId: ctx.householdId, isActive: true },
+      }),
+      // Get categories for AI categorization
+      ctx.prisma.category.findMany({
+        where: { householdId: ctx.householdId, isActive: true },
+        select: { id: true, name: true, type: true },
+      }),
+    ]);
+
     const rules = rulesRaw.map((r: typeof rulesRaw[number]) => ({
       ...r,
       type: r.type as 'merchant' | 'keyword' | 'regex',
     }));
-
-    // Get categories for AI categorization
-    const categoriesRaw = await ctx.prisma.category.findMany({
-      where: { householdId: ctx.householdId, isActive: true },
-      select: { id: true, name: true, type: true },
-    });
 
     const categories = categoriesRaw.map((c: typeof categoriesRaw[number]) => ({
       ...c,
