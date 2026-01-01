@@ -36,12 +36,11 @@ function LoginForm() {
 
     try {
       await authenticatePasskey();
-      // Success - redirect to callback URL
-      router.push(callbackUrl);
-      router.refresh();
+      // Success - use full page reload to ensure session cookie is recognized
+      // Client-side navigation (router.push) doesn't pick up the newly set cookie
+      window.location.href = callbackUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
-    } finally {
       setIsLoading(false);
     }
   };
