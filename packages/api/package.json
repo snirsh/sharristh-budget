@@ -15,13 +15,11 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "typecheck:strict": "tsc --noEmit && tsup --dts-only"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@sfam/db": "workspace:*",
     "@sfam/domain": "workspace:*",
-    "@sfam/scraper": "workspace:*",
     "@trpc/server": "^10.45.2",
     "superjson": "^2.2.2",
     "zod": "^3.24.1"

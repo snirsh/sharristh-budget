@@ -1,11 +1,12 @@
 import { createScraper, CompanyTypes } from 'israeli-bank-scrapers';
 import type { ScraperAdapter } from './base';
 import { registerAdapter } from './base';
-import type { 
-  IsraCardCredentials, 
+import type {
+  IsraCardCredentials,
   ScrapeResult,
   ScrapedAccount,
 } from '../types';
+import { getChromiumLaunchOptions } from '../chromium-config';
 
 /**
  * Isracard Credit Card Adapter
@@ -27,11 +28,21 @@ class IsracardAdapter implements ScraperAdapter {
     console.log('[Isracard] Card digits:', creds.card6Digits);
 
     try {
+      // Get Chromium configuration for Vercel/production
+      const launchOptions = await getChromiumLaunchOptions();
+
       const scraper = createScraper({
         companyId: CompanyTypes.isracard,
         startDate,
         combineInstallments: false,
         showBrowser: false,
+        ...(launchOptions.executablePath && {
+          browser: {
+            executablePath: launchOptions.executablePath,
+            args: launchOptions.args,
+            headless: launchOptions.headless,
+          },
+        }),
       });
 
       console.log('[Isracard] Calling scraper.scrape()...');

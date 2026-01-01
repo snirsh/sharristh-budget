@@ -17,17 +17,22 @@ export async function initScheduler() {
 
   console.log('[Scheduler] Initializing bank sync scheduler');
 
-  // Run daily at 6 AM Israel time
+  // Run twice daily at 6 AM and 6 PM Israel time for fresh transaction data
   // Cron format: minute hour day month weekday
-  cron.schedule('0 6 * * *', async () => {
-    console.log('[Scheduler] Starting scheduled bank sync');
+  cron.schedule('0 6,18 * * *', async () => {
+    const hour = new Date().toLocaleString('en-US', {
+      timeZone: 'Asia/Jerusalem',
+      hour: 'numeric',
+      hour12: false
+    });
+    console.log(`[Scheduler] Starting scheduled bank sync at ${hour}:00 Israel time`);
     await syncAllConnections();
   }, {
     timezone: 'Asia/Jerusalem',
   });
 
   isSchedulerInitialized = true;
-  console.log('[Scheduler] Bank sync scheduler initialized - runs daily at 6 AM Israel time');
+  console.log('[Scheduler] Bank sync scheduler initialized - runs twice daily at 6 AM and 6 PM Israel time');
 
   // Auto-sync on startup if connections haven't synced today
   // This is especially useful for local development where cron may not have run
