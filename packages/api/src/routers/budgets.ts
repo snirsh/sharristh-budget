@@ -60,32 +60,34 @@ export const budgetsRouter = router({
    * Get budgets for a month with evaluations
    */
   forMonth: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
-    const budgets = await ctx.prisma.budget.findMany({
-      where: {
-        householdId: ctx.householdId,
-        month: input,
-      },
-      include: {
-        category: true,
-      },
-    });
-
-    // Get all transactions for the month to calculate actual spending
+    // Calculate date range
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
     const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
-    const transactions = await ctx.prisma.transaction.findMany({
-      where: {
-        householdId: ctx.householdId,
-        isIgnored: false,
-        date: {
-          gte: startDate,
-          lte: endDate,
+    // Parallelize independent database queries
+    const [budgets, transactions] = await Promise.all([
+      ctx.prisma.budget.findMany({
+        where: {
+          householdId: ctx.householdId,
+          month: input,
         },
-        direction: 'expense',
-      },
-    });
+        include: {
+          category: true,
+        },
+      }),
+      ctx.prisma.transaction.findMany({
+        where: {
+          householdId: ctx.householdId,
+          isIgnored: false,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+          direction: 'expense',
+        },
+      }),
+    ]);
 
     // Evaluate each budget
     const domainTransactions = toTransactions(transactions);
@@ -109,31 +111,34 @@ export const budgetsRouter = router({
    * Get alert budgets (nearing or exceeding limits)
    */
   alerts: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
-    const budgets = await ctx.prisma.budget.findMany({
-      where: {
-        householdId: ctx.householdId,
-        month: input,
-      },
-      include: {
-        category: true,
-      },
-    });
-
+    // Calculate date range
     const [year, monthNum] = input.split('-').map(Number);
     const startDate = new Date(year!, monthNum! - 1, 1);
     const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
 
-    const transactions = await ctx.prisma.transaction.findMany({
-      where: {
-        householdId: ctx.householdId,
-        isIgnored: false,
-        date: {
-          gte: startDate,
-          lte: endDate,
+    // Parallelize independent database queries
+    const [budgets, transactions] = await Promise.all([
+      ctx.prisma.budget.findMany({
+        where: {
+          householdId: ctx.householdId,
+          month: input,
         },
-        direction: 'expense',
-      },
-    });
+        include: {
+          category: true,
+        },
+      }),
+      ctx.prisma.transaction.findMany({
+        where: {
+          householdId: ctx.householdId,
+          isIgnored: false,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+          direction: 'expense',
+        },
+      }),
+    ]);
 
     const domainTransactions = toTransactions(transactions);
     const evaluations = budgets.map((budget: typeof budgets[number]) => {
