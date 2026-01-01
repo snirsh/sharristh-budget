@@ -9,6 +9,18 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     console.log('[Instrumentation] Initializing server-side services');
 
+    // Set Chromium path for Puppeteer BEFORE loading israeli-bank-scrapers
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      try {
+        const chromium = await import('@sparticuz/chromium');
+        const executablePath = await chromium.default.executablePath();
+        process.env.PUPPETEER_EXECUTABLE_PATH = executablePath;
+        console.log('[Instrumentation] Set PUPPETEER_EXECUTABLE_PATH:', executablePath);
+      } catch (error) {
+        console.error('[Instrumentation] Failed to set Chromium path:', error);
+      }
+    }
+
     // Skip scheduler in demo mode (no bank connections in demo)
     if (process.env.DEMO_MODE !== 'true') {
       // Initialize the bank sync scheduler (includes auto-sync for stale connections)
