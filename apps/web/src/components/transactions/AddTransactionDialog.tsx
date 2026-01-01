@@ -100,13 +100,13 @@ export function AddTransactionDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction</h2>
           <button
             onClick={handleClose}
-            className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <X className="h-5 w-5" />
           </button>
@@ -126,8 +126,8 @@ export function AddTransactionDialog({
                 className={cn(
                   'px-4 py-2 rounded-lg font-medium transition-colors',
                   direction === 'expense'
-                    ? 'bg-danger-100 text-danger-700 border-2 border-danger-500'
-                    : 'bg-gray-100 text-gray-700 dark:text-gray-200 border-2 border-transparent hover:bg-gray-200'
+                    ? 'bg-danger-100 dark:bg-danger-900/40 text-danger-700 dark:text-danger-400 border-2 border-danger-500'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-2 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600'
                 )}
               >
                 Expense
@@ -138,8 +138,8 @@ export function AddTransactionDialog({
                 className={cn(
                   'px-4 py-2 rounded-lg font-medium transition-colors',
                   direction === 'income'
-                    ? 'bg-success-100 text-success-700 border-2 border-success-500'
-                    : 'bg-gray-100 text-gray-700 dark:text-gray-200 border-2 border-transparent hover:bg-gray-200'
+                    ? 'bg-success-100 dark:bg-success-900/40 text-success-700 dark:text-success-400 border-2 border-success-500'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-2 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600'
                 )}
               >
                 Income
@@ -265,8 +265,8 @@ export function AddTransactionDialog({
 
           {/* Error message */}
           {createMutation.isError && (
-            <div className="p-3 bg-danger-50 border border-danger-200 rounded-lg">
-              <p className="text-sm text-danger-700">
+            <div className="p-3 bg-danger-50 dark:bg-danger-900/30 border border-danger-200 dark:border-danger-800 rounded-lg">
+              <p className="text-sm text-danger-700 dark:text-danger-400">
                 {createMutation.error.message}
               </p>
             </div>

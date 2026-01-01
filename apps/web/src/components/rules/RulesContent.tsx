@@ -199,15 +199,15 @@ export function RulesContent({ categories }: { categories: Category[] }) {
                   className={cn(
                     'flex items-center gap-4 rounded-lg border px-4 py-3',
                     !rule.isActive
-                      ? 'border-gray-200 bg-gray-50 opacity-60'
-                      : 'border-gray-200'
+                      ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 opacity-60'
+                      : 'border-gray-200 dark:border-gray-700'
                   )}
                 >
-                  <code className="flex-1 font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                  <code className="flex-1 font-mono text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-900 dark:text-gray-100">
                     {rule.pattern}
                   </code>
-                  <span className="text-gray-500">→</span>
-                  <span className="flex items-center gap-1 text-sm font-medium">
+                  <span className="text-gray-500 dark:text-gray-400">→</span>
+                  <span className="flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white">
                     <span>{rule.category?.icon}</span>
                     {rule.category?.name}
                   </span>

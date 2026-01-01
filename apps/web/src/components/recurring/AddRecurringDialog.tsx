@@ -86,16 +86,16 @@ export function AddRecurringDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
-            <Repeat className="h-5 w-5 text-primary-600" />
-            <h2 className="text-xl font-bold text-gray-900">Add Recurring Transaction</h2>
+            <Repeat className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Recurring Transaction</h2>
           </div>
           <button
             onClick={handleClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <X className="h-5 w-5" />
           </button>
@@ -105,7 +105,7 @@ export function AddRecurringDialog({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Name *
             </label>
             <input
@@ -120,7 +120,7 @@ export function AddRecurringDialog({
 
           {/* Direction Toggle */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
               Type
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -130,8 +130,8 @@ export function AddRecurringDialog({
                 className={cn(
                   'px-4 py-2 rounded-lg font-medium transition-colors',
                   direction === 'expense'
-                    ? 'bg-danger-100 text-danger-700 border-2 border-danger-500'
-                    : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
+                    ? 'bg-danger-100 dark:bg-danger-900/40 text-danger-700 dark:text-danger-400 border-2 border-danger-500'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-2 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600'
                 )}
               >
                 Expense
@@ -142,8 +142,8 @@ export function AddRecurringDialog({
                 className={cn(
                   'px-4 py-2 rounded-lg font-medium transition-colors',
                   direction === 'income'
-                    ? 'bg-success-100 text-success-700 border-2 border-success-500'
-                    : 'bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200'
+                    ? 'bg-success-100 dark:bg-success-900/40 text-success-700 dark:text-success-400 border-2 border-success-500'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-2 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600'
                 )}
               >
                 Income
@@ -153,7 +153,7 @@ export function AddRecurringDialog({
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Amount (₪) *
             </label>
             <input
@@ -170,7 +170,7 @@ export function AddRecurringDialog({
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Category
             </label>
             <select
@@ -189,7 +189,7 @@ export function AddRecurringDialog({
 
           {/* Frequency */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Frequency
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -204,7 +204,7 @@ export function AddRecurringDialog({
                 <option value="yearly">Yearly</option>
               </select>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Every</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">Every</span>
                 <input
                   type="number"
                   min="1"
@@ -213,7 +213,7 @@ export function AddRecurringDialog({
                   onChange={(e) => setInterval(e.target.value)}
                   className="input w-20"
                 />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
                   {frequency === 'monthly' && interval === '2' ? 'months (bimonthly)' :
                    frequency === 'monthly' ? 'month(s)' :
                    frequency === 'yearly' ? 'year(s)' :
@@ -226,7 +226,7 @@ export function AddRecurringDialog({
           {/* Day of month (for monthly) */}
           {frequency === 'monthly' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                 Day of month
               </label>
               <input
@@ -237,7 +237,7 @@ export function AddRecurringDialog({
                 onChange={(e) => setByMonthDay(e.target.value)}
                 className="input w-full"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Which day of the month (1-31)
               </p>
             </div>
@@ -245,7 +245,7 @@ export function AddRecurringDialog({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               Description
             </label>
             <input
@@ -259,8 +259,8 @@ export function AddRecurringDialog({
 
           {/* Error message */}
           {createMutation.isError && (
-            <div className="p-3 bg-danger-50 border border-danger-200 rounded-lg">
-              <p className="text-sm text-danger-700">
+            <div className="p-3 bg-danger-50 dark:bg-danger-900/30 border border-danger-200 dark:border-danger-800 rounded-lg">
+              <p className="text-sm text-danger-700 dark:text-danger-400">
                 {createMutation.error.message}
               </p>
             </div>

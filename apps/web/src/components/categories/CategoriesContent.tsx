@@ -231,9 +231,9 @@ export function CategoriesContent() {
   };
 
   const typeLabels = {
-    income: { title: 'Income', description: 'Sources of money coming in', color: 'bg-emerald-50 border-emerald-200' },
-    expected: { title: 'Expected Expenses', description: 'Regular, predictable expenses', color: 'bg-blue-50 border-blue-200' },
-    varying: { title: 'Varying Expenses', description: 'Irregular or unexpected expenses', color: 'bg-amber-50 border-amber-200' },
+    income: { title: 'Income', description: 'Sources of money coming in', color: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800' },
+    expected: { title: 'Expected Expenses', description: 'Regular, predictable expenses', color: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800' },
+    varying: { title: 'Varying Expenses', description: 'Irregular or unexpected expenses', color: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800' },
   };
 
   return (
@@ -269,7 +269,7 @@ export function CategoriesContent() {
 
       {/* Seed Success Message */}
       {seedMutation.isSuccess && seedMutation.data?.success && (
-        <div className="card p-4 bg-success-50 border-success-200 text-success-800">
+        <div className="card p-4 bg-success-50 dark:bg-success-900/30 border-success-200 dark:border-success-800 text-success-800 dark:text-success-300">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
             <p className="font-medium">{seedMutation.data.message}</p>
@@ -332,14 +332,14 @@ export function CategoriesContent() {
       {showModal && editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {editing.isNew ? 'Create Category' : 'Edit Category'}
               </h2>
               <button
                 onClick={closeModal}
-                className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -390,7 +390,7 @@ export function CategoriesContent() {
                       className={cn(
                         'h-8 w-8 rounded-full border-2 transition-transform hover:scale-110',
                         editing.color === color
-                          ? 'border-gray-900 scale-110'
+                          ? 'border-gray-900 dark:border-white scale-110'
                           : 'border-transparent'
                       )}
                       style={{ backgroundColor: color }}
@@ -399,8 +399,8 @@ export function CategoriesContent() {
                   <button
                     onClick={() => setEditing({ ...editing, color: '' })}
                     className={cn(
-                      'h-8 w-8 rounded-full border-2 bg-gray-100 flex items-center justify-center text-gray-400 text-xs',
-                      !editing.color ? 'border-gray-900' : 'border-transparent'
+                      'h-8 w-8 rounded-full border-2 bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 text-xs',
+                      !editing.color ? 'border-gray-900 dark:border-white' : 'border-transparent'
                     )}
                   >
                     ✕
@@ -421,8 +421,8 @@ export function CategoriesContent() {
                       className={cn(
                         'px-3 py-2 rounded-lg border text-sm font-medium transition-all',
                         editing.type === option.value
-                          ? 'border-primary-500 bg-primary-50 text-primary-700'
-                          : 'border-gray-200 bg-white text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                          : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
                       )}
                     >
                       {option.label}
@@ -477,7 +477,7 @@ export function CategoriesContent() {
 
             {/* Error Display */}
             {(updateMutation.error || createMutation.error) && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
                 {updateMutation.error?.message || createMutation.error?.message}
               </div>
             )}
@@ -489,15 +489,15 @@ export function CategoriesContent() {
       {deleteState && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={closeDeleteModal} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2 text-red-600">
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                 <Trash2 className="h-5 w-5" />
                 <h2 className="text-xl font-semibold">Delete Category</h2>
               </div>
               <button
                 onClick={closeDeleteModal}
-                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -514,29 +514,29 @@ export function CategoriesContent() {
                 </p>
 
                 {/* Category Preview */}
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
                   <span className="text-2xl">{deleteInfo.category.icon || '📁'}</span>
                   <span className="font-semibold text-gray-900 dark:text-white">{deleteInfo.category.name}</span>
                 </div>
 
                 {/* Subcategories Warning */}
                 {deleteInfo.subcategories.length > 0 && (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-xl">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="font-medium text-amber-800">
+                        <p className="font-medium text-amber-800 dark:text-amber-300">
                           This will also delete {deleteInfo.subcategories.length} subcategor{deleteInfo.subcategories.length === 1 ? 'y' : 'ies'}:
                         </p>
                         <ul className="mt-2 space-y-1">
                           {deleteInfo.subcategories.slice(0, 5).map((sub) => (
-                            <li key={sub.id} className="text-sm text-amber-700 flex items-center gap-2">
+                            <li key={sub.id} className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
                               <span>{sub.icon || '📁'}</span>
                               <span>{sub.name}</span>
                             </li>
                           ))}
                           {deleteInfo.subcategories.length > 5 && (
-                            <li className="text-sm text-amber-600 italic">
+                            <li className="text-sm text-amber-600 dark:text-amber-500 italic">
                               ...and {deleteInfo.subcategories.length - 5} more
                             </li>
                           )}
@@ -550,10 +550,10 @@ export function CategoriesContent() {
                 {(deleteInfo.affectedCounts.transactions > 0 ||
                   deleteInfo.affectedCounts.budgets > 0 ||
                   deleteInfo.affectedCounts.rules > 0) && (
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl space-y-2">
-                    <p className="font-medium text-blue-800 text-sm">This will affect:</p>
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl space-y-2">
+                    <p className="font-medium text-blue-800 dark:text-blue-300 text-sm">This will affect:</p>
                     {deleteInfo.affectedCounts.transactions > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                         <FileText className="h-4 w-4" />
                         <span>
                           {deleteInfo.affectedCounts.transactions} transaction{deleteInfo.affectedCounts.transactions === 1 ? '' : 's'} will become uncategorized
@@ -561,7 +561,7 @@ export function CategoriesContent() {
                       </div>
                     )}
                     {deleteInfo.affectedCounts.budgets > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                         <Calculator className="h-4 w-4" />
                         <span>
                           {deleteInfo.affectedCounts.budgets} budget{deleteInfo.affectedCounts.budgets === 1 ? '' : 's'} will be deleted
@@ -569,7 +569,7 @@ export function CategoriesContent() {
                       </div>
                     )}
                     {deleteInfo.affectedCounts.rules > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                         <Wand2 className="h-4 w-4" />
                         <span>
                           {deleteInfo.affectedCounts.rules} categorization rule{deleteInfo.affectedCounts.rules === 1 ? '' : 's'} will be deleted
@@ -602,7 +602,7 @@ export function CategoriesContent() {
 
             {/* Error Display */}
             {deleteMutation.error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
                 {deleteMutation.error.message}
               </div>
             )}
@@ -655,7 +655,7 @@ function CategoryRow({
     <Fragment>
       <div
         className={cn(
-          'group flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/60 transition-colors',
+          'group flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/60 dark:hover:bg-gray-700/50 transition-colors',
           !category.isActive && 'opacity-50'
         )}
         style={{ paddingLeft: `${depth * 24 + 12}px` }}
@@ -664,7 +664,7 @@ function CategoryRow({
         <button
           onClick={onToggleExpand}
           className={cn(
-            'p-0.5 rounded hover:bg-gray-200',
+            'p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600',
             !hasChildren && 'invisible'
           )}
         >
@@ -693,21 +693,21 @@ function CategoryRow({
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={onAddChild}
-            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
             title="Add subcategory"
           >
             <Plus className="h-4 w-4" />
           </button>
           <button
             onClick={onStartEdit}
-            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
             title="Edit category"
           >
             <Edit2 className="h-4 w-4" />
           </button>
           <button
             onClick={onToggleActive}
-            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
             title={category.isActive ? 'Disable category' : 'Enable category'}
           >
             {category.isActive ? (
@@ -718,7 +718,7 @@ function CategoryRow({
           </button>
           <button
             onClick={onDelete}
-            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
             title="Delete category"
           >
             <Trash2 className="h-4 w-4" />

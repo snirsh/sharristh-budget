@@ -127,12 +127,12 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
 
       {/* Error State */}
       {isError && (
-        <div className="card bg-danger-50 border-danger-200">
-          <div className="flex items-center gap-2 text-danger-700">
+        <div className="card bg-danger-50 dark:bg-danger-900/30 border-danger-200 dark:border-danger-800">
+          <div className="flex items-center gap-2 text-danger-700 dark:text-danger-400">
             <AlertCircle className="h-5 w-5" />
             <p className="font-medium">Failed to load budgets</p>
           </div>
-          <p className="text-sm text-danger-600 mt-1">
+          <p className="text-sm text-danger-600 dark:text-danger-400 mt-1">
             {error?.message || 'An error occurred while loading budgets'}
           </p>
         </div>
@@ -203,7 +203,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
               const progressWidth = Math.min(evaluation.percentUsed * 100, 100);
 
               return (
-                <tr key={evaluation.budget.id} className="hover:bg-gray-50">
+                <tr key={evaluation.budget.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">
@@ -284,7 +284,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',
@@ -315,13 +315,13 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => saveEdit(evaluation.budget.categoryId)}
-                          className="p-1 text-success-600 hover:bg-success-50 rounded"
+                          className="p-1 text-success-600 hover:bg-success-50 dark:hover:bg-success-900/30 rounded"
                         >
                           <Save className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setEditingBudget(null)}
-                          className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                          className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -330,14 +330,14 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => startEditing(evaluation)}
-                          className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                           title="Edit budget"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(evaluation.budget.id)}
-                          className="p-1 text-danger-400 hover:text-danger-600 hover:bg-danger-50 rounded"
+                          className="p-1 text-danger-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/30 rounded"
                           title="Delete budget"
                         >
                           <Trash2 className="h-4 w-4" />

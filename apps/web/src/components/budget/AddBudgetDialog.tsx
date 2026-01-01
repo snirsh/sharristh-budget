@@ -107,13 +107,13 @@ export function AddBudgetDialog({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Add Budget</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Budget</h2>
           <button
             onClick={handleClose}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
           >
             <X className="h-5 w-5" />
           </button>
@@ -218,8 +218,8 @@ export function AddBudgetDialog({
                     className="text-primary-600 focus:ring-primary-500"
                   />
                   <div>
-                    <span className="font-medium">Soft Limit</span>
-                    <p className="text-sm text-gray-500">
+                    <span className="font-medium text-gray-900 dark:text-white">Soft Limit</span>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       Warning only, allows exceeding
                     </p>
                   </div>
@@ -239,8 +239,8 @@ export function AddBudgetDialog({
                     className="text-primary-600 focus:ring-primary-500"
                   />
                   <div>
-                    <span className="font-medium">Hard Limit</span>
-                    <p className="text-sm text-gray-500">
+                    <span className="font-medium text-gray-900 dark:text-white">Hard Limit</span>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       Strict limit, prevents exceeding
                     </p>
                   </div>
@@ -266,16 +266,16 @@ export function AddBudgetDialog({
               onChange={(e) =>
                 setFormData({ ...formData, alertThresholdPct: e.target.value })
               }
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+              className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Get notified when spending reaches this percentage
             </p>
           </div>
 
           {/* Form Error */}
           {errors.form && (
-            <div className="bg-danger-50 border border-danger-200 rounded p-3 text-sm text-danger-700">
+            <div className="bg-danger-50 dark:bg-danger-900/30 border border-danger-200 dark:border-danger-800 rounded p-3 text-sm text-danger-700 dark:text-danger-400">
               {errors.form}
             </div>
           )}

@@ -214,7 +214,7 @@ export function ConnectionsContent() {
       {/* Add Connection Form */}
       {showAddForm && (
         <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {twoFactorConnectionId ? 'Complete 2FA Setup' : 'Add New Connection'}
           </h2>
 
@@ -222,7 +222,7 @@ export function ConnectionsContent() {
             // 2FA Completion Form
             <div className="space-y-4">
               {initTwoFactorMutation.isPending ? (
-                <div className="bg-primary-50 text-primary-700 p-4 rounded-lg">
+                <div className="bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 p-4 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <div>
@@ -232,7 +232,7 @@ export function ConnectionsContent() {
                   </div>
                 </div>
               ) : initTwoFactorMutation.error ? (
-                <div className="bg-error-50 text-error-700 p-4 rounded-lg">
+                <div className="bg-error-50 dark:bg-error-900/30 text-error-700 dark:text-error-300 p-4 rounded-lg">
                   <p className="font-medium">Failed to send OTP</p>
                   <p className="text-sm">{initTwoFactorMutation.error.message}</p>
                   <button
@@ -247,7 +247,7 @@ export function ConnectionsContent() {
                   </button>
                 </div>
               ) : (
-                <div className="bg-primary-50 text-primary-700 p-4 rounded-lg">
+                <div className="bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 p-4 rounded-lg">
                   <p className="font-medium">OTP code sent to your phone</p>
                   <p className="text-sm">Enter the code you received via SMS to complete the setup.</p>
                   {twoFactorSessionId && (
@@ -257,7 +257,7 @@ export function ConnectionsContent() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                   OTP Code
                 </label>
                 <input
@@ -296,7 +296,7 @@ export function ConnectionsContent() {
               </div>
 
               {completeTwoFactorMutation.error && (
-                <p className="text-sm text-error-600">
+                <p className="text-sm text-error-600 dark:text-error-400">
                   {completeTwoFactorMutation.error.message}
                 </p>
               )}
@@ -306,7 +306,7 @@ export function ConnectionsContent() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Provider
                   </label>
                   <select
@@ -325,7 +325,7 @@ export function ConnectionsContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Display Name
                   </label>
                   <input
@@ -345,7 +345,7 @@ export function ConnectionsContent() {
                 // OneZero credentials
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       Email
                     </label>
                     <input
@@ -359,7 +359,7 @@ export function ConnectionsContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       Password
                     </label>
                     <input
@@ -373,7 +373,7 @@ export function ConnectionsContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       Phone Number
                     </label>
                     <input
@@ -386,7 +386,7 @@ export function ConnectionsContent() {
                       className="input"
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       International format (e.g., +972501234567) or local (0501234567)
                     </p>
                   </div>
@@ -395,7 +395,7 @@ export function ConnectionsContent() {
                 // Isracard credentials
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       ID Number
                     </label>
                     <input
@@ -410,7 +410,7 @@ export function ConnectionsContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       Last 6 Digits of Card
                     </label>
                     <input
@@ -426,7 +426,7 @@ export function ConnectionsContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       Password
                     </label>
                     <input
@@ -443,7 +443,7 @@ export function ConnectionsContent() {
               )}
 
               {formData.provider === 'onezero' && (
-                <div className="bg-warning-50 text-warning-700 p-3 rounded-lg text-sm">
+                <div className="bg-warning-50 dark:bg-warning-900/30 text-warning-700 dark:text-warning-300 p-3 rounded-lg text-sm">
                   <strong>Note:</strong> OneZero requires 2FA setup. After adding, you'll receive an OTP code via SMS to complete the connection.
                 </div>
               )}
@@ -472,7 +472,7 @@ export function ConnectionsContent() {
               </div>
 
               {createMutation.error && (
-                <p className="text-sm text-error-600">
+                <p className="text-sm text-error-600 dark:text-error-400">
                   {createMutation.error.message}
                 </p>
               )}
@@ -512,24 +512,24 @@ export function ConnectionsContent() {
                       className={cn(
                         'flex h-10 w-10 items-center justify-center rounded-lg',
                         connection.isActive
-                          ? 'bg-primary-100 text-primary-600'
-                          : 'bg-gray-100 text-gray-400'
+                          ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
                       )}
                     >
                       {getProviderIcon(connection.provider)}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-gray-900 dark:text-white">
                         {connection.displayName}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Added {formatDate(connection.createdAt)}
                       </p>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
                     {connection.providerDisplayName}
                   </span>
                   {connection.requiresTwoFactor && !connection.isActive && (
@@ -544,16 +544,16 @@ export function ConnectionsContent() {
                     <span
                       className={cn(
                         'text-sm capitalize',
-                        connection.lastSyncStatus === 'success' && 'text-success-600',
-                        connection.lastSyncStatus === 'error' && 'text-error-600',
-                        !connection.lastSyncStatus && 'text-gray-400'
+                        connection.lastSyncStatus === 'success' && 'text-success-600 dark:text-success-400',
+                        connection.lastSyncStatus === 'error' && 'text-error-600 dark:text-error-400',
+                        !connection.lastSyncStatus && 'text-gray-400 dark:text-gray-500'
                       )}
                     >
                       {connection.lastSyncStatus || 'Never synced'}
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500">
+                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                   {connection.lastSyncAt
                     ? formatDate(connection.lastSyncAt)
                     : 'Never'}
@@ -598,7 +598,7 @@ export function ConnectionsContent() {
                         }
                       }}
                       disabled={deleteMutation.isPending}
-                      className="btn btn-sm btn-outline text-error-600 hover:bg-error-50"
+                      className="btn btn-sm btn-outline text-error-600 dark:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/30"
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -630,7 +630,7 @@ export function ConnectionsContent() {
 
       {/* Sync Status Messages */}
       {syncMutation.isSuccess && (
-        <div className="fixed bottom-4 right-4 bg-success-50 dark:bg-success-900 text-success-700 dark:text-success-200 px-4 py-3 rounded-lg shadow-lg animate-in">
+        <div className="fixed bottom-4 right-4 bg-success-50 dark:bg-success-900/90 text-success-700 dark:text-success-200 px-4 py-3 rounded-lg shadow-lg animate-in border border-success-200 dark:border-success-800">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
             <span>
@@ -642,7 +642,7 @@ export function ConnectionsContent() {
       )}
 
       {syncMutation.error && (
-        <div className="fixed bottom-4 right-4 bg-error-50 dark:bg-error-900 text-error-700 dark:text-error-200 px-4 py-3 rounded-lg shadow-lg animate-in">
+        <div className="fixed bottom-4 right-4 bg-error-50 dark:bg-error-900/90 text-error-700 dark:text-error-200 px-4 py-3 rounded-lg shadow-lg animate-in border border-error-200 dark:border-error-800">
           <div className="flex items-center gap-2">
             <XCircle className="h-5 w-5" />
             <span>Sync failed: {syncMutation.error.message}</span>
@@ -652,7 +652,7 @@ export function ConnectionsContent() {
 
       {/* Sync All Status Messages */}
       {syncAllMutation.isSuccess && (
-        <div className="fixed bottom-4 right-4 bg-success-50 dark:bg-success-900 text-success-700 dark:text-success-200 px-4 py-3 rounded-lg shadow-lg animate-in max-w-md">
+        <div className="fixed bottom-4 right-4 bg-success-50 dark:bg-success-900/90 text-success-700 dark:text-success-200 px-4 py-3 rounded-lg shadow-lg animate-in max-w-md border border-success-200 dark:border-success-800">
           <div className="flex items-start gap-2">
             <CheckCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <div>
@@ -679,7 +679,7 @@ export function ConnectionsContent() {
       )}
 
       {syncAllMutation.error && (
-        <div className="fixed bottom-4 right-4 bg-error-50 dark:bg-error-900 text-error-700 dark:text-error-200 px-4 py-3 rounded-lg shadow-lg animate-in">
+        <div className="fixed bottom-4 right-4 bg-error-50 dark:bg-error-900/90 text-error-700 dark:text-error-200 px-4 py-3 rounded-lg shadow-lg animate-in border border-error-200 dark:border-error-800">
           <div className="flex items-center gap-2">
             <XCircle className="h-5 w-5" />
             <span>Sync all failed: {syncAllMutation.error.message}</span>

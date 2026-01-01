@@ -165,8 +165,8 @@ export function TransactionsContent({
               <tr
                 key={tx.id}
                 className={cn(
-                  'hover:bg-gray-50',
-                  tx.needsReview && 'bg-warning-50'
+                  'hover:bg-gray-50 dark:hover:bg-gray-800',
+                  tx.needsReview && 'bg-warning-50 dark:bg-warning-900/30'
                 )}
               >
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

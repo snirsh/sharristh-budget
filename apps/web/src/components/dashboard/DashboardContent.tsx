@@ -120,18 +120,18 @@ export function DashboardContent({
 
       {/* Alerts Section */}
       {alerts.length > 0 && (
-        <div className="card border-l-4 border-warning-500 bg-warning-50">
+        <div className="card border-l-4 border-warning-500 bg-warning-50 dark:bg-warning-900/30">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-warning-600 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-warning-600 dark:text-warning-400 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-semibold text-warning-800">Budget Alerts</h3>
-              <p className="text-sm text-warning-700 mt-1">
+              <h3 className="font-semibold text-warning-800 dark:text-warning-300">Budget Alerts</h3>
+              <p className="text-sm text-warning-700 dark:text-warning-400 mt-1">
                 {alerts.length} {alerts.length === 1 ? 'category' : 'categories'} need attention
               </p>
               <div className="mt-3 space-y-2">
                 {alerts.slice(0, 3).map((alert) => (
                   <div key={alert.categoryId} className="flex items-center justify-between text-sm">
-                    <span className="text-warning-800 dark:text-gray-200">{alert.categoryName}</span>
+                    <span className="text-warning-800 dark:text-warning-200">{alert.categoryName}</span>
                     <span className={cn('badge', getStatusBadgeClass(alert.status))}>
                       {getStatusLabel(alert.status)} • {formatPercent(alert.percentUsed)}
                     </span>
@@ -139,7 +139,7 @@ export function DashboardContent({
                 ))}
               </div>
               {alerts.length > 3 && (
-                <Link href="/budget" className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-warning-700 hover:text-warning-800">
+                <Link href="/budget" className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-warning-700 dark:text-warning-400 hover:text-warning-800 dark:hover:text-warning-300">
                   View all alerts <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
@@ -151,20 +151,20 @@ export function DashboardContent({
       {/* Needs Review Banner */}
       {needsReviewCount > 0 && (
         <Link href="/transactions?needsReview=true" className="block">
-          <div className="card border-l-4 border-primary-500 bg-primary-50 hover:bg-primary-100 transition-colors">
+          <div className="card border-l-4 border-primary-500 bg-primary-50 dark:bg-primary-900/30 hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Receipt className="h-5 w-5 text-primary-600" />
+                <Receipt className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                 <div>
-                  <h3 className="font-semibold text-primary-800">
+                  <h3 className="font-semibold text-primary-800 dark:text-primary-300">
                     {needsReviewCount} transactions need review
                   </h3>
-                  <p className="text-sm text-primary-700">
+                  <p className="text-sm text-primary-700 dark:text-primary-400">
                     Click to categorize and organize
                   </p>
                 </div>
               </div>
-              <ArrowRight className="h-5 w-5 text-primary-600" />
+              <ArrowRight className="h-5 w-5 text-primary-600 dark:text-primary-400" />
             </div>
           </div>
         </Link>
@@ -204,7 +204,7 @@ export function DashboardContent({
           </div>
           <div className="space-y-3">
             {recentTransactions.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+              <div key={tx.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{tx.category?.icon || '📝'}</span>
                   <div>
@@ -308,7 +308,7 @@ function CategoryRow({
             )}
           </span>
         </div>
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
             className={cn(
               'h-full rounded-full transition-all',
@@ -338,13 +338,13 @@ function StatBox({
   color?: 'success' | 'warning' | 'danger';
 }) {
   return (
-    <div className="text-center p-3 rounded-lg bg-gray-50">
+    <div className="text-center p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
       <p
         className={cn(
           'text-2xl font-bold',
-          color === 'success' && 'text-success-600',
-          color === 'warning' && 'text-warning-600',
-          color === 'danger' && 'text-danger-600',
+          color === 'success' && 'text-success-600 dark:text-success-400',
+          color === 'warning' && 'text-warning-600 dark:text-warning-400',
+          color === 'danger' && 'text-danger-600 dark:text-danger-400',
           !color && 'text-gray-900 dark:text-white'
         )}
       >

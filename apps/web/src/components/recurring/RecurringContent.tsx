@@ -199,8 +199,8 @@ function TemplateRow({
       className={cn(
         'flex items-center gap-4 rounded-lg border px-4 py-3',
         !template.isActive
-          ? 'border-gray-200 bg-gray-50 opacity-60'
-          : 'border-gray-200'
+          ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 opacity-60'
+          : 'border-gray-200 dark:border-gray-700'
       )}
     >
       {/* Icon & Name */}

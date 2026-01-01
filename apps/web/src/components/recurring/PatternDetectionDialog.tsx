@@ -60,15 +60,15 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-lg shadow-xl">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Detected Recurring Patterns
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {isLoading
                   ? 'Analyzing your transactions...'
                   : `Found ${patterns.length} potential recurring transaction${patterns.length !== 1 ? 's' : ''}`}
@@ -76,7 +76,7 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             >
               <X className="h-5 w-5" />
             </button>
@@ -88,15 +88,15 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
           {isLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              <span className="ml-2 text-gray-500">Analyzing transactions...</span>
+              <span className="ml-2 text-gray-500 dark:text-gray-400">Analyzing transactions...</span>
             </div>
           )}
 
           {!isLoading && patterns.length === 0 && (
             <div className="text-center py-12">
-              <Sparkles className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500 font-medium">No recurring patterns detected</p>
-              <p className="text-sm text-gray-400 mt-1">
+              <Sparkles className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+              <p className="text-gray-500 dark:text-gray-400 font-medium">No recurring patterns detected</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                 Try adding more transactions or adjusting the detection settings
               </p>
             </div>
@@ -121,7 +121,7 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4">
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex justify-end gap-3">
             <button onClick={onClose} className="btn btn-outline">
               Close
@@ -170,10 +170,10 @@ function PatternCard({
 
   const confidenceColor =
     confidencePercent >= 80
-      ? 'text-success-700 bg-success-100 border-success-200'
+      ? 'text-success-700 dark:text-success-400 bg-success-100 dark:bg-success-900/30 border-success-200 dark:border-success-800'
       : confidencePercent >= 60
-      ? 'text-warning-700 bg-warning-100 border-warning-200'
-      : 'text-gray-700 bg-gray-100 border-gray-200';
+      ? 'text-warning-700 dark:text-warning-400 bg-warning-100 dark:bg-warning-900/30 border-warning-200 dark:border-warning-800'
+      : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600';
 
   const formatFrequency = () => {
     if (pattern.estimatedInterval === 1) {
@@ -196,16 +196,16 @@ function PatternCard({
   };
 
   return (
-    <div className="card p-0 overflow-hidden border border-gray-200">
+    <div className="card p-0 overflow-hidden border border-gray-200 dark:border-gray-700">
       {/* Header */}
       <div
-        className="p-4 hover:bg-gray-50 cursor-pointer"
+        className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
         onClick={onToggle}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-gray-900">{pattern.merchant}</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{pattern.merchant}</h3>
               <span
                 className={cn(
                   'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
@@ -215,7 +215,7 @@ function PatternCard({
                 {confidencePercent}% confidence
               </span>
             </div>
-            <p className="text-sm text-gray-500 mt-1">{pattern.reason}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{pattern.reason}</p>
           </div>
         </div>
 
@@ -224,26 +224,26 @@ function PatternCard({
           <div className="flex items-center gap-2 text-sm">
             <DollarSign className="h-4 w-4 text-gray-400" />
             <div>
-              <div className="font-medium text-gray-900">
+              <div className="font-medium text-gray-900 dark:text-white">
                 {formatCurrency(pattern.averageAmount)}
               </div>
-              <div className="text-xs text-gray-500">Average amount</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Average amount</div>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-gray-400" />
             <div>
-              <div className="font-medium text-gray-900 capitalize">
+              <div className="font-medium text-gray-900 dark:text-white capitalize">
                 {formatFrequency()}
               </div>
-              <div className="text-xs text-gray-500">Frequency</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Frequency</div>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <TrendingUp className="h-4 w-4 text-gray-400" />
             <div>
-              <div className="font-medium text-gray-900">{pattern.occurrences}</div>
-              <div className="text-xs text-gray-500">Occurrences</div>
+              <div className="font-medium text-gray-900 dark:text-white">{pattern.occurrences}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Occurrences</div>
             </div>
           </div>
         </div>
@@ -251,24 +251,24 @@ function PatternCard({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="border-t border-gray-200 bg-gray-50 p-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
             Recent Transactions ({pattern.transactions.length})
           </h4>
           <div className="space-y-2 mb-4">
             {pattern.transactions.slice(-5).map((tx) => (
               <div
                 key={tx.id}
-                className="flex items-center justify-between text-sm bg-white rounded px-3 py-2"
+                className="flex items-center justify-between text-sm bg-white dark:bg-gray-800 rounded px-3 py-2"
               >
                 <div>
-                  <span className="text-gray-600">
+                  <span className="text-gray-600 dark:text-gray-300">
                     {new Date(tx.date).toLocaleDateString()}
                   </span>
                   <span className="text-gray-400 mx-2">•</span>
-                  <span className="text-gray-900">{tx.description}</span>
+                  <span className="text-gray-900 dark:text-white">{tx.description}</span>
                 </div>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-gray-900 dark:text-white">
                   {formatCurrency(tx.amount)}
                 </span>
               </div>
