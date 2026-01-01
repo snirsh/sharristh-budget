@@ -197,10 +197,45 @@ export const dashboardRouter = router({
         };
       });
 
+      // Format KPIs on server
+      const formattedKpis = {
+        ...kpis,
+        formattedIncome: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(kpis.totalIncome),
+        formattedExpenses: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(kpis.totalExpenses),
+        formattedSavings: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(kpis.netSavings),
+        formattedSavingsRate: new Intl.NumberFormat('en-US', {
+          style: 'percent',
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        }).format(kpis.savingsRate),
+      };
+
+      // Format recent transactions on server
+      const formattedRecentTransactions = recentTransactions.map(tx => ({
+        ...tx,
+        formattedAmount: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(Math.abs(tx.amount)),
+        formattedDate: new Intl.DateTimeFormat('en-US', {
+          month: 'short',
+          day: 'numeric',
+        }).format(new Date(tx.date)),
+      }));
+
       return {
         month: input.month,
         overview: {
-          kpis,
+          kpis: formattedKpis,
           budgetSummary: {
             total: budgetEvaluations.length,
             onTrack: budgetEvaluations.filter((e) => e.status === 'ok').length,
@@ -216,15 +251,28 @@ export const dashboardRouter = router({
             actualAmount: a.actualAmount,
             plannedAmount: a.budget.plannedAmount,
             limitAmount: a.budget.limitAmount,
+            // Format on server
+            formattedActual: new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(a.actualAmount),
+            formattedPlanned: new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(a.budget.plannedAmount),
           })),
           varyingExpenses: {
             count: varyingExpenses.length,
             total: varyingExpenses.reduce((sum, t) => sum + t.amount, 0),
+            formattedTotal: new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(varyingExpenses.reduce((sum, t) => sum + t.amount, 0)),
           },
           needsReviewCount,
         },
         categoryBreakdown,
-        recentTransactions,
+        recentTransactions: formattedRecentTransactions,
       };
     }),
 
