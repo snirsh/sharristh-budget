@@ -357,7 +357,23 @@ export const TransactionsContent = ({
             {transactions.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
-                  No transactions found
+                  <div className="space-y-2">
+                    <p>No transactions found for {formatMonth(currentMonth)}</p>
+                    <p className="text-sm">
+                      Try navigating to a previous month using the arrows above, or{' '}
+                      <button
+                        onClick={() => navigateMonth('prev')}
+                        className="text-primary-500 hover:underline"
+                      >
+                        go to {formatMonth((() => {
+                          const [year, monthNum] = currentMonth.split('-').map(Number);
+                          const date = new Date(year!, monthNum! - 1);
+                          date.setMonth(date.getMonth() - 1);
+                          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                        })())}
+                      </button>
+                    </p>
+                  </div>
                 </td>
               </tr>
             )}
