@@ -36,28 +36,11 @@ export const prisma =
     },
   });
 
-// Log slow queries in production (>200ms threshold)
-// Skip during build/compile time to avoid initialization errors
-if (process.env.NODE_ENV === 'production' && typeof prisma.$use === 'function') {
-  try {
-    prisma.$use(async (params, next) => {
-      const start = Date.now();
-      const result = await next(params);
-      const duration = Date.now() - start;
-
-      if (duration > 200) {
-        console.warn(
-          `[Prisma Slow Query] ${params.model}.${params.action} took ${duration}ms`
-        );
-      }
-
-      return result;
-    });
-  } catch (error) {
-    // Middleware setup failed - likely during build time, safe to ignore
-    console.warn('[Prisma] Middleware setup skipped:', error);
-  }
-}
+// Note: Prisma middleware ($use) cannot be used here as it causes build failures
+// in Next.js edge/build environments. Slow query detection is handled via:
+// 1. Prisma's built-in query logging (configured above)
+// 2. The monitoring utilities in packages/db/src/monitoring.ts
+// 3. Manual query wrapping with timedQuery() for critical operations
 
 globalForPrisma.prisma = prisma;
 
