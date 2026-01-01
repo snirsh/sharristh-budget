@@ -151,11 +151,15 @@ class OneZeroAdapter implements ScraperAdapter {
         hasEmail: !!scrapeOptions.email,
         hasPassword: !!scrapeOptions.password,
         hasOtpToken: !!scrapeOptions.otpLongTermToken,
+        emailLength: scrapeOptions.email?.length || 0,
+        passwordLength: scrapeOptions.password?.length || 0,
       });
 
       try {
         // Cast to any to handle extended options
+        console.log('[OneZero] About to call scraper.scrape()...');
         const result = await scraper.scrape(scrapeOptions as Parameters<typeof scraper.scrape>[0]);
+        console.log('[OneZero] scraper.scrape() returned');
 
         console.log('[OneZero] Scrape result success:', result.success);
         if (!result.success) {
@@ -403,15 +407,30 @@ class OneZeroAdapter implements ScraperAdapter {
 
       console.log('[OneZero] Successfully obtained long-term token, length:', tokenResult.longTermTwoFactorAuthToken.length);
 
+      // Note: We can't validate email/password during 2FA completion because
+      // the library's login() method would close the browser and we'd lose state.
+      // The credentials will be validated during the first sync.
+      // If the sync fails with an auth error, the user will need to check their credentials.
+
       return {
         success: true,
         longTermToken: tokenResult.longTermTwoFactorAuthToken,
       };
     } catch (error) {
       console.error('[OneZero] Error completing 2FA:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to complete 2FA';
+      
+      // Check if this is a session-related error (common on serverless)
+      if (errorMessage.includes('otpContext') || errorMessage.includes('undefined')) {
+        return {
+          success: false,
+          errorMessage: 'Session state lost. This can happen on serverless platforms. Please try the 2FA process again.',
+        };
+      }
+      
       return {
         success: false,
-        errorMessage: error instanceof Error ? error.message : 'Failed to complete 2FA',
+        errorMessage,
       };
     }
   }
