@@ -9,6 +9,7 @@ import {
   bankConnectionsRouter,
   accountsRouter,
   demoRouter,
+  performanceRouter,
 } from './routers';
 
 /**
@@ -24,6 +25,7 @@ export const appRouter = router({
   bankConnections: bankConnectionsRouter,
   accounts: accountsRouter,
   demo: demoRouter,
+  performance: performanceRouter,
 });
 
 /**
