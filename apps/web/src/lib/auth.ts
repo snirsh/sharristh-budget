@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import NextAuth, { type NextAuthResult } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import Passkey from 'next-auth/providers/passkey';
 import { prisma } from '@sfam/db';
@@ -249,9 +249,9 @@ const authConfig = NextAuth({
   trustHost: true,
 });
 
-// Export auth functions
-export const handlers = authConfig.handlers;
-export const auth = authConfig.auth;
+// Export auth functions with explicit types for tsgo compatibility
+export const handlers: NextAuthResult['handlers'] = authConfig.handlers;
+export const auth: NextAuthResult['auth'] = authConfig.auth;
 
 // Export auth type for use in other files
 export type { Session } from 'next-auth';

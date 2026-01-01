@@ -33,8 +33,9 @@ export function AddBudgetDialog({
     includeInactive: false,
   });
 
+  type Category = (typeof categories)[number];
   const budgetableCategories = categories.filter(
-    (cat) => cat.type === 'expected' || cat.type === 'varying'
+    (cat: Category) => cat.type === 'expected' || cat.type === 'varying'
   );
 
   const createMutation = trpc.budgets.upsert.useMutation({
@@ -42,7 +43,7 @@ export function AddBudgetDialog({
       utils.budgets.forMonth.invalidate(currentMonth);
       handleClose();
     },
-    onError: (error) => {
+    onError: (error: { message?: string }) => {
       setErrors({ form: error.message || 'Failed to create budget' });
     },
   });
@@ -137,7 +138,7 @@ export function AddBudgetDialog({
               )}
             >
               <option value="">Select category...</option>
-              {budgetableCategories.map((cat) => (
+              {budgetableCategories.map((cat: Category) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.name}
                 </option>

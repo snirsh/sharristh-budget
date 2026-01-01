@@ -91,6 +91,7 @@ export interface SyncResult {
   success: boolean;
   transactionsFound: number;
   transactionsNew: number;
+  errorType?: string;
   errorMessage?: string;
 }
 

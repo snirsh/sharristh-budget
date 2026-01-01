@@ -301,6 +301,14 @@ export const bankConnectionsRouter = router({
         );
 
         if (!result.success) {
+          // Check if this is an authentication error that requires re-authentication
+          const isAuthError = 
+            result.errorType === 'AUTH_REQUIRED' ||
+            result.errorMessage?.includes('re-authenticate') ||
+            result.errorMessage?.includes('expired') ||
+            result.errorMessage?.includes('idToken') ||
+            result.errorMessage?.includes('Cannot read properties of undefined');
+
           // Update sync job with error
           await ctx.prisma.syncJob.update({
             where: { id: syncJob.id },
@@ -311,16 +319,19 @@ export const bankConnectionsRouter = router({
             },
           });
 
+          // If auth error, mark connection as needing 2FA re-setup
           await ctx.prisma.bankConnection.update({
             where: { id: connection.id },
             data: {
               lastSyncAt: new Date(),
-              lastSyncStatus: 'error',
+              lastSyncStatus: isAuthError ? 'auth_required' : 'error',
+              // Deactivate connection if auth is required
+              ...(isAuthError ? { isActive: false } : {}),
             },
           });
 
           throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
+            code: isAuthError ? 'UNAUTHORIZED' : 'INTERNAL_SERVER_ERROR',
             message: result.errorMessage || 'Sync failed',
           });
         }
@@ -447,6 +458,14 @@ export const bankConnectionsRouter = router({
           );
 
           if (!result.success) {
+            // Check if this is an authentication error that requires re-authentication
+            const isAuthError = 
+              result.errorType === 'AUTH_REQUIRED' ||
+              result.errorMessage?.includes('re-authenticate') ||
+              result.errorMessage?.includes('expired') ||
+              result.errorMessage?.includes('idToken') ||
+              result.errorMessage?.includes('Cannot read properties of undefined');
+
             await ctx.prisma.syncJob.update({
               where: { id: syncJob.id },
               data: {
@@ -456,11 +475,14 @@ export const bankConnectionsRouter = router({
               },
             });
 
+            // If auth error, mark connection as needing 2FA re-setup
             await ctx.prisma.bankConnection.update({
               where: { id: connection.id },
               data: {
                 lastSyncAt: new Date(),
-                lastSyncStatus: 'error',
+                lastSyncStatus: isAuthError ? 'auth_required' : 'error',
+                // Deactivate connection if auth is required
+                ...(isAuthError ? { isActive: false } : {}),
               },
             });
 
@@ -468,7 +490,9 @@ export const bankConnectionsRouter = router({
               connectionId: connection.id,
               displayName: connection.displayName,
               success: false,
-              errorMessage: result.errorMessage,
+              errorMessage: isAuthError 
+                ? `${result.errorMessage} Connection has been deactivated - please re-authenticate.`
+                : result.errorMessage,
             });
             continue;
           }

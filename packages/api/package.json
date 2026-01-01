@@ -13,9 +13,9 @@
     }
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@sfam/db": "workspace:*",
@@ -27,8 +27,7 @@
   },
   "devDependencies": {
     "@sfam/config": "workspace:*",
-    "tsup": "^8.3.5",
+    "tsdown": "^0.18.4",
     "typescript": "^5.7.2"
   }
 }
-

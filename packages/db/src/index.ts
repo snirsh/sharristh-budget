@@ -1,6 +1,5 @@
 export { prisma } from './client';
-export type { PrismaClient } from './client';
 
-// Re-export all Prisma types
+// Re-export all Prisma types and PrismaClient class
 export * from '@prisma/client';
 

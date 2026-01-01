@@ -78,8 +78,9 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
     }
   };
 
-  const totalPlanned = budgets.reduce((sum, b) => sum + b.budget.plannedAmount, 0);
-  const totalActual = budgets.reduce((sum, b) => sum + b.actualAmount, 0);
+  type BudgetEvaluation = (typeof budgets)[number];
+  const totalPlanned = budgets.reduce((sum: number, b: BudgetEvaluation) => sum + b.budget.plannedAmount, 0);
+  const totalActual = budgets.reduce((sum: number, b: BudgetEvaluation) => sum + b.actualAmount, 0);
 
   return (
     <div className="space-y-6 animate-in">
@@ -198,7 +199,7 @@ export function BudgetContent({ month: initialMonth }: BudgetContentProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-            {budgets.map((evaluation) => {
+            {budgets.map((evaluation: BudgetEvaluation) => {
               const isEditing = editingBudget === evaluation.budget.categoryId;
               const progressWidth = Math.min(evaluation.percentUsed * 100, 100);
 

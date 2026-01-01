@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { View, Text, Pressable, type ViewProps } from 'react-native';
 import { cn } from '../utils';
 

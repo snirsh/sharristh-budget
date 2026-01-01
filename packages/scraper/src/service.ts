@@ -96,12 +96,13 @@ export class ScraperService {
     console.log(`[ScraperService] Scrape result: success=${scrapeResult.success}, accounts=${scrapeResult.accounts?.length || 0}`);
     
     if (!scrapeResult.success || !scrapeResult.accounts) {
-      console.error(`[ScraperService] Scrape failed: ${scrapeResult.errorMessage}`);
+      console.error(`[ScraperService] Scrape failed: ${scrapeResult.errorMessage} (type: ${scrapeResult.errorType})`);
       return {
         result: {
           success: false,
           transactionsFound: 0,
           transactionsNew: 0,
+          errorType: scrapeResult.errorType,
           errorMessage: scrapeResult.errorMessage || 'Unknown scrape error',
         },
         transactions: [],

@@ -13,11 +13,11 @@
     }
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "israeli-bank-scrapers": "^6.3.7",
@@ -26,9 +26,8 @@
   "devDependencies": {
     "@sfam/config": "workspace:*",
     "@types/node": "^20.17.10",
-    "tsup": "^8.3.5",
+    "tsdown": "^0.18.4",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
 }
-
