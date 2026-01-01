@@ -1,2 +1,2 @@
 # Run typecheck on changed packages (excluding ui and mobile with pre-existing errors)
-pnpm exec turbo typecheck --filter=!@sfam/ui --filter=!@sfam/mobile
+pnpm exec turbo typecheck --filter=!@sfam/ui --filter=!@sfam/mobile --ui=stream
