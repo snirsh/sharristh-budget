@@ -28,21 +28,17 @@ class IsracardAdapter implements ScraperAdapter {
     console.log('[Isracard] Card digits:', creds.card6Digits);
 
     try {
-      // Get Chromium configuration for Vercel/production
+      // Set Chromium path for Vercel/production via environment variable
       const launchOptions = await getChromiumLaunchOptions();
+      if (launchOptions.executablePath) {
+        process.env.PUPPETEER_EXECUTABLE_PATH = launchOptions.executablePath;
+      }
 
       const scraper = createScraper({
         companyId: CompanyTypes.isracard,
         startDate,
         combineInstallments: false,
         showBrowser: false,
-        ...(launchOptions.executablePath && {
-          browser: {
-            executablePath: launchOptions.executablePath,
-            args: launchOptions.args,
-            headless: launchOptions.headless,
-          },
-        }),
       });
 
       console.log('[Isracard] Calling scraper.scrape()...');

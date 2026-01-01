@@ -63,21 +63,17 @@ class OneZeroAdapter implements ScraperAdapter {
     console.log('[OneZero] Email:', creds.email?.substring(0, 3) + '***');
 
     try {
-      // Get Chromium configuration for Vercel/production
+      // Set Chromium path for Vercel/production via environment variable
       const launchOptions = await getChromiumLaunchOptions();
+      if (launchOptions.executablePath) {
+        process.env.PUPPETEER_EXECUTABLE_PATH = launchOptions.executablePath;
+      }
 
       const scraper = createScraper({
         companyId: CompanyTypes.oneZero,
         startDate,
         combineInstallments: false,
         showBrowser: false,
-        ...(launchOptions.executablePath && {
-          browser: {
-            executablePath: launchOptions.executablePath,
-            args: launchOptions.args,
-            headless: launchOptions.headless,
-          },
-        }),
       });
 
       const scrapeOptions: OneZeroScrapeOptions = {
@@ -224,8 +220,11 @@ class OneZeroAdapter implements ScraperAdapter {
     try {
       console.log(`[OneZero] Initiating 2FA with phone: ${phoneNumber}`);
 
-      // Get Chromium configuration for Vercel/production
+      // Set Chromium path for Vercel/production via environment variable
       const launchOptions = await getChromiumLaunchOptions();
+      if (launchOptions.executablePath) {
+        process.env.PUPPETEER_EXECUTABLE_PATH = launchOptions.executablePath;
+      }
 
       // Create a scraper instance - this maintains the internal state needed for 2FA
       const scraper = createScraper({
@@ -233,13 +232,6 @@ class OneZeroAdapter implements ScraperAdapter {
         startDate: new Date(), // Not used for 2FA, but required
         combineInstallments: false,
         showBrowser: false,
-        ...(launchOptions.executablePath && {
-          browser: {
-            executablePath: launchOptions.executablePath,
-            args: launchOptions.args,
-            headless: launchOptions.headless,
-          },
-        }),
       });
 
       // Use the library's built-in method to trigger 2FA
