@@ -150,10 +150,27 @@ export function ConnectionsContent() {
         return <CheckCircle className="h-5 w-5 text-success-500" />;
       case 'error':
         return <XCircle className="h-5 w-5 text-error-500" />;
+      case 'auth_required':
+        return <KeyRound className="h-5 w-5 text-warning-500" />;
       case 'pending':
         return <Clock className="h-5 w-5 text-warning-500" />;
       default:
         return <Clock className="h-5 w-5 text-gray-400" />;
+    }
+  };
+
+  const getStatusLabel = (status: string | null) => {
+    switch (status) {
+      case 'auth_required':
+        return 'Re-auth required';
+      case 'success':
+        return 'Success';
+      case 'error':
+        return 'Error';
+      case 'pending':
+        return 'Pending';
+      default:
+        return 'Never synced';
     }
   };
 
@@ -543,13 +560,14 @@ export function ConnectionsContent() {
                     {getStatusIcon(connection.lastSyncStatus)}
                     <span
                       className={cn(
-                        'text-sm capitalize',
+                        'text-sm',
                         connection.lastSyncStatus === 'success' && 'text-success-600 dark:text-success-400',
                         connection.lastSyncStatus === 'error' && 'text-error-600 dark:text-error-400',
+                        connection.lastSyncStatus === 'auth_required' && 'text-warning-600 dark:text-warning-400',
                         !connection.lastSyncStatus && 'text-gray-400 dark:text-gray-500'
                       )}
                     >
-                      {connection.lastSyncStatus || 'Never synced'}
+                      {getStatusLabel(connection.lastSyncStatus)}
                     </span>
                   </div>
                 </td>
@@ -560,7 +578,24 @@ export function ConnectionsContent() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    {connection.isActive && (
+                    {/* Show Re-authenticate button for auth_required status */}
+                    {connection.lastSyncStatus === 'auth_required' && connection.requiresTwoFactor && (
+                      <button
+                        onClick={() => {
+                          setTwoFactorConnectionId(connection.id);
+                          setShowAddForm(true);
+                          initTwoFactorMutation.mutate({
+                            connectionId: connection.id,
+                          });
+                        }}
+                        className="btn btn-sm btn-warning"
+                      >
+                        <KeyRound className="h-4 w-4 mr-1" />
+                        Re-authenticate
+                      </button>
+                    )}
+                    {/* Show Sync button for active connections without auth issues */}
+                    {connection.isActive && connection.lastSyncStatus !== 'auth_required' && (
                       <button
                         onClick={() =>
                           syncMutation.mutate({ connectionId: connection.id })
@@ -576,6 +611,7 @@ export function ConnectionsContent() {
                         )}
                       </button>
                     )}
+                    {/* Show Setup 2FA for inactive connections */}
                     {!connection.isActive && connection.requiresTwoFactor && (
                       <button
                         onClick={() => {

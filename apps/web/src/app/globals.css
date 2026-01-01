@@ -45,6 +45,10 @@
     @apply btn bg-danger-500 text-white hover:bg-danger-600 focus:ring-danger-500;
   }
 
+  .btn-warning {
+    @apply btn bg-warning-500 text-white hover:bg-warning-600 focus:ring-warning-500;
+  }
+
   .btn-ghost {
     @apply btn bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-gray-500;
   }

@@ -319,14 +319,14 @@ export const bankConnectionsRouter = router({
             },
           });
 
-          // If auth error, mark connection as needing 2FA re-setup
+          // If auth error, mark connection as needing re-auth but keep it active
+          // This allows users to re-authenticate without deleting and recreating
           await ctx.prisma.bankConnection.update({
             where: { id: connection.id },
             data: {
               lastSyncAt: new Date(),
               lastSyncStatus: isAuthError ? 'auth_required' : 'error',
-              // Deactivate connection if auth is required
-              ...(isAuthError ? { isActive: false } : {}),
+              // Keep isActive true - the status indicates re-auth needed
             },
           });
 
@@ -475,14 +475,13 @@ export const bankConnectionsRouter = router({
               },
             });
 
-            // If auth error, mark connection as needing 2FA re-setup
+            // If auth error, mark connection as needing re-auth but keep it active
             await ctx.prisma.bankConnection.update({
               where: { id: connection.id },
               data: {
                 lastSyncAt: new Date(),
                 lastSyncStatus: isAuthError ? 'auth_required' : 'error',
-                // Deactivate connection if auth is required
-                ...(isAuthError ? { isActive: false } : {}),
+                // Keep isActive true - the status indicates re-auth needed
               },
             });
 
@@ -491,7 +490,7 @@ export const bankConnectionsRouter = router({
               displayName: connection.displayName,
               success: false,
               errorMessage: isAuthError 
-                ? `${result.errorMessage} Connection has been deactivated - please re-authenticate.`
+                ? `${result.errorMessage} Please re-authenticate this connection.`
                 : result.errorMessage,
             });
             continue;
