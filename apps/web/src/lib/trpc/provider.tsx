@@ -32,6 +32,18 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       links: [
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
+          maxURLLength: 2048, // Prevent overly long URLs
+
+          // Batch requests within 10ms window for better performance
+          // This groups multiple queries into a single HTTP request
+          // @ts-expect-error - batchingInterval exists but types may not be updated
+          batchingInterval: 10,
+
+          headers() {
+            return {
+              'x-trpc-source': 'client',
+            };
+          },
         }),
       ],
     })

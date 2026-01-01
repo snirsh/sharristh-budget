@@ -17,12 +17,15 @@ import { trpc } from '@/lib/trpc/client';
 export const DashboardContent = () => {
   const { currentMonth } = useMonth();
 
-  const { data: overview } = trpc.dashboard.overview.useQuery(currentMonth);
-  const { data: categoryBreakdown = [] } = trpc.dashboard.categoryBreakdown.useQuery(currentMonth);
-  const { data: recentTransactions = [] } = trpc.dashboard.recentTransactions.useQuery({ 
-    limit: 5,
+  // Use consolidated endpoint for better performance (1 request instead of 3)
+  const { data: dashboardData } = trpc.dashboard.getFullDashboard.useQuery({
     month: currentMonth,
+    recentLimit: 5,
   });
+
+  const overview = dashboardData?.overview;
+  const categoryBreakdown = dashboardData?.categoryBreakdown ?? [];
+  const recentTransactions = dashboardData?.recentTransactions ?? [];
 
   const kpis = overview?.kpis ?? { totalIncome: 0, totalExpenses: 0, netSavings: 0, savingsRate: 0 };
   const budgetSummary = overview?.budgetSummary ?? { total: 0, onTrack: 0, nearingLimit: 0, exceededSoft: 0, exceededHard: 0 };

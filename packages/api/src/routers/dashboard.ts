@@ -54,6 +54,181 @@ function toTransactions<T extends {
 
 export const dashboardRouter = router({
   /**
+   * Get full dashboard data in a single request (consolidated for performance)
+   */
+  getFullDashboard: protectedProcedure
+    .input(z.object({
+      month: monthSchema,
+      recentLimit: z.number().default(5),
+    }))
+    .query(async ({ ctx, input }) => {
+      const [year, monthNum] = input.month.split('-').map(Number);
+      const startDate = new Date(year!, monthNum! - 1, 1);
+      const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
+
+      // Run all dashboard queries in parallel for maximum performance
+      const [
+        transactions,
+        budgets,
+        varyingCategory,
+        needsReviewCount,
+        categories,
+        recentTransactions,
+      ] = await Promise.all([
+        // Transactions for the month
+        ctx.prisma.transaction.findMany({
+          where: {
+            householdId: ctx.householdId,
+            isIgnored: false,
+            date: { gte: startDate, lte: endDate },
+          },
+          include: {
+            category: {
+              select: { id: true, name: true, icon: true, color: true, type: true },
+            },
+          },
+        }),
+        // Budgets for the month
+        ctx.prisma.budget.findMany({
+          where: { householdId: ctx.householdId, month: input.month },
+          include: { category: true },
+        }),
+        // Varying category
+        ctx.prisma.category.findFirst({
+          where: { householdId: ctx.householdId, type: 'varying' },
+        }),
+        // Needs review count
+        ctx.prisma.transaction.count({
+          where: {
+            householdId: ctx.householdId,
+            needsReview: true,
+            isIgnored: false,
+          },
+        }),
+        // Categories with budgets for breakdown
+        ctx.prisma.category.findMany({
+          where: {
+            householdId: ctx.householdId,
+            isActive: true,
+            type: { in: ['expected', 'varying'] },
+          },
+          include: {
+            budgets: { where: { month: input.month } },
+          },
+        }),
+        // Recent transactions
+        ctx.prisma.transaction.findMany({
+          where: {
+            householdId: ctx.householdId,
+            isIgnored: false,
+            date: { gte: startDate, lte: endDate },
+          },
+          include: {
+            category: {
+              select: { id: true, name: true, icon: true, color: true, type: true },
+            },
+            account: {
+              select: { id: true, name: true, icon: true },
+            },
+          },
+          orderBy: { date: 'desc' },
+          take: input.recentLimit,
+        }),
+      ]);
+
+      // Calculate KPIs
+      const domainTransactions = toTransactions(transactions);
+      const kpis = calculateMonthlyKPIs(domainTransactions, input.month);
+
+      // Calculate budget evaluations
+      const budgetEvaluations = budgets.map((budget) => {
+        const actualAmount = calculateCategorySpending(
+          domainTransactions,
+          budget.categoryId,
+          input.month
+        );
+        return {
+          ...evaluateBudgetStatus(toBudget(budget), actualAmount),
+          category: budget.category,
+        };
+      });
+
+      // Get alerts
+      const alerts = getAlertBudgets(budgetEvaluations);
+
+      // Get varying expenses
+      const varyingExpenses = transactions.filter(
+        (t) =>
+          t.direction === 'expense' &&
+          (t.categoryId === varyingCategory?.id || t.categoryId === null)
+      );
+
+      // Calculate category breakdown
+      const categoryBreakdown = categories.map((category) => {
+        const categoryTransactions = transactions.filter((t) => t.categoryId === category.id && t.direction === 'expense');
+        const actualAmount = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
+        const budget = category.budgets[0];
+
+        let status = 'ok';
+        let percentUsed = 0;
+
+        if (budget) {
+          const evaluation = evaluateBudgetStatus(toBudget(budget), actualAmount);
+          status = evaluation.status;
+          percentUsed = evaluation.percentUsed;
+        } else if (actualAmount > 0) {
+          status = 'no_budget';
+        }
+
+        return {
+          category: {
+            id: category.id,
+            name: category.name,
+            icon: category.icon,
+            color: category.color,
+            type: category.type,
+          },
+          plannedAmount: budget?.plannedAmount ?? 0,
+          limitAmount: budget?.limitAmount ?? null,
+          actualAmount,
+          percentUsed,
+          status,
+          transactionCount: categoryTransactions.length,
+        };
+      });
+
+      return {
+        month: input.month,
+        overview: {
+          kpis,
+          budgetSummary: {
+            total: budgetEvaluations.length,
+            onTrack: budgetEvaluations.filter((e) => e.status === 'ok').length,
+            nearingLimit: budgetEvaluations.filter((e) => e.status === 'nearing_limit').length,
+            exceededSoft: budgetEvaluations.filter((e) => e.status === 'exceeded_soft').length,
+            exceededHard: budgetEvaluations.filter((e) => e.status === 'exceeded_hard').length,
+          },
+          alerts: alerts.map((a) => ({
+            categoryId: a.budget.categoryId,
+            categoryName: budgets.find((b) => b.categoryId === a.budget.categoryId)?.category.name,
+            status: a.status,
+            percentUsed: a.percentUsed,
+            actualAmount: a.actualAmount,
+            plannedAmount: a.budget.plannedAmount,
+            limitAmount: a.budget.limitAmount,
+          })),
+          varyingExpenses: {
+            count: varyingExpenses.length,
+            total: varyingExpenses.reduce((sum, t) => sum + t.amount, 0),
+          },
+          needsReviewCount,
+        },
+        categoryBreakdown,
+        recentTransactions,
+      };
+    }),
+
+  /**
    * Get dashboard overview for a month
    */
   overview: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
