@@ -2,5 +2,4 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 # Run full build including DTS generation to catch strict type errors
-echo "Running full build to catch DTS type errors..."
 pnpm build
