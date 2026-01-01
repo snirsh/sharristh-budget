@@ -37,6 +37,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@prisma/nextjs-monorepo-workaround-plugin": "^5.22.0",
     "@sfam/config": "workspace:*",
     "@types/node": "^22.10.2",
     "@types/node-cron": "^3.0.11",
