@@ -8,29 +8,29 @@ import type {
   TwoFactorCompleteResult,
   ScrapedAccount,
 } from '../types';
-import { getChromiumLaunchOptions } from '../chromium-config';
+import { getScraperBrowserOptions } from '../chromium-config';
 
 // Extended scrape options to include long-term 2FA token
 // The library expects 'otpLongTermToken' for the long-term token
 // and 'email' (not 'username') for the email
-interface OneZeroScrapeOptions {
+type OneZeroScrapeOptions = {
   email: string;
   password: string;
   otpLongTermToken?: string;
-}
+};
 
 // Store pending 2FA scraper instances by session ID
 // We need to keep the scraper instance alive to maintain the otpContext state
-interface Pending2FASession {
+type Pending2FASession = {
   scraper: ReturnType<typeof createScraper>;
   createdAt: Date;
   phoneNumber: string;
-}
+};
 
 const pending2FASessions = new Map<string, Pending2FASession>();
 
 // Clean up old sessions (older than 10 minutes)
-function cleanupStaleSessions() {
+const cleanupStaleSessions = () => {
   const now = new Date();
   const maxAge = 10 * 60 * 1000; // 10 minutes
 
@@ -40,7 +40,39 @@ function cleanupStaleSessions() {
       pending2FASessions.delete(sessionId);
     }
   }
-}
+};
+
+/**
+ * Check if a token looks valid and has expected structure
+ */
+const validateToken = (token: string): { valid: boolean; reason?: string } => {
+  if (!token || token.length < 10) {
+    return { valid: false, reason: 'Token is empty or too short' };
+  }
+
+  // If it's a JSON token, validate structure
+  if (token.startsWith('{')) {
+    try {
+      const tokenObj = JSON.parse(token);
+      
+      // The library expects specific fields in the token
+      // Check for common OAuth token fields
+      if (!tokenObj.idToken && !tokenObj.accessToken && !tokenObj.refreshToken) {
+        return { 
+          valid: false, 
+          reason: `Token JSON missing expected fields. Has: ${Object.keys(tokenObj).join(', ')}` 
+        };
+      }
+      
+      return { valid: true };
+    } catch {
+      return { valid: false, reason: 'Token looks like JSON but failed to parse' };
+    }
+  }
+
+  // Non-JSON tokens are assumed valid (could be JWT or other format)
+  return { valid: true };
+};
 
 /**
  * OneZero Bank Adapter
@@ -62,63 +94,58 @@ class OneZeroAdapter implements ScraperAdapter {
     console.log('[OneZero] Has longTermToken:', !!longTermToken);
     console.log('[OneZero] Email:', creds.email?.substring(0, 3) + '***');
 
-    try {
-      // Set Chromium path for Vercel/production via environment variable
-      const launchOptions = await getChromiumLaunchOptions();
-      if (launchOptions.executablePath) {
-        process.env.PUPPETEER_EXECUTABLE_PATH = launchOptions.executablePath;
-      }
+    // Validate token before attempting scrape
+    if (!longTermToken) {
+      console.warn('[OneZero] No long-term token available - this will require interactive OTP which is not supported in this flow');
+      return {
+        success: false,
+        errorType: 'AUTH_REQUIRED',
+        errorMessage: 'No long-term token available. Please complete 2FA setup first.',
+      };
+    }
 
+    // Validate token structure
+    const tokenValidation = validateToken(longTermToken);
+    if (!tokenValidation.valid) {
+      console.error('[OneZero] Token validation failed:', tokenValidation.reason);
+      return {
+        success: false,
+        errorType: 'AUTH_REQUIRED',
+        errorMessage: `Invalid 2FA token: ${tokenValidation.reason}. Please re-authenticate.`,
+      };
+    }
+
+    try {
+      // Get browser options optimized for Vercel/serverless environments
+      const browserOptions = await getScraperBrowserOptions();
+
+      console.log('[OneZero] Browser options:', {
+        hasExecutablePath: !!browserOptions.executablePath,
+        argsCount: browserOptions.args?.length || 0,
+        showBrowser: browserOptions.showBrowser,
+      });
+
+      // Create scraper with browser options
       const scraper = createScraper({
         companyId: CompanyTypes.oneZero,
         startDate,
         combineInstallments: false,
-        showBrowser: false,
+        showBrowser: browserOptions.showBrowser ?? false,
+        executablePath: browserOptions.executablePath,
+        args: browserOptions.args,
       });
 
       const scrapeOptions: OneZeroScrapeOptions = {
         email: creds.email,
         password: creds.password,
+        otpLongTermToken: longTermToken,
       };
 
-      // Use long-term token if available (library expects 'otpLongTermToken')
-      if (longTermToken) {
-        console.log('[OneZero] Using long-term OTP token');
-        console.log('[OneZero] Token length:', longTermToken.length);
-        console.log('[OneZero] Token preview:', longTermToken.substring(0, 20) + '...');
-
-        // Try parsing token if it looks like JSON
-        if (longTermToken.startsWith('{')) {
-          try {
-            const tokenObj = JSON.parse(longTermToken);
-            console.log('[OneZero] Token is JSON object with keys:', Object.keys(tokenObj));
-
-            // Use the token directly if it has expected properties
-            if (tokenObj.idToken || tokenObj.accessToken) {
-              scrapeOptions.otpLongTermToken = longTermToken;
-            } else {
-              console.error('[OneZero] Token JSON missing expected properties:', tokenObj);
-              return {
-                success: false,
-                errorType: 'AUTH_REQUIRED',
-                errorMessage: 'Invalid token format. Please re-authenticate.',
-              };
-            }
-          } catch (e) {
-            console.error('[OneZero] Failed to parse token as JSON:', e);
-            scrapeOptions.otpLongTermToken = longTermToken;
-          }
-        } else {
-          scrapeOptions.otpLongTermToken = longTermToken;
-        }
-      } else {
-        console.warn('[OneZero] No long-term token available - this will require interactive OTP which is not supported in this flow');
-        return {
-          success: false,
-          errorType: 'AUTH_REQUIRED',
-          errorMessage: 'No long-term token available. Please complete 2FA setup first.',
-        };
-      }
+      console.log('[OneZero] Token details:', {
+        length: longTermToken.length,
+        isJson: longTermToken.startsWith('{'),
+        preview: longTermToken.substring(0, 30) + '...',
+      });
 
       console.log('[OneZero] Calling scraper.scrape() with options:', {
         hasEmail: !!scrapeOptions.email,
@@ -134,9 +161,19 @@ class OneZeroAdapter implements ScraperAdapter {
         if (!result.success) {
           console.error('[OneZero] Scrape failed:', result.errorType, result.errorMessage);
 
-          // Add helpful message for potential token expiration
+          // Detect token-related errors and provide helpful message
           const errorMsg = result.errorMessage || 'Authentication failed';
-          const enhancedMessage = `${errorMsg}. If authentication continues to fail, your 2FA token may have expired - please re-authenticate.`;
+          const isTokenError = 
+            errorMsg.includes('idToken') || 
+            errorMsg.includes('token') || 
+            errorMsg.includes('auth') ||
+            errorMsg.includes('undefined') ||
+            result.errorType === 'INVALID_PASSWORD' ||
+            result.errorType === 'CHANGE_PASSWORD';
+
+          const enhancedMessage = isTokenError
+            ? `${errorMsg}. Your 2FA token appears to be expired or invalid - please re-authenticate.`
+            : `${errorMsg}. If authentication continues to fail, your 2FA token may have expired - please re-authenticate.`;
 
           return {
             success: false,
@@ -149,23 +186,23 @@ class OneZeroAdapter implements ScraperAdapter {
 
         // Map the accounts to our format
         const accounts: ScrapedAccount[] = (result.accounts || []).map((acc) => ({
-        accountNumber: acc.accountNumber,
-        balance: acc.balance,
-        txns: acc.txns.map((txn) => ({
-          type: txn.type === 'installments' ? 'installments' : 'normal',
-          identifier: txn.identifier,
-          date: txn.date,
-          processedDate: txn.processedDate,
-          originalAmount: txn.originalAmount,
-          originalCurrency: txn.originalCurrency,
-          chargedAmount: txn.chargedAmount,
-          chargedCurrency: txn.chargedCurrency,
-          description: txn.description,
-          memo: txn.memo,
-          installments: txn.installments,
-          status: txn.status === 'pending' ? 'pending' : 'completed',
-        })),
-      }));
+          accountNumber: acc.accountNumber,
+          balance: acc.balance,
+          txns: acc.txns.map((txn) => ({
+            type: txn.type === 'installments' ? 'installments' : 'normal',
+            identifier: txn.identifier,
+            date: txn.date,
+            processedDate: txn.processedDate,
+            originalAmount: txn.originalAmount,
+            originalCurrency: txn.originalCurrency,
+            chargedAmount: txn.chargedAmount,
+            chargedCurrency: txn.chargedCurrency,
+            description: txn.description,
+            memo: txn.memo,
+            installments: txn.installments,
+            status: txn.status === 'pending' ? 'pending' : 'completed',
+          })),
+        }));
 
         const totalTxns = accounts.reduce((sum, acc) => sum + acc.txns.length, 0);
         console.log('[OneZero] Mapped accounts:', accounts.length, 'with total transactions:', totalTxns);
@@ -183,10 +220,23 @@ class OneZeroAdapter implements ScraperAdapter {
           console.error('[OneZero] Error stack:', errorStack);
         }
 
+        // Check if this is a token-related error (like "Cannot read properties of undefined (reading 'idToken')")
+        const isTokenError = 
+          errorMessage.includes('idToken') || 
+          errorMessage.includes('Cannot read properties of undefined');
+
+        if (isTokenError) {
+          return {
+            success: false,
+            errorType: 'AUTH_REQUIRED',
+            errorMessage: `Authentication token is invalid or expired. Please re-authenticate by completing 2FA setup again.`,
+          };
+        }
+
         return {
           success: false,
           errorType: 'EXCEPTION',
-          errorMessage: `OneZero scrape failed: ${errorMessage}`,
+          errorMessage: `OneZero scrape failed: ${errorMessage}. If this persists, try re-authenticating.`,
         };
       }
     } catch (error) {
@@ -220,18 +270,22 @@ class OneZeroAdapter implements ScraperAdapter {
     try {
       console.log(`[OneZero] Initiating 2FA with phone: ${phoneNumber}`);
 
-      // Set Chromium path for Vercel/production via environment variable
-      const launchOptions = await getChromiumLaunchOptions();
-      if (launchOptions.executablePath) {
-        process.env.PUPPETEER_EXECUTABLE_PATH = launchOptions.executablePath;
-      }
+      // Get browser options optimized for Vercel/serverless environments
+      const browserOptions = await getScraperBrowserOptions();
+
+      console.log('[OneZero 2FA] Browser options:', {
+        hasExecutablePath: !!browserOptions.executablePath,
+        argsCount: browserOptions.args?.length || 0,
+      });
 
       // Create a scraper instance - this maintains the internal state needed for 2FA
       const scraper = createScraper({
         companyId: CompanyTypes.oneZero,
         startDate: new Date(), // Not used for 2FA, but required
         combineInstallments: false,
-        showBrowser: false,
+        showBrowser: browserOptions.showBrowser ?? false,
+        executablePath: browserOptions.executablePath,
+        args: browserOptions.args,
       });
 
       // Use the library's built-in method to trigger 2FA
@@ -239,10 +293,11 @@ class OneZeroAdapter implements ScraperAdapter {
       const triggerResult = await scraper.triggerTwoFactorAuth(phoneNumber);
 
       if (!triggerResult.success) {
-        console.error('[OneZero] Failed to trigger 2FA:', triggerResult.errorMessage);
+        const errorMsg = 'errorMessage' in triggerResult ? triggerResult.errorMessage : 'Failed to send OTP';
+        console.error('[OneZero] Failed to trigger 2FA:', errorMsg);
         return {
           success: false,
-          errorMessage: triggerResult.errorMessage || 'Failed to send OTP',
+          errorMessage: errorMsg || 'Failed to send OTP',
         };
       }
 
@@ -313,12 +368,18 @@ class OneZeroAdapter implements ScraperAdapter {
       // Log the token structure for debugging (without sensitive data)
       if (tokenResult.success && 'longTermTwoFactorAuthToken' in tokenResult && tokenResult.longTermTwoFactorAuthToken) {
         const token = tokenResult.longTermTwoFactorAuthToken;
+        console.log('[OneZero] Token received:', {
+          length: token.length,
+          isJson: token.startsWith('{'),
+          preview: token.substring(0, 50) + '...',
+        });
+
         if (token.startsWith('{')) {
           try {
             const tokenObj = JSON.parse(token);
             console.log('[OneZero] Token structure:', Object.keys(tokenObj));
-          } catch (e) {
-            console.log('[OneZero] Token is not JSON');
+          } catch {
+            console.log('[OneZero] Token is not valid JSON');
           }
         }
       }

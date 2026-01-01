@@ -6,7 +6,7 @@ import type {
   ScrapeResult,
   ScrapedAccount,
 } from '../types';
-import { getChromiumLaunchOptions } from '../chromium-config';
+import { getScraperBrowserOptions } from '../chromium-config';
 
 /**
  * Isracard Credit Card Adapter
@@ -28,17 +28,24 @@ class IsracardAdapter implements ScraperAdapter {
     console.log('[Isracard] Card digits:', creds.card6Digits);
 
     try {
-      // Set Chromium path for Vercel/production via environment variable
-      const launchOptions = await getChromiumLaunchOptions();
-      if (launchOptions.executablePath) {
-        process.env.PUPPETEER_EXECUTABLE_PATH = launchOptions.executablePath;
-      }
+      // Get browser options optimized for Vercel/serverless environments
+      const browserOptions = await getScraperBrowserOptions();
+      
+      console.log('[Isracard] Browser options:', {
+        hasExecutablePath: !!browserOptions.executablePath,
+        argsCount: browserOptions.args?.length || 0,
+        showBrowser: browserOptions.showBrowser,
+      });
 
+      // Create scraper with browser options
+      // The library accepts executablePath and args directly in the options
       const scraper = createScraper({
         companyId: CompanyTypes.isracard,
         startDate,
         combineInstallments: false,
-        showBrowser: false,
+        showBrowser: browserOptions.showBrowser ?? false,
+        executablePath: browserOptions.executablePath,
+        args: browserOptions.args,
       });
 
       console.log('[Isracard] Calling scraper.scrape()...');
@@ -75,7 +82,7 @@ class IsracardAdapter implements ScraperAdapter {
           chargedCurrency: txn.chargedCurrency,
           description: txn.description,
           memo: txn.memo,
-          category: (txn as any).category, // Extract category/sector from Isracard
+          category: (txn as unknown as { category?: string }).category, // Extract category/sector from Isracard
           installments: txn.installments,
           status: txn.status === 'pending' ? 'pending' : 'completed',
         })),

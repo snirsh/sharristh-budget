@@ -4,20 +4,34 @@
  * https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 
-export async function register() {
+export const register = async () => {
   // Only run on the server (not during build or in edge runtime)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     console.log('[Instrumentation] Initializing server-side services');
+    console.log('[Instrumentation] Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      DEMO_MODE: process.env.DEMO_MODE,
+    });
 
-    // Set Chromium path for Puppeteer BEFORE loading israeli-bank-scrapers
+    // Set Chromium environment variables for Puppeteer BEFORE loading israeli-bank-scrapers
+    // Note: The main configuration happens in chromium-config.ts which passes args directly
+    // to the scraper. This is a fallback for any code that reads env vars directly.
     if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
       try {
         const chromium = await import('@sparticuz/chromium');
         const executablePath = await chromium.default.executablePath();
+        
+        // Set executable path (some libraries look for this env var)
         process.env.PUPPETEER_EXECUTABLE_PATH = executablePath;
-        console.log('[Instrumentation] Set PUPPETEER_EXECUTABLE_PATH:', executablePath);
+        
+        console.log('[Instrumentation] Chromium configuration:', {
+          executablePath,
+          argsCount: chromium.default.args.length,
+        });
       } catch (error) {
-        console.error('[Instrumentation] Failed to set Chromium path:', error);
+        console.error('[Instrumentation] Failed to configure Chromium:', error);
+        console.log('[Instrumentation] Scraper will use fallback configuration');
       }
     }
 
@@ -32,5 +46,5 @@ export async function register() {
 
     console.log('[Instrumentation] Server-side services initialized');
   }
-}
+};
 
