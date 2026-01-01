@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { formatCurrency, formatDate, formatMonth, cn } from '@/lib/utils';
-import { Search, Filter, Check, X, ChevronDown, ChevronLeft, ChevronRight, Plus, Wand2, EyeOff, Eye, Trash2 } from 'lucide-react';
+import { Search, Filter, Check, X, ChevronDown, ChevronLeft, ChevronRight, Plus, Wand2, EyeOff, Eye, Trash2, CheckCheck, Minus } from 'lucide-react';
 import { TransactionSummary } from './TransactionSummary';
 import { AddTransactionDialog } from './AddTransactionDialog';
 import { AICategoryBadgeCompact } from './AICategoryBadge';
@@ -33,6 +33,8 @@ export const TransactionsContent = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [editingTransaction, setEditingTransaction] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchCategoryId, setBatchCategoryId] = useState<string>('');
 
   const utils = trpc.useUtils();
 
@@ -92,7 +94,84 @@ export const TransactionsContent = ({
     },
   });
 
+  const batchApproveMutation = trpc.transactions.batchApprove.useMutation({
+    onSuccess: () => {
+      utils.transactions.list.invalidate();
+      setSelectedIds(new Set());
+    },
+  });
+
+  const batchIgnoreMutation = trpc.transactions.batchIgnore.useMutation({
+    onSuccess: () => {
+      utils.transactions.list.invalidate();
+      setSelectedIds(new Set());
+    },
+  });
+
+  const batchDeleteMutation = trpc.transactions.batchDelete.useMutation({
+    onSuccess: () => {
+      utils.transactions.list.invalidate();
+      setSelectedIds(new Set());
+    },
+  });
+
+  const batchRecategorizeMutation = trpc.transactions.batchRecategorize.useMutation({
+    onSuccess: () => {
+      utils.transactions.list.invalidate();
+      setSelectedIds(new Set());
+      setBatchCategoryId('');
+    },
+  });
+
   const transactions = transactionsData?.transactions ?? [];
+
+  // Selection helpers
+  const toggleSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === transactions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map((tx) => tx.id)));
+    }
+  };
+
+  const isAllSelected = transactions.length > 0 && selectedIds.size === transactions.length;
+  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < transactions.length;
+
+  // Batch actions
+  const handleBatchApprove = () => {
+    batchApproveMutation.mutate({ transactionIds: Array.from(selectedIds) });
+  };
+
+  const handleBatchIgnore = (isIgnored: boolean) => {
+    batchIgnoreMutation.mutate({ transactionIds: Array.from(selectedIds), isIgnored });
+  };
+
+  const handleBatchDelete = () => {
+    if (confirm(`Are you sure you want to delete ${selectedIds.size} transaction(s)?`)) {
+      batchDeleteMutation.mutate({ transactionIds: Array.from(selectedIds) });
+    }
+  };
+
+  const handleBatchRecategorize = () => {
+    if (!batchCategoryId) return;
+    batchRecategorizeMutation.mutate({
+      transactionIds: Array.from(selectedIds),
+      categoryId: batchCategoryId,
+      createRule: false,
+    });
+  };
 
   const handleRecategorize = (transactionId: string, categoryId: string, createRule: boolean) => {
     recategorizeMutation.mutate({
@@ -218,11 +297,86 @@ export const TransactionsContent = ({
         </button>
       </div>
 
+      {/* Batch Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-0 z-10 card p-3 bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
+            {selectedIds.size} selected
+          </span>
+          <div className="h-4 w-px bg-primary-200 dark:bg-primary-700" />
+          <button
+            onClick={handleBatchApprove}
+            disabled={batchApproveMutation.isPending}
+            className="btn btn-sm bg-success-500 text-white hover:bg-success-600"
+          >
+            <CheckCheck className="h-4 w-4 mr-1" />
+            Approve
+          </button>
+          <button
+            onClick={() => handleBatchIgnore(true)}
+            disabled={batchIgnoreMutation.isPending}
+            className="btn btn-sm btn-outline"
+          >
+            <EyeOff className="h-4 w-4 mr-1" />
+            Ignore
+          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={batchCategoryId}
+              onChange={(e) => setBatchCategoryId(e.target.value)}
+              className="input text-sm py-1.5 w-40"
+            >
+              <option value="">Set category...</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.icon} {cat.name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleBatchRecategorize}
+              disabled={!batchCategoryId || batchRecategorizeMutation.isPending}
+              className="btn btn-sm btn-primary disabled:opacity-50"
+            >
+              Apply
+            </button>
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={handleBatchDelete}
+            disabled={batchDeleteMutation.isPending}
+            className="btn btn-sm btn-danger"
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Delete
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="btn btn-sm btn-ghost text-gray-500"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Transactions List */}
       <div className="card p-0 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <tr>
+              <th className="px-4 py-3 w-10">
+                <button
+                  onClick={toggleSelectAll}
+                  className="flex items-center justify-center w-5 h-5 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  title={isAllSelected ? 'Deselect all' : 'Select all'}
+                >
+                  {isAllSelected ? (
+                    <Check className="h-3 w-3 text-primary-600" />
+                  ) : isSomeSelected ? (
+                    <Minus className="h-3 w-3 text-primary-600" />
+                  ) : null}
+                </button>
+              </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Date
               </th>
@@ -250,9 +404,23 @@ export const TransactionsContent = ({
                 className={cn(
                   'hover:bg-gray-50 dark:hover:bg-gray-800',
                   tx.needsReview && 'bg-warning-50 dark:bg-warning-900/30',
-                  tx.isIgnored && 'opacity-50 bg-gray-100 dark:bg-gray-900'
+                  tx.isIgnored && 'opacity-50 bg-gray-100 dark:bg-gray-900',
+                  selectedIds.has(tx.id) && 'bg-primary-50 dark:bg-primary-900/20'
                 )}
               >
+                <td className="px-4 py-3 w-10">
+                  <button
+                    onClick={() => toggleSelection(tx.id)}
+                    className={cn(
+                      'flex items-center justify-center w-5 h-5 rounded border transition-colors',
+                      selectedIds.has(tx.id)
+                        ? 'bg-primary-500 border-primary-500 text-white'
+                        : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    )}
+                  >
+                    {selectedIds.has(tx.id) && <Check className="h-3 w-3" />}
+                  </button>
+                </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(tx.date)}
                 </td>
@@ -291,8 +459,8 @@ export const TransactionsContent = ({
                         className={cn(
                           'inline-flex items-center gap-1 px-2 py-1 rounded text-sm',
                           tx.category
-                            ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-100'
-                            : 'text-warning-700 bg-warning-100 hover:bg-warning-200'
+                            ? 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            : 'text-warning-700 bg-warning-100 hover:bg-warning-200 dark:bg-warning-900/40 dark:text-warning-400 dark:hover:bg-warning-900/60'
                         )}
                       >
                         <span>{tx.category?.icon || '❓'}</span>
@@ -356,7 +524,7 @@ export const TransactionsContent = ({
             ))}
             {transactions.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                   <div className="space-y-2">
                     <p>No transactions found for {formatMonth(currentMonth)}</p>
                     <p className="text-sm">
@@ -433,13 +601,13 @@ const CategorySelector = ({
       <button
         onClick={() => selectedId && onSelect(selectedId, createRule)}
         disabled={!selectedId}
-        className="p-1 text-success-600 hover:bg-success-50 rounded disabled:opacity-50"
+        className="p-1 text-success-600 hover:bg-success-50 dark:hover:bg-success-900/30 rounded disabled:opacity-50"
       >
         <Check className="h-4 w-4" />
       </button>
       <button
         onClick={onCancel}
-        className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+        className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
       >
         <X className="h-4 w-4" />
       </button>

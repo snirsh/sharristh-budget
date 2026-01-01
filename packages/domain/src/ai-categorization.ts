@@ -62,7 +62,7 @@ export const suggestCategoryWithAI = async (
           ],
           generationConfig: {
             temperature: 0.1, // Very low for consistent categorization
-            maxOutputTokens: 150,
+            maxOutputTokens: 256, // Increased to avoid truncation
           },
         }),
         signal: AbortSignal.timeout(10000), // 10 second timeout
@@ -158,19 +158,48 @@ Respond ONLY with valid JSON in this exact format (no other text, no markdown):
 
 /**
  * Parse AI response and validate the category ID
+ * Handles various malformed JSON cases from AI responses
  */
 const parseResponse = (
   response: string,
   categories: CategoryForCategorization[]
 ): ParsedAIResponse => {
   try {
+    // Clean up response - remove markdown code blocks if present
+    let cleaned = response.replace(/```json?\s*/gi, '').replace(/```\s*/g, '').trim();
+
     // Extract JSON from response (AI might add extra text)
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return { categoryId: null, confidence: 0, reasoning: 'No JSON found' };
     }
 
-    const parsed = JSON.parse(jsonMatch[0]) as {
+    let jsonStr = jsonMatch[0];
+
+    // Try to fix common JSON issues from truncated responses
+    // Fix unterminated strings by finding incomplete string at end
+    const lastQuoteIndex = jsonStr.lastIndexOf('"');
+    const lastColonIndex = jsonStr.lastIndexOf(':');
+
+    // If JSON ends abruptly, try to close it properly
+    if (!jsonStr.endsWith('}')) {
+      // Check if we're in the middle of a string value
+      const openBraces = (jsonStr.match(/\{/g) || []).length;
+      const closeBraces = (jsonStr.match(/\}/g) || []).length;
+
+      if (openBraces > closeBraces) {
+        // Try to salvage: close any open string and object
+        if (lastQuoteIndex > lastColonIndex) {
+          // We're likely in a string value, close it
+          jsonStr = jsonStr + '"}';
+        } else {
+          // After a colon, incomplete value
+          jsonStr = jsonStr + '""' + '}'.repeat(openBraces - closeBraces);
+        }
+      }
+    }
+
+    const parsed = JSON.parse(jsonStr) as {
       categoryId?: string;
       confidence?: number;
       reasoning?: string;
@@ -180,6 +209,18 @@ const parseResponse = (
     const isValidCategory = categories.some((c) => c.id === parsed.categoryId);
 
     if (!isValidCategory) {
+      // Try to find a partial match (AI might return slightly different ID)
+      const partialMatch = categories.find((c) =>
+        c.id.includes(parsed.categoryId || '') || (parsed.categoryId || '').includes(c.id)
+      );
+      if (partialMatch) {
+        return {
+          categoryId: partialMatch.id,
+          confidence: Math.min((parsed.confidence || 0.5) * 0.8, 0.7), // Lower confidence for partial match
+          reasoning: parsed.reasoning || 'Partial match',
+        };
+      }
+
       return {
         categoryId: null,
         confidence: 0,
