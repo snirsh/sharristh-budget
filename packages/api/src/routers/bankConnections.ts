@@ -98,7 +98,7 @@ export const bankConnectionsRouter = router({
     const connection = await ctx.prisma.bankConnection.create({
       data: {
         householdId: ctx.householdId,
-        provider: input.provider,
+        provider: input.provider as string,
         displayName: input.displayName,
         encryptedCreds,
         isActive: !requiresTwoFactor, // Not active until 2FA is complete for OneZero

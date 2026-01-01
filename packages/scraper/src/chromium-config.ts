@@ -24,7 +24,7 @@ export async function getChromiumLaunchOptions(): Promise<LaunchOptions> {
       return {
         executablePath: await chromium.default.executablePath(),
         args: chromium.default.args,
-        headless: chromium.default.headless,
+        headless: true,
       };
     } catch (error) {
       console.error('[Chromium] Failed to load @sparticuz/chromium:', error);
