@@ -208,7 +208,7 @@ export const TransactionsContent = ({
         </button>
 
         <button
-          onClick={() => applyCategorizationMutation.mutate()}
+          onClick={() => applyCategorizationMutation.mutate(undefined)}
           disabled={applyCategorizationMutation.isPending}
           className="btn btn-outline"
           title="Apply categorization rules to uncategorized transactions"

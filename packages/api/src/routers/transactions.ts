@@ -59,8 +59,8 @@ export const transactionsRouter = router({
     }
     if (input.search) {
       where.OR = [
-        { description: { contains: input.search, mode: 'insensitive' } },
-        { merchant: { contains: input.search, mode: 'insensitive' } },
+        { description: { contains: input.search, mode: 'insensitive' as const } },
+        { merchant: { contains: input.search, mode: 'insensitive' as const } },
       ];
     }
 
@@ -296,7 +296,9 @@ export const transactionsRouter = router({
   /**
    * Apply categorization rules to all uncategorized or low-confidence transactions
    */
-  applyCategorization: protectedProcedure.mutation(async ({ ctx }) => {
+  applyCategorization: protectedProcedure
+    .input(z.void())
+    .mutation(async ({ ctx }) => {
     // Get all transactions that need categorization
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
