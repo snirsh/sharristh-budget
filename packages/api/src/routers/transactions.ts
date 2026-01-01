@@ -59,8 +59,8 @@ export const transactionsRouter = router({
     }
     if (input.search) {
       where.OR = [
-        { description: { contains: input.search } },
-        { merchant: { contains: input.search } },
+        { description: { contains: input.search, mode: 'insensitive' } },
+        { merchant: { contains: input.search, mode: 'insensitive' } },
       ];
     }
 
