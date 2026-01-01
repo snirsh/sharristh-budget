@@ -10,10 +10,12 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
-  
+  const message = searchParams.get('message');
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
+  const info = message === 'registration_closed' ? 'Registration is closed. This app only allows one user.' : null;
 
   useEffect(() => {
     // Check WebAuthn support
@@ -59,6 +61,16 @@ function LoginForm() {
                 Your browser or device doesn&apos;t support passkeys. Please use a modern browser with biometric authentication.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Info Message */}
+      {info && (
+        <div className="mb-6 p-4 bg-blue-500/20 border border-blue-500/30 rounded-xl">
+          <div className="flex gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <p className="text-blue-200 text-sm">{info}</p>
           </div>
         </div>
       )}
@@ -111,13 +123,15 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* Register Link */}
-      <Link
-        href="/register"
-        className="block w-full text-center px-6 py-3 border border-white/20 text-white/80 hover:text-white hover:border-white/40 font-medium rounded-xl transition-all duration-200"
-      >
-        Register with invite code
-      </Link>
+      {/* Register Link - Hide if registration is closed */}
+      {!info && (
+        <Link
+          href="/register"
+          className="block w-full text-center px-6 py-3 border border-white/20 text-white/80 hover:text-white hover:border-white/40 font-medium rounded-xl transition-all duration-200"
+        >
+          Register with invite code
+        </Link>
+      )}
     </>
   );
 }

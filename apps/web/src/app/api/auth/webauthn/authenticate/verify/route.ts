@@ -93,9 +93,19 @@ export async function POST(request: NextRequest) {
 
     // Set session cookie
     const cookieStore = await cookies();
-    cookieStore.set('authjs.session-token', sessionToken, {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token';
+
+    console.log('[WebAuthn Authenticate] Setting session cookie:', {
+      cookieName,
+      isProduction,
+      userId: authenticator.userId,
+      expires,
+    });
+
+    cookieStore.set(cookieName, sessionToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'lax',
       path: '/',
       expires,

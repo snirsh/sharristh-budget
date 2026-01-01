@@ -79,6 +79,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if any users exist (single-user system - block after first user)
+    const userCount = await prisma.user.count();
+    if (userCount > 0) {
+      console.log('[WebAuthn Options] Registration blocked - user already exists');
+      return NextResponse.json(
+        { error: 'Registration is closed. Only one user is allowed.' },
+        { status: 403 }
+      );
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
