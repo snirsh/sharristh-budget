@@ -548,27 +548,21 @@ find ~/backups -name "*.gz" -mtime +7 -delete
 
 ## Optional: Enable AI Categorization
 
-If you want AI-powered transaction categorization:
+If you want AI-powered transaction categorization (free):
 
-```bash
-# Add to docker-compose.yml
-nano docker-compose.yml
-# Add ollama service (see plan for details)
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+2. Create an API key (free)
+3. Update your `.env`:
+   ```bash
+   nano .env
+   # Add: GEMINI_API_KEY=your-api-key-here
+   ```
+4. Restart web:
+   ```bash
+   docker compose restart web
+   ```
 
-# Pull model
-docker compose up -d ollama
-docker compose exec ollama ollama pull llama3.2:3b
-
-# Update .env
-nano .env
-# Set: OLLAMA_ENABLED=true
-# Set: OLLAMA_BASE_URL=http://ollama:11434
-
-# Restart web
-docker compose restart web
-```
-
-**Note:** This will use ~4GB RAM and inference takes 2-5 seconds per transaction.
+**Note:** Google Gemini free tier includes 15 requests/min and 1M tokens/month - more than enough for a personal budget app.
 
 ## Support
 

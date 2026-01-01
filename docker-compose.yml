@@ -22,8 +22,8 @@ services:
       # Production mode
       NODE_ENV: production
 
-      # Optional: Disable AI for now (can enable later)
-      OLLAMA_ENABLED: false
+      # Optional: Google Gemini AI for categorization (free tier)
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       DEMO_MODE: false
     volumes:
       # Persist SQLite database

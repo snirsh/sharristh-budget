@@ -29,7 +29,7 @@ export async function categorizeTransaction(
   categories?: CategoryForCategorization[],
   options?: {
     enableAI?: boolean;
-    ollamaBaseUrl?: string;
+    aiApiKey?: string;
   }
 ): Promise<CategorizationResult> {
   // 1. If category is already set, return as manual
@@ -70,12 +70,12 @@ export async function categorizeTransaction(
   }
 
   // 5. Try AI suggestion (if enabled and categories provided)
-  if (options?.enableAI && categories && categories.length > 0) {
+  if (options?.enableAI && options?.aiApiKey && categories && categories.length > 0) {
     try {
       const aiResult = await suggestCategoryWithAI(
         tx,
         categories,
-        options.ollamaBaseUrl
+        options.aiApiKey
       );
       if (aiResult) {
         return aiResult;
@@ -236,7 +236,7 @@ export async function categorizeTransactions(
   categories?: CategoryForCategorization[],
   options?: {
     enableAI?: boolean;
-    ollamaBaseUrl?: string;
+    aiApiKey?: string;
   }
 ): Promise<Map<TransactionInput, CategorizationResult>> {
   const results = new Map<TransactionInput, CategorizationResult>();

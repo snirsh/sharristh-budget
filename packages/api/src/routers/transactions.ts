@@ -7,6 +7,24 @@ import {
 } from '@sfam/domain/schemas';
 import { categorizeTransaction } from '@sfam/domain';
 
+/**
+ * Extract the most meaningful keyword from a description for rule creation
+ * Returns the longest word (≥4 chars) that's likely to be a merchant/business name
+ */
+const extractKeyword = (description: string): string | null => {
+  const words = description
+    .split(/\s+/)
+    .filter((w) => w.length >= 4)
+    // Filter out common Hebrew words and numbers
+    .filter((w) => !/^\d+$/.test(w))
+    .filter((w) => !['תשלום', 'העברה', 'משיכה', 'הפקדה', 'עמלה'].includes(w));
+
+  if (words.length === 0) return null;
+
+  // Return the longest word (likely to be the merchant name)
+  return words.sort((a, b) => b.length - a.length)[0] ?? null;
+};
+
 export const transactionsRouter = router({
   /**
    * List transactions with filters
@@ -127,8 +145,8 @@ export const transactionsRouter = router({
         rules,
         categories,
         {
-          enableAI: process.env.OLLAMA_ENABLED === 'true',
-          ollamaBaseUrl: process.env.OLLAMA_BASE_URL,
+          enableAI: !!process.env.GEMINI_API_KEY,
+          aiApiKey: process.env.GEMINI_API_KEY,
         }
       );
 
@@ -151,6 +169,37 @@ export const transactionsRouter = router({
 
       categorizationSource = result.source;
       confidence = result.confidence;
+
+      // Auto-create rule from AI suggestion with high confidence (≥0.75)
+      // This helps the system "learn" and reduces future AI calls
+      if (result.source === 'ai_suggestion' && result.confidence >= 0.75 && categoryId) {
+        const rulePattern = input.merchant || extractKeyword(input.description);
+        const ruleType = input.merchant ? 'merchant' : 'keyword';
+
+        if (rulePattern && rulePattern.length >= 3) {
+          // Check if similar rule already exists
+          const existingRule = await ctx.prisma.categoryRule.findFirst({
+            where: {
+              householdId: ctx.householdId,
+              pattern: { contains: rulePattern, mode: 'insensitive' },
+            },
+          });
+
+          if (!existingRule) {
+            await ctx.prisma.categoryRule.create({
+              data: {
+                householdId: ctx.householdId,
+                categoryId,
+                type: ruleType,
+                pattern: rulePattern,
+                priority: 5, // Medium priority - can be overridden by user rules
+                isActive: true,
+                createdFrom: 'ai_suggestion',
+              },
+            });
+          }
+        }
+      }
     }
 
     // Build transaction data - only include categoryId if it's not null
@@ -293,8 +342,8 @@ export const transactionsRouter = router({
         rules,
         categories,
         {
-          enableAI: process.env.OLLAMA_ENABLED === 'true',
-          ollamaBaseUrl: process.env.OLLAMA_BASE_URL,
+          enableAI: !!process.env.GEMINI_API_KEY,
+          aiApiKey: process.env.GEMINI_API_KEY,
         }
       );
 
@@ -335,13 +384,43 @@ export const transactionsRouter = router({
             },
           });
           updatedCount++;
+
+          // Auto-create rule from AI suggestion with high confidence (≥0.75)
+          if (result.source === 'ai_suggestion' && result.confidence >= 0.75) {
+            const rulePattern = tx.merchant || extractKeyword(tx.description);
+            const ruleType = tx.merchant ? 'merchant' : 'keyword';
+
+            if (rulePattern && rulePattern.length >= 3) {
+              // Check if similar rule already exists
+              const existingRule = await ctx.prisma.categoryRule.findFirst({
+                where: {
+                  householdId: ctx.householdId,
+                  pattern: { contains: rulePattern, mode: 'insensitive' },
+                },
+              });
+
+              if (!existingRule) {
+                await ctx.prisma.categoryRule.create({
+                  data: {
+                    householdId: ctx.householdId,
+                    categoryId: finalCategoryId,
+                    type: ruleType,
+                    pattern: rulePattern,
+                    priority: 5,
+                    isActive: true,
+                    createdFrom: 'ai_suggestion',
+                  },
+                });
+              }
+            }
+          }
         }
       }
     }
 
     return {
       updated: updatedCount,
-      message: `Updated ${updatedCount} transaction(s) with categorization rules${process.env.OLLAMA_ENABLED === 'true' ? ' and AI suggestions' : ''}`,
+      message: `Updated ${updatedCount} transaction(s) with categorization rules${process.env.GEMINI_API_KEY ? ' and AI suggestions' : ''}`,
     };
   }),
 

@@ -116,7 +116,7 @@ describe('categorizeTransaction', () => {
     expect(result.source).toBe('fallback');
   });
 
-  it('should fallback to varying expenses for unmatched expenses', async () => {
+  it('should fallback with null categoryId for unmatched expenses (API determines actual category)', async () => {
     const tx: TransactionInput = {
       description: 'Random purchase',
       amount: 100,
@@ -125,12 +125,13 @@ describe('categorizeTransaction', () => {
 
     const result = await categorizeTransaction(tx, mockRules);
 
-    expect(result.categoryId).toBe('cat-varying');
+    expect(result.categoryId).toBeNull();
     expect(result.source).toBe('fallback');
     expect(result.confidence).toBe(0.5);
+    expect(result.reason).toContain('varying expenses');
   });
 
-  it('should fallback to other income for unmatched income', async () => {
+  it('should fallback with null categoryId for unmatched income (API determines actual category)', async () => {
     const tx: TransactionInput = {
       description: 'Random income',
       amount: 1000,
@@ -139,9 +140,10 @@ describe('categorizeTransaction', () => {
 
     const result = await categorizeTransaction(tx, mockRules);
 
-    expect(result.categoryId).toBe('cat-other-income');
+    expect(result.categoryId).toBeNull();
     expect(result.source).toBe('fallback');
     expect(result.confidence).toBe(0.5);
+    expect(result.reason).toContain('income category');
   });
 
   it('should prioritize merchant rules over keyword rules', async () => {

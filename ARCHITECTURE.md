@@ -14,7 +14,7 @@ SharristhBudget is a modern household budget management application built for Is
 - **API Layer**: tRPC (type-safe API)
 - **Authentication**: NextAuth.js with WebAuthn (passkeys)
 - **UI**: Tailwind CSS
-- **AI**: Ollama (local LLM inference) with Llama 3.2 3B
+- **AI**: Google Gemini (cloud-based, free tier)
 
 ### Testing & Tooling
 - **E2E Testing**: Playwright
@@ -113,22 +113,21 @@ SharristhBudget/
 2. **Merchant Rule** (0.95) - Exact merchant match
 3. **Keyword Rule** (0.80) - Keyword in description/merchant
 4. **Regex Rule** (0.75) - Pattern match
-5. **AI Suggestion** (~0.85) - Ollama/Llama 3.2 3B analysis
+5. **AI Suggestion** (~0.85) - Google Gemini analysis
 6. **Fallback** (0.50) - Default category from database
 
 **AI Categorization** (`packages/domain/src/ai-categorization.ts`):
-- **Model**: Llama 3.2 3B via Ollama
-- **Local & Private**: All processing on-device
-- **Timeout**: 5 seconds (graceful fallback)
-- **Temperature**: 0.3 (consistent results)
+- **Model**: Google Gemini 2.0 Flash
+- **Cloud-based**: Works on Vercel serverless
+- **Timeout**: 10 seconds (graceful fallback)
+- **Temperature**: 0.1 (consistent results)
 - **Confidence Cap**: 0.85 (never exceeds rule-based methods)
 - **Review Flag**: AI suggestions marked `needsReview: true`
+- **Auto-Learning**: Creates rules automatically from high-confidence AI suggestions (≥75%)
 
 **Environment Variables**:
 ```bash
-OLLAMA_ENABLED=true
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2:3b
+GEMINI_API_KEY=your-api-key-from-google-ai-studio
 ```
 
 **Visual Indicator**:
@@ -217,7 +216,7 @@ categorizeTransaction() (domain layer)
     ├→ Match regex rule? → Return (0.75)
     ├→ AI enabled? → suggestCategoryWithAI()
     │   ├→ Build prompt with transaction + categories
-    │   ├→ Call Ollama API (5s timeout)
+    │   ├→ Call Gemini API (10s timeout)
     │   ├→ Parse JSON response
     │   └→ Return (≤0.85 confidence)
     └→ Fallback → Lookup default category from DB (0.50)
@@ -321,10 +320,8 @@ AUTH_WEBAUTHN_RP_ID=localhost
 AUTH_WEBAUTHN_RP_NAME=Sharristh Budget
 AUTH_WEBAUTHN_RP_ORIGIN=http://localhost:3000
 
-# AI (optional)
-OLLAMA_ENABLED=true
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2:3b
+# AI (optional - free tier)
+GEMINI_API_KEY=your-api-key-from-google-ai-studio
 ```
 
 ### Demo Mode (`.env.demo`)
@@ -332,7 +329,7 @@ OLLAMA_MODEL=llama3.2:3b
 DEMO_MODE=true
 DATABASE_URL="file:./demo.db"
 AUTH_SECRET=demo-secret-key-not-used-in-demo-mode
-OLLAMA_ENABLED=false  # Can be enabled for testing
+# GEMINI_API_KEY= # Can be enabled for testing
 ```
 
 ## Domain Layer
@@ -341,7 +338,7 @@ OLLAMA_ENABLED=false  # Can be enabled for testing
 
 **Key Modules**:
 - `categorization.ts`: Rule + AI categorization logic
-- `ai-categorization.ts`: Ollama integration
+- `ai-categorization.ts`: Google Gemini integration
 - `budgets.ts`: Budget evaluation algorithms
 - `recurring.ts`: Recurring transaction scheduling
 - `types.ts`: Shared TypeScript interfaces
@@ -358,7 +355,7 @@ export async function categorizeTransaction(
   tx: TransactionInput,
   rules: CategoryRule[],
   categories?: Category[],
-  options?: { enableAI?: boolean; ollamaBaseUrl?: string }
+  options?: { enableAI?: boolean; aiApiKey?: string }
 ): Promise<CategorizationResult> {
   // Business logic only
 }
@@ -367,10 +364,9 @@ export async function categorizeTransaction(
 ## Performance Considerations
 
 ### AI Categorization
-- **Response Time**: 200-500ms per transaction
-- **Timeout**: 5 seconds (graceful fallback to next method)
-- **Memory**: ~4GB RAM while Ollama running
-- **Model Size**: 3.5GB (one-time download)
+- **Response Time**: 500-1500ms per transaction
+- **Timeout**: 10 seconds (graceful fallback to next method)
+- **Free Tier**: 15 req/min, 1M tokens/month on Google Gemini
 - **Batching**: Currently sequential (can be parallelized in future)
 
 ### Database
@@ -414,7 +410,7 @@ pnpm playwright test demo          # Demo mode tests only
 - Node.js 20+
 - pnpm
 - SQLite3
-- (Optional) Ollama for AI features
+- (Optional) Google Gemini API key for AI features
 
 ### Build
 ```bash
@@ -445,7 +441,7 @@ pnpm dev:demo  # Port 3001
 ## Security Considerations
 
 ### Data Privacy
-- **AI Processing**: 100% local (no external API calls)
+- **AI Processing**: Minimal data sent to Gemini API (only description, merchant, amount)
 - **Household Isolation**: All queries scoped to `householdId`
 - **Demo Mode**: Completely separate database
 
@@ -516,7 +512,7 @@ test: Add E2E test for budget deletion
 - [Next.js Documentation](https://nextjs.org/docs)
 - [tRPC Documentation](https://trpc.io/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
-- [Ollama Documentation](https://github.com/ollama/ollama/blob/main/docs/api.md)
+- [Google Gemini Documentation](https://ai.google.dev/docs)
 - [AI Categorization Setup](./AI_CATEGORIZATION.md)
 - [Demo Mode Documentation](./DEMO_MODE.md)
 

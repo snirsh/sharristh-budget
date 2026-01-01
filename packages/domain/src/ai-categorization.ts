@@ -1,6 +1,7 @@
 /**
- * AI-powered category suggestion using local Ollama (Llama 3.2 3B)
- * Provides privacy-focused, offline category suggestions for transactions
+ * AI-powered category suggestion using Google Gemini (free tier)
+ * Provides cloud-based AI categorization for transactions
+ * Free tier: 15 requests/minute, 1M tokens/month
  */
 
 import type {
@@ -9,56 +10,85 @@ import type {
   CategorizationResult as BaseCategorizationResult,
 } from './types';
 
-interface OllamaResponse {
-  model: string;
-  created_at: string;
-  response: string;
-  done: boolean;
-}
+type GeminiResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+  error?: {
+    message: string;
+  };
+};
 
-interface ParsedAIResponse {
+type ParsedAIResponse = {
   categoryId: string | null;
   confidence: number;
   reasoning: string;
-}
+};
 
 /**
- * Suggest a category for a transaction using Ollama AI
+ * Suggest a category for a transaction using Google Gemini AI
  * @param tx - Transaction to categorize
  * @param categories - Available categories
- * @param ollamaBaseUrl - Ollama API base URL (default: http://localhost:11434)
+ * @param apiKey - Google AI API key
  * @returns Categorization result or null if AI fails
  */
-export async function suggestCategoryWithAI(
+export const suggestCategoryWithAI = async (
   tx: TransactionInput,
   categories: CategoryForCategorization[],
-  ollamaBaseUrl: string = 'http://localhost:11434'
-): Promise<BaseCategorizationResult | null> {
+  apiKey?: string
+): Promise<BaseCategorizationResult | null> => {
+  if (!apiKey) {
+    console.warn('AI categorization skipped: No API key provided');
+    return null;
+  }
+
   try {
     const prompt = buildPrompt(tx, categories);
 
-    const response = await fetch(`${ollamaBaseUrl}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama3.2:3b',
-        prompt,
-        stream: false,
-        options: {
-          temperature: 0.3, // Low temperature for consistent categorization
-          num_predict: 150, // Limit response length
-        },
-      }),
-      signal: AbortSignal.timeout(5000), // 5 second timeout
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.1, // Very low for consistent categorization
+            maxOutputTokens: 150,
+          },
+        }),
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      }
+    );
 
     if (!response.ok) {
-      console.warn(`Ollama API returned status ${response.status}`);
+      const errorText = await response.text();
+      console.warn(`Gemini API returned status ${response.status}: ${errorText}`);
       return null;
     }
 
-    const data = (await response.json()) as OllamaResponse;
-    const result = parseResponse(data.response, categories);
+    const data = (await response.json()) as GeminiResponse;
+
+    if (data.error) {
+      console.warn(`Gemini API error: ${data.error.message}`);
+      return null;
+    }
+
+    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!responseText) {
+      console.warn('Gemini returned empty response');
+      return null;
+    }
+
+    const result = parseResponse(responseText, categories);
 
     if (!result.categoryId) {
       console.warn('AI did not return a valid category ID');
@@ -78,20 +108,20 @@ export async function suggestCategoryWithAI(
   } catch (error) {
     // Graceful degradation - log but don't fail
     if (error instanceof Error && error.name === 'TimeoutError') {
-      console.warn('AI categorization timed out after 5s');
-    } else if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
-      console.warn('Ollama is not running or not accessible');
+      console.warn('AI categorization timed out after 10s');
+    } else if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('AI categorization was aborted');
     } else {
       console.error('AI categorization failed:', error);
     }
     return null; // Fall through to next categorization method
   }
-}
+};
 
 /**
  * Build a prompt for the AI to categorize the transaction
  */
-function buildPrompt(tx: TransactionInput, categories: CategoryForCategorization[]): string {
+const buildPrompt = (tx: TransactionInput, categories: CategoryForCategorization[]): string => {
   // Group categories by type for better context
   const incomeCategories = categories.filter((c) => c.type === 'income');
   const expenseCategories = categories.filter(
@@ -105,7 +135,7 @@ function buildPrompt(tx: TransactionInput, categories: CategoryForCategorization
     .map((c) => `- ${c.id}: ${c.name}`)
     .join('\n');
 
-  return `You are a financial transaction categorization assistant. Categorize this transaction into one of the available categories.
+  return `You are a financial transaction categorization assistant for a Hebrew/Israeli user. Categorize this transaction into one of the available categories.
 
 Transaction:
 - Description: ${tx.description}
@@ -119,23 +149,20 @@ ${categoryList}
 Instructions:
 1. Choose the MOST appropriate category ID from the list above
 2. Provide a confidence score between 0.0 and 1.0
-3. Explain your reasoning briefly
+3. Explain your reasoning briefly (in English)
+4. Hebrew text in descriptions is common - understand them contextually
 
-Respond ONLY with valid JSON in this exact format (no other text):
-{
-  "categoryId": "<exact category ID from list>",
-  "confidence": <number between 0.0 and 1.0>,
-  "reasoning": "<brief explanation in 1 sentence>"
-}`;
-}
+Respond ONLY with valid JSON in this exact format (no other text, no markdown):
+{"categoryId": "<exact category ID from list>", "confidence": <number between 0.0 and 1.0>, "reasoning": "<brief explanation in 1 sentence>"}`;
+};
 
 /**
  * Parse AI response and validate the category ID
  */
-function parseResponse(
+const parseResponse = (
   response: string,
   categories: CategoryForCategorization[]
-): ParsedAIResponse {
+): ParsedAIResponse => {
   try {
     // Extract JSON from response (AI might add extra text)
     const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -176,4 +203,4 @@ function parseResponse(
       reasoning: 'Parse error',
     };
   }
-}
+};
