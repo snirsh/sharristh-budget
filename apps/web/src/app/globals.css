@@ -109,5 +109,10 @@
       transform: translateY(0);
     }
   }
+
+  /* Fix table text visibility in dark mode */
+  .dark table tbody td {
+    @apply text-gray-200;
+  }
 }
 
