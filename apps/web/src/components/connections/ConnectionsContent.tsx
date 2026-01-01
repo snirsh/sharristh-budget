@@ -630,7 +630,7 @@ export function ConnectionsContent() {
 
       {/* Sync Status Messages */}
       {syncMutation.isSuccess && (
-        <div className="fixed bottom-4 right-4 bg-success-50 text-success-700 px-4 py-3 rounded-lg shadow-lg animate-in">
+        <div className="fixed bottom-4 right-4 bg-success-50 dark:bg-success-900 text-success-700 dark:text-success-200 px-4 py-3 rounded-lg shadow-lg animate-in">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
             <span>
@@ -642,7 +642,7 @@ export function ConnectionsContent() {
       )}
 
       {syncMutation.error && (
-        <div className="fixed bottom-4 right-4 bg-error-50 text-error-700 px-4 py-3 rounded-lg shadow-lg animate-in">
+        <div className="fixed bottom-4 right-4 bg-error-50 dark:bg-error-900 text-error-700 dark:text-error-200 px-4 py-3 rounded-lg shadow-lg animate-in">
           <div className="flex items-center gap-2">
             <XCircle className="h-5 w-5" />
             <span>Sync failed: {syncMutation.error.message}</span>
@@ -652,7 +652,7 @@ export function ConnectionsContent() {
 
       {/* Sync All Status Messages */}
       {syncAllMutation.isSuccess && (
-        <div className="fixed bottom-4 right-4 bg-success-50 text-success-700 px-4 py-3 rounded-lg shadow-lg animate-in max-w-md">
+        <div className="fixed bottom-4 right-4 bg-success-50 dark:bg-success-900 text-success-700 dark:text-success-200 px-4 py-3 rounded-lg shadow-lg animate-in max-w-md">
           <div className="flex items-start gap-2">
             <CheckCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <div>
@@ -662,7 +662,7 @@ export function ConnectionsContent() {
                 {syncAllMutation.data.totalTransactionsNew} new.
               </p>
               {syncAllMutation.data.results.some((r) => !r.success) && (
-                <div className="mt-2 text-sm text-error-600">
+                <div className="mt-2 text-sm text-error-600 dark:text-error-300">
                   <p className="font-medium">Failed connections:</p>
                   <ul className="list-disc list-inside">
                     {syncAllMutation.data.results
@@ -679,7 +679,7 @@ export function ConnectionsContent() {
       )}
 
       {syncAllMutation.error && (
-        <div className="fixed bottom-4 right-4 bg-error-50 text-error-700 px-4 py-3 rounded-lg shadow-lg animate-in">
+        <div className="fixed bottom-4 right-4 bg-error-50 dark:bg-error-900 text-error-700 dark:text-error-200 px-4 py-3 rounded-lg shadow-lg animate-in">
           <div className="flex items-center gap-2">
             <XCircle className="h-5 w-5" />
             <span>Sync all failed: {syncAllMutation.error.message}</span>
