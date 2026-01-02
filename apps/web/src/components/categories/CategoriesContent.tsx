@@ -25,7 +25,7 @@ import type { AppRouter } from '@sfam/api';
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type Category = RouterOutputs['categories']['list'][number];
-type CategoryType = 'income' | 'expected' | 'varying';
+type CategoryType = 'income' | 'expense';
 
 interface EditingState {
   id: string | null;
@@ -52,8 +52,7 @@ const DEFAULT_COLORS = [
 
 const TYPE_OPTIONS: { value: CategoryType; label: string; description: string }[] = [
   { value: 'income', label: 'Income', description: 'Sources of money coming in' },
-  { value: 'expected', label: 'Expected', description: 'Regular, predictable expenses' },
-  { value: 'varying', label: 'Varying', description: 'Irregular or variable expenses' },
+  { value: 'expense', label: 'Expense', description: 'Money going out' },
 ];
 
 export function CategoriesContent() {
@@ -226,14 +225,12 @@ export function CategoriesContent() {
   // Group categories by type
   const groupedCategories = {
     income: categories.filter((c) => c.type === 'income' && !c.parentCategoryId),
-    expected: categories.filter((c) => c.type === 'expected' && !c.parentCategoryId),
-    varying: categories.filter((c) => c.type === 'varying' && !c.parentCategoryId),
+    expense: categories.filter((c) => c.type === 'expense' && !c.parentCategoryId),
   };
 
   const typeLabels = {
     income: { title: 'Income', description: 'Sources of money coming in', color: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800' },
-    expected: { title: 'Expected Expenses', description: 'Regular, predictable expenses', color: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800' },
-    varying: { title: 'Varying Expenses', description: 'Irregular or unexpected expenses', color: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800' },
+    expense: { title: 'Expenses', description: 'Money going out', color: 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800' },
   };
 
   return (
@@ -413,7 +410,7 @@ export function CategoriesContent() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
                   Type
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {TYPE_OPTIONS.map((option) => (
                     <button
                       key={option.value}
