@@ -768,8 +768,8 @@ const CategorySelector = ({
     if (transactionDirection === 'income') {
       return cat.type === 'income';
     }
-    // For expenses, show expected and varying categories
-    return cat.type === 'expected' || cat.type === 'varying';
+    // For expenses, show expense categories (not income)
+    return cat.type !== 'income';
   });
 
   return (
@@ -834,7 +834,7 @@ const MobileCategorySelector = ({
     if (transactionDirection === 'income') {
       return cat.type === 'income';
     }
-    return cat.type === 'expected' || cat.type === 'varying';
+    return cat.type !== 'income';
   });
 
   return (
