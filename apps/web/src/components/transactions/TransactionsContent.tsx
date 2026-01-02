@@ -25,14 +25,14 @@ type TransactionsData = {
 type TransactionsContentProps = {
   categories: Category[];
   initialNeedsReview?: boolean;
-  month: string;
+  initialMonth: string;
   initialTransactions?: TransactionsData;
 };
 
 export const TransactionsContent = ({
   categories,
   initialNeedsReview = false,
-  month: initialMonth,
+  initialMonth,
   initialTransactions,
 }: TransactionsContentProps) => {
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
