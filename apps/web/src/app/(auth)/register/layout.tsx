@@ -1,28 +1,13 @@
-import { prisma } from '@sfam/db';
-import { redirect } from 'next/navigation';
-
 /**
- * Registration layout - checks if registration is allowed
- * Single-user system - only allow one user
+ * Registration layout - simplified
+ * Actual registration access control is handled by the page and API endpoints
+ * This allows for proper invite code validation from URL parameters
  */
-export default async function RegisterLayout({
+export default function RegisterLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Skip check during build (no DATABASE_URL available)
-  if (!process.env.DATABASE_URL) {
-    return <>{children}</>;
-  }
-
-  // Check if any users exist
-  const userCount = await prisma.user.count();
-
-  // If a user already exists, redirect to login
-  if (userCount > 0) {
-    redirect('/login?message=registration_closed');
-  }
-
   return <>{children}</>;
 }
 

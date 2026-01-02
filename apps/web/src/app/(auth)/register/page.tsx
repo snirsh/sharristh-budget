@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { KeyRound, Mail, Shield, Loader2, AlertCircle, CheckCircle, Fingerprint } from 'lucide-react';
 import Link from 'next/link';
 import { registerPasskey, isPlatformAuthenticatorAvailable, isWebAuthnSupported } from '@/lib/auth-client';
@@ -10,7 +10,8 @@ type Step = 'form' | 'registering' | 'success';
 
 export default function RegisterPage() {
   const router = useRouter();
-  
+  const searchParams = useSearchParams();
+
   const [step, setStep] = useState<Step>('form');
   const [email, setEmail] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -29,6 +30,14 @@ export default function RegisterPage() {
     }
     checkSupport();
   }, []);
+
+  // Auto-fill invite code from URL parameter
+  useEffect(() => {
+    const inviteParam = searchParams.get('invite');
+    if (inviteParam) {
+      setInviteCode(inviteParam);
+    }
+  }, [searchParams]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
