@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { auth } from '@/lib/auth';
 
 /**
  * Public routes that don't require authentication
@@ -19,12 +18,13 @@ function isPublicRoute(pathname: string): boolean {
 }
 
 /**
- * Middleware to protect routes
- * Redirects unauthenticated users to login
- * Validates session expiration
- * Skips auth in demo mode
+ * Lightweight middleware for Edge runtime
+ * - Checks for session cookie presence (fast, edge-compatible)
+ * - Actual session validation happens in server components and API routes
+ * - Login page validates sessions server-side and redirects if already authenticated
+ * - Protected pages validate sessions via auth() calls
  */
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
@@ -37,18 +37,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Validate session using Auth.js
-  // This checks both cookie existence and session validity (including expiration)
-  const session = await auth();
+  // Check for session cookie (lightweight check for Edge runtime)
+  // Auth.js uses different cookie names based on environment
+  const sessionCookie =
+    request.cookies.get('authjs.session-token') ||
+    request.cookies.get('__Secure-authjs.session-token');
 
-  // If no valid session, redirect to login
-  if (!session?.user) {
+  // If no session cookie, redirect to login
+  // Session validity (expiration) is validated by:
+  // - Server components (e.g., login page checks and redirects if authenticated)
+  // - API routes (validate session on each request)
+  if (!sessionCookie) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Valid session exists, allow request
+  // Session cookie exists - allow request
+  // Individual routes will validate session validity as needed
   return NextResponse.next();
 }
 
