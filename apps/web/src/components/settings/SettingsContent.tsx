@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { Trash2, AlertTriangle } from 'lucide-react';
+import { PartnerInvites } from './PartnerInvites';
 
 export function SettingsContent() {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -25,6 +26,9 @@ export function SettingsContent() {
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="text-gray-500">Manage your household settings and data</p>
       </div>
+
+      {/* Partner Invites */}
+      <PartnerInvites />
 
       {/* Danger Zone */}
       <div className="card border-danger-200">

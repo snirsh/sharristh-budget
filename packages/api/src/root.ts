@@ -10,6 +10,7 @@ import {
   accountsRouter,
   demoRouter,
   performanceRouter,
+  invitesRouter,
 } from './routers';
 
 /**
@@ -26,6 +27,7 @@ export const appRouter = router({
   accounts: accountsRouter,
   demo: demoRouter,
   performance: performanceRouter,
+  invites: invitesRouter,
 });
 
 /**

@@ -45,14 +45,24 @@ model Authenticator {
 }
 
 model InviteCode {
-  id           String    @id @default(cuid())
-  code         String    @unique // Stored as hash
-  usedAt       DateTime?
-  usedByUserId String?
-  createdAt    DateTime  @default(now())
+  id             String    @id @default(cuid())
+  code           String    @unique // Stored as hash
+  type           String    @default("global") // "global" | "household"
+  householdId    String?   // Null for global invites, set for household partner invites
+  role           String    @default("member") // Role for household invites: "owner" | "member"
+  expiresAt      DateTime? // Null for no expiration, otherwise expiration timestamp
+  usedAt         DateTime?
+  usedByUserId   String?
+  createdByUserId String?  // Who created this invite (for household invites)
+  createdAt      DateTime  @default(now())
 
-  usedBy User? @relation(fields: [usedByUserId], references: [id])
+  household Household? @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  usedBy    User?      @relation("InviteCodeUsedBy", fields: [usedByUserId], references: [id])
+  createdBy User?      @relation("InviteCodeCreatedBy", fields: [createdByUserId], references: [id])
 
+  @@index([householdId])
+  @@index([createdByUserId])
+  @@index([expiresAt])
   @@map("invite_codes")
 }
 
@@ -74,6 +84,7 @@ model Household {
   rules           CategoryRule[]
   recurring       RecurringTransactionTemplate[]
   bankConnections BankConnection[]
+  inviteCodes     InviteCode[]
 
   @@map("households")
 }
@@ -87,12 +98,13 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  memberships    HouseholdMember[]
-  transactions   Transaction[]
-  corrections    UserCorrection[]
-  sessions       Session[]
-  authenticators Authenticator[]
-  inviteCode     InviteCode[]
+  memberships       HouseholdMember[]
+  transactions      Transaction[]
+  corrections       UserCorrection[]
+  sessions          Session[]
+  authenticators    Authenticator[]
+  inviteCodesUsed   InviteCode[]      @relation("InviteCodeUsedBy")
+  inviteCodesCreated InviteCode[]     @relation("InviteCodeCreatedBy")
 
   @@map("users")
 }
