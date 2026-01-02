@@ -1,46 +1,125 @@
-# Fix: Missing 'role' Column in invite_codes Table
+# Fix: Missing Columns in invite_codes Table
 
 ## Problem
-The database is missing the `role` column in the `invite_codes` table, causing invite operations to fail with:
+The database is missing several columns in the `invite_codes` table, causing invite operations to fail with errors like:
 ```
 The column `invite_codes.role` does not exist in the current database.
+The column `type` does not exist in the current database.
+```
+
+This indicates your database schema is out of sync with the Prisma schema definition.
+
+## Quick Diagnosis
+
+Run this to check what columns are missing:
+```bash
+export DATABASE_URL="your-database-url-here"
+node check-database.mjs
 ```
 
 ## Solution
-You need to apply the migration to add the missing column. Choose one of the methods below:
 
-### Method 1: Using Prisma CLI (Recommended)
+Choose the method that works best for your setup:
+
+### Method 1: Automated Fix Script (Recommended)
 ```bash
-# If using Vercel Postgres or another hosted database:
-# 1. Make sure your DATABASE_URL is set in your environment
-# 2. Run:
-cd packages/db
-pnpm db:push
+# Set your DATABASE_URL environment variable
+export DATABASE_URL="your-database-url-here"
+
+# Run the automated fix
+./fix-invite-database.sh
 ```
 
-### Method 2: Using the Migration Script
+This script will:
+1. Check what columns currently exist
+2. Show you what's missing
+3. Apply the comprehensive migration
+4. Verify the fix
+
+### Method 2: Using Node.js Script Directly
 ```bash
-# Set your DATABASE_URL environment variable, then run:
+# Set your DATABASE_URL
 export DATABASE_URL="your-database-url-here"
-node apply-migration.mjs
+
+# Check current state
+node check-database.mjs
+
+# Apply migration
+node apply-migration-comprehensive.mjs
 ```
 
 ### Method 3: Manual SQL (if you have direct database access)
-Connect to your PostgreSQL database and run:
-```sql
-ALTER TABLE "invite_codes" ADD COLUMN IF NOT EXISTS "role" TEXT NOT NULL DEFAULT 'member';
+Connect to your PostgreSQL database and run the migration SQL directly:
+
+```bash
+# Copy the SQL from:
+cat packages/db/prisma/migrations/20260102_fix_invite_codes_schema/migration.sql
+
+# Then run it in your PostgreSQL client
 ```
 
-### Method 4: For Vercel deployments
+The migration adds these columns if they don't exist:
+- `type` (TEXT, default 'global')
+- `role` (TEXT, default 'member')
+- `householdId` (TEXT, nullable)
+- `expiresAt` (TIMESTAMP)
+- `usedAt` (TIMESTAMP)
+- `usedByUserId` (TEXT)
+- `createdByUserId` (TEXT)
+- `createdAt` (TIMESTAMP, default now)
+
+### Method 4: Using Prisma CLI (Nuclear Option)
+```bash
+cd packages/db
+
+# This will force the entire schema to match
+# WARNING: This might drop data if there are other schema conflicts
+pnpm db:push --accept-data-loss
+```
+
+### Method 5: For Vercel Deployments
 If your app is deployed on Vercel:
-1. Go to your Vercel project settings
-2. Find your DATABASE_URL in Environment Variables
-3. Connect to your database using Vercel's database dashboard or a tool like pgAdmin
-4. Run the SQL from Method 3
+
+1. **Get your DATABASE_URL:**
+   - Go to Vercel project → Settings → Environment Variables
+   - Copy the `DATABASE_URL` value
+
+2. **Run locally:**
+   ```bash
+   export DATABASE_URL="the-url-from-vercel"
+   ./fix-invite-database.sh
+   ```
+
+3. **Or use Vercel's database tools:**
+   - Go to Storage → Your Database → Query
+   - Paste and run the SQL from `packages/db/prisma/migrations/20260102_fix_invite_codes_schema/migration.sql`
+
+## After Applying the Migration
+
+1. ✅ Restart your application
+2. ✅ Clear your browser cache (or do a hard refresh)
+3. ✅ Try creating an invite again
+4. ✅ The invite system should now work correctly
 
 ## Verification
-After applying the migration, restart your app and try creating an invite again. The error should be resolved.
+
+Run the check script to verify all columns are present:
+```bash
+export DATABASE_URL="your-database-url-here"
+node check-database.mjs
+```
+
+You should see ✅ All expected columns are present!
+
+## Important Notes
+
+- ✅ Safe to run multiple times (uses `IF NOT EXISTS` checks)
+- ✅ Won't drop or modify existing data
+- ✅ Only adds missing columns
+- ✅ Uses PostgreSQL conditional column additions
 
 ## Migration File Locations
-- Migration SQL: `packages/db/prisma/migrations/20260102_add_role_to_invite_codes/migration.sql`
-- Helper script: `apply-migration.mjs`
+- Comprehensive migration: `packages/db/prisma/migrations/20260102_fix_invite_codes_schema/migration.sql`
+- Check script: `check-database.mjs`
+- Apply script: `apply-migration-comprehensive.mjs`
+- Automated fix: `fix-invite-database.sh`
