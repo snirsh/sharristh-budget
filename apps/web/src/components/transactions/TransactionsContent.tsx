@@ -359,8 +359,8 @@ export const TransactionsContent = ({
         </div>
       )}
 
-      {/* Transactions List */}
-      <div className="card p-0 overflow-x-auto">
+      {/* Transactions List - Desktop Table View */}
+      <div className="hidden md:block card p-0 overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <tr>
@@ -447,6 +447,7 @@ export const TransactionsContent = ({
                     <CategorySelector
                       categories={categories}
                       currentCategoryId={tx.category?.id}
+                      transactionDirection={tx.direction as 'income' | 'expense'}
                       onSelect={(catId, createRule) => {
                         handleRecategorize(tx.id, catId, createRule);
                       }}
@@ -549,6 +550,192 @@ export const TransactionsContent = ({
         </table>
       </div>
 
+      {/* Transactions List - Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {transactions.length > 0 && (
+          <div className="flex items-center justify-between px-2">
+            <button
+              onClick={toggleSelectAll}
+              className="flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400"
+            >
+              <div className={cn(
+                'flex items-center justify-center w-6 h-6 rounded border-2 transition-colors',
+                isAllSelected
+                  ? 'bg-primary-500 border-primary-500 text-white'
+                  : 'border-gray-300 dark:border-gray-600'
+              )}>
+                {isAllSelected ? (
+                  <Check className="h-4 w-4" />
+                ) : isSomeSelected ? (
+                  <Minus className="h-4 w-4 text-primary-600" />
+                ) : null}
+              </div>
+              {isAllSelected ? 'Deselect all' : 'Select all'}
+            </button>
+          </div>
+        )}
+        {transactions.map((tx) => (
+          <div
+            key={tx.id}
+            className={cn(
+              'card p-4 relative',
+              tx.needsReview && 'border-l-4 border-warning-500',
+              tx.isIgnored && 'opacity-50 bg-gray-100 dark:bg-gray-900',
+              selectedIds.has(tx.id) && 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
+            )}
+          >
+            {/* Checkbox and Date Row */}
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={() => toggleSelection(tx.id)}
+                className={cn(
+                  'flex items-center justify-center w-7 h-7 rounded border-2 transition-colors',
+                  selectedIds.has(tx.id)
+                    ? 'bg-primary-500 border-primary-500 text-white'
+                    : 'border-gray-300 dark:border-gray-600 active:bg-gray-100 dark:active:bg-gray-700'
+                )}
+              >
+                {selectedIds.has(tx.id) && <Check className="h-4 w-4" />}
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(tx.date)}
+                </span>
+                {tx.needsReview && (
+                  <span className="badge badge-warning text-xs">Review</span>
+                )}
+              </div>
+            </div>
+
+            {/* Description and Merchant */}
+            <div className="mb-3">
+              <p className={cn(
+                'font-medium',
+                tx.isIgnored
+                  ? 'text-gray-500 dark:text-gray-400 line-through'
+                  : 'text-gray-900 dark:text-white'
+              )}>
+                {tx.description}
+              </p>
+              {tx.merchant && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">{tx.merchant}</p>
+              )}
+              {tx.isIgnored && (
+                <span className="text-sm text-gray-400 dark:text-gray-500 italic">Ignored</span>
+              )}
+            </div>
+
+            {/* Category Selector */}
+            <div className="mb-3">
+              {editingTransaction === tx.id ? (
+                <MobileCategorySelector
+                  categories={categories}
+                  currentCategoryId={tx.category?.id}
+                  transactionDirection={tx.direction as 'income' | 'expense'}
+                  onSelect={(catId, createRule) => {
+                    handleRecategorize(tx.id, catId, createRule);
+                  }}
+                  onCancel={() => setEditingTransaction(null)}
+                />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditingTransaction(tx.id)}
+                    className={cn(
+                      'flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
+                      tx.category
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 active:bg-gray-200 dark:active:bg-gray-600'
+                        : 'bg-warning-100 text-warning-700 dark:bg-warning-900/40 dark:text-warning-400 active:bg-warning-200 dark:active:bg-warning-900/60'
+                    )}
+                  >
+                    <span className="text-lg">{tx.category?.icon || '❓'}</span>
+                    <span>{tx.category?.name || 'Set Category'}</span>
+                    <ChevronDown className="h-4 w-4 ml-auto" />
+                  </button>
+                  <AICategoryBadgeCompact
+                    source={tx.categorizationSource}
+                    confidence={tx.confidence}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Amount and Account Row */}
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {tx.account?.name}
+              </span>
+              <span
+                className={cn(
+                  'text-lg font-semibold',
+                  tx.isIgnored
+                    ? 'text-gray-400 dark:text-gray-500'
+                    : tx.direction === 'income'
+                      ? 'text-success-600'
+                      : 'text-gray-900 dark:text-white'
+                )}
+              >
+                {tx.direction === 'income' ? '+' : '-'}
+                {formatCurrency(tx.amount)}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleToggleIgnore(tx.id, !tx.isIgnored)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors',
+                  tx.isIgnored
+                    ? 'bg-success-100 text-success-700 dark:bg-success-900/40 dark:text-success-400 active:bg-success-200'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 active:bg-gray-200 dark:active:bg-gray-600'
+                )}
+              >
+                {tx.isIgnored ? (
+                  <>
+                    <Eye className="h-4 w-4" />
+                    <span>Restore</span>
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-4 w-4" />
+                    <span>Ignore</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => handleDelete(tx.id)}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/40 dark:text-danger-400 active:bg-danger-200 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        ))}
+        {transactions.length === 0 && (
+          <div className="card p-12 text-center text-gray-500 dark:text-gray-400">
+            <div className="space-y-2">
+              <p>No transactions found for {formatMonth(currentMonth)}</p>
+              <p className="text-sm">
+                Try navigating to a previous month using the arrows above, or{' '}
+                <button
+                  onClick={() => navigateMonth('prev')}
+                  className="text-primary-500 hover:underline"
+                >
+                  go to {formatMonth((() => {
+                    const [year, monthNum] = currentMonth.split('-').map(Number);
+                    const date = new Date(year!, monthNum! - 1);
+                    date.setMonth(date.getMonth() - 1);
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                  })())}
+                </button>
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Add Transaction Dialog */}
       <AddTransactionDialog
         categories={categories}
@@ -563,16 +750,27 @@ export const TransactionsContent = ({
 const CategorySelector = ({
   categories,
   currentCategoryId,
+  transactionDirection,
   onSelect,
   onCancel,
 }: {
   categories: Category[];
   currentCategoryId?: string;
+  transactionDirection: 'income' | 'expense';
   onSelect: (categoryId: string, createRule: boolean) => void;
   onCancel: () => void;
 }) => {
   const [selectedId, setSelectedId] = useState(currentCategoryId || '');
   const [createRule, setCreateRule] = useState(false);
+
+  // Filter categories based on transaction direction
+  const filteredCategories = categories.filter((cat) => {
+    if (transactionDirection === 'income') {
+      return cat.type === 'income';
+    }
+    // For expenses, show expected and varying categories
+    return cat.type === 'expected' || cat.type === 'varying';
+  });
 
   return (
     <div className="flex items-center gap-2">
@@ -583,7 +781,7 @@ const CategorySelector = ({
         autoFocus
       >
         <option value="">Select category...</option>
-        {categories.map((cat) => (
+        {filteredCategories.map((cat) => (
           <option key={cat.id} value={cat.id}>
             {cat.icon} {cat.name}
           </option>
@@ -611,6 +809,74 @@ const CategorySelector = ({
       >
         <X className="h-4 w-4" />
       </button>
+    </div>
+  );
+};
+
+const MobileCategorySelector = ({
+  categories,
+  currentCategoryId,
+  transactionDirection,
+  onSelect,
+  onCancel,
+}: {
+  categories: Category[];
+  currentCategoryId?: string;
+  transactionDirection: 'income' | 'expense';
+  onSelect: (categoryId: string, createRule: boolean) => void;
+  onCancel: () => void;
+}) => {
+  const [selectedId, setSelectedId] = useState(currentCategoryId || '');
+  const [createRule, setCreateRule] = useState(false);
+
+  // Filter categories based on transaction direction
+  const filteredCategories = categories.filter((cat) => {
+    if (transactionDirection === 'income') {
+      return cat.type === 'income';
+    }
+    return cat.type === 'expected' || cat.type === 'varying';
+  });
+
+  return (
+    <div className="space-y-3">
+      <select
+        value={selectedId}
+        onChange={(e) => setSelectedId(e.target.value)}
+        className="input w-full text-base py-3"
+        autoFocus
+      >
+        <option value="">Select category...</option>
+        {filteredCategories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.icon} {cat.name}
+          </option>
+        ))}
+      </select>
+      <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+        <input
+          type="checkbox"
+          checked={createRule}
+          onChange={(e) => setCreateRule(e.target.checked)}
+          className="rounded w-5 h-5"
+        />
+        <span>Create rule for this merchant/pattern</span>
+      </label>
+      <div className="flex gap-2">
+        <button
+          onClick={() => selectedId && onSelect(selectedId, createRule)}
+          disabled={!selectedId}
+          className="flex-1 btn btn-primary py-3 disabled:opacity-50"
+        >
+          <Check className="h-5 w-5 mr-2" />
+          Save Category
+        </button>
+        <button
+          onClick={onCancel}
+          className="btn btn-outline py-3"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   );
 };
