@@ -1,7 +1,8 @@
 import { serverTrpc } from '@/lib/trpc/server';
 import { RulesContent } from '@/components/rules/RulesContent';
 
-export const dynamic = 'force-dynamic';
+// ISR: Revalidate every hour for rules (rarely change)
+export const revalidate = 3600;
 
 export default async function RulesPage() {
   const trpc = await serverTrpc();

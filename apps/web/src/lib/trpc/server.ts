@@ -95,8 +95,9 @@ const createServerContext = cache(async (): Promise<Context> => {
 /**
  * Server-side tRPC caller for React Server Components
  * Automatically includes authentication context
+ * Cached per request to enable deduplication of tRPC calls
  */
-export const serverTrpc = async () => {
+export const serverTrpc = cache(async () => {
   const context = await createServerContext();
   return createCaller(context);
-};
+});

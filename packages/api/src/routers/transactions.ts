@@ -82,8 +82,30 @@ export const transactionsRouter = router({
       ctx.prisma.transaction.count({ where }),
     ]);
 
+    // Format data on server to reduce client-side computation
+    const formattedTransactions = transactions.map(tx => ({
+      ...tx,
+      // Pre-format currency on server (reduces client work)
+      formattedAmount: new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(Math.abs(tx.amount)),
+      // Pre-format date on server
+      formattedDate: new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(new Date(tx.date)),
+      // Build category path on server
+      categoryPath: tx.category
+        ? tx.category.name
+        : 'Uncategorized',
+    }));
+
     return {
-      transactions,
+      transactions: formattedTransactions,
       total,
       hasMore: input.offset + transactions.length < total,
     };

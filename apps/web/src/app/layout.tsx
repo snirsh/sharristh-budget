@@ -5,6 +5,7 @@ import './globals.css';
 import { TRPCProvider } from '@/lib/trpc/provider';
 import { ThemeProvider } from '@/lib/theme';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { WebVitals } from '@/components/analytics/WebVitals';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -47,6 +48,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans antialiased">
+        <WebVitals />
         <ThemeProvider>
           <TRPCProvider>
             <div className="flex min-h-screen">

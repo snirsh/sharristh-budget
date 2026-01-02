@@ -2,7 +2,8 @@ import { Suspense } from 'react';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 import { Loader2 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+// ISR: Revalidate every 60 seconds for dashboard data
+export const revalidate = 60;
 
 const Loading = () => (
   <div className="flex items-center justify-center py-12">

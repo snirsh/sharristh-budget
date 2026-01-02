@@ -7,4 +7,5 @@ export { dashboardRouter } from './dashboard';
 export { bankConnectionsRouter } from './bankConnections';
 export { accountsRouter } from './accounts';
 export { demoRouter } from './demo';
+export { performanceRouter } from './performance';
 
