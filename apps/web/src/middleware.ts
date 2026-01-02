@@ -2,22 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Public routes that don't require authentication
- */
-const publicRoutes = [
-  '/login',
-  '/register',
-  '/api/auth',
-];
-
-/**
- * Check if a path matches any public route
- */
-function isPublicRoute(pathname: string): boolean {
-  return publicRoutes.some((route) => pathname.startsWith(route));
-}
-
-/**
  * Lightweight middleware for Edge runtime
  * - Checks for session cookie presence (fast, edge-compatible)
  * - Actual session validation happens in server components and API routes
@@ -28,7 +12,11 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
-  if (isPublicRoute(pathname)) {
+  if (
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/api/auth')
+  ) {
     return NextResponse.next();
   }
 
