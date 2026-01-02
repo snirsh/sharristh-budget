@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { auth } from '@/lib/auth';
 
 /**
  * Public routes that don't require authentication
@@ -20,9 +21,10 @@ function isPublicRoute(pathname: string): boolean {
 /**
  * Middleware to protect routes
  * Redirects unauthenticated users to login
+ * Validates session expiration
  * Skips auth in demo mode
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
@@ -35,20 +37,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for session cookie
-  // Auth.js uses different cookie names based on environment
-  const sessionCookie =
-    request.cookies.get('authjs.session-token') ||
-    request.cookies.get('__Secure-authjs.session-token');
+  // Validate session using Auth.js
+  // This checks both cookie existence and session validity (including expiration)
+  const session = await auth();
 
-  // If no session, redirect to login
-  if (!sessionCookie) {
+  // If no valid session, redirect to login
+  if (!session?.user) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Session exists, allow request
+  // Valid session exists, allow request
   return NextResponse.next();
 }
 
