@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createTRPCRouter, publicProcedure } from '../trpc';
+import { router, publicProcedure } from '../trpc';
 import { getQueryStats, getSlowQueries } from '@sfam/db';
 
 /**
@@ -10,7 +10,7 @@ import { getQueryStats, getSlowQueries } from '@sfam/db';
  *
  * Note: In production, you may want to restrict these endpoints to admin users only.
  */
-export const performanceRouter = createTRPCRouter({
+export const performanceRouter = router({
   /**
    * Get database query statistics
    */
