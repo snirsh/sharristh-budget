@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script to fix the missing 'role' column in invite_codes table
+# Script to fix the missing columns in invite_codes table
 
 echo "=== Fix Invite Database ==="
 echo ""
@@ -12,27 +12,32 @@ if [ -z "$DATABASE_URL" ]; then
   echo "  export DATABASE_URL='your-database-url-here'"
   echo ""
   echo "Or if using .env.local:"
-  echo "  1. Create apps/web/.env.local"
+  echo "  1. Create apps/web/.env.local or .env.local in root"
   echo "  2. Add: DATABASE_URL='your-database-url-here'"
-  echo "  3. Run: source apps/web/.env.local && ./fix-invite-database.sh"
+  echo "  3. Run: source .env.local && ./fix-invite-database.sh"
   exit 1
 fi
 
 echo "✓ DATABASE_URL is set"
 echo ""
 
-# Try to use Prisma CLI from node_modules
-PRISMA_BIN="./node_modules/.pnpm/@prisma+client@6.19.1_prisma@6.19.1_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client/node_modules/.bin/prisma"
+# First, check the current state of the database
+echo "Step 1: Checking current database schema..."
+node check-database.mjs
+echo ""
 
-if [ -f "$PRISMA_BIN" ]; then
-  echo "✓ Found Prisma CLI"
-  echo "Applying migration..."
-  PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 $PRISMA_BIN db push --schema=packages/db/prisma/schema.prisma --accept-data-loss
-else
-  echo "❌ Prisma CLI not found."
-  echo "Please run: pnpm install"
-  exit 1
+# Ask user to confirm
+read -p "Do you want to apply the migration? (y/n) " -n 1 -r
+echo ""
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+  echo "Migration cancelled."
+  exit 0
 fi
+
+# Apply the comprehensive migration
+echo "Step 2: Applying migration..."
+node apply-migration-comprehensive.mjs
 
 echo ""
 echo "✅ Migration complete! You can now invite your spouse."
