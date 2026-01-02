@@ -751,5 +751,369 @@ export const categoriesRouter = router({
       categoriesCreated: createdCount,
     };
   }),
+
+  /**
+   * Migrate existing categories to new schema
+   * Replaces all existing categories with the new bilingual structure
+   */
+  migrateToNewSchema: protectedProcedure.mutation(async ({ ctx }) => {
+    // Category mapping for smart migration
+    const categoryMapping: Record<string, string> = {
+      'משכורת': 'Salary (משכורת)',
+      'Salary': 'Salary (משכורת)',
+      'Salary (משכורת)': 'Salary (משכורת)',
+      'פרילנס': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
+      'Freelance': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
+      'Freelance (פרילנס)': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
+      'מתנות': 'Gifts & Transfers (מתנות והעברות)',
+      'Gifts': 'Gifts & Transfers (מתנות והעברות)',
+      'Gifts (מתנות)': 'Gifts & Transfers (מתנות והעברות)',
+      'הכנסה אחרת': 'Other Income (הכנסה אחרת)',
+      'Other Income': 'Other Income (הכנסה אחרת)',
+      'Other Income (הכנסה אחרת)': 'Other Income (הכנסה אחרת)',
+      'שכר דירה': 'Rent / Mortgage (שכר דירה / משכנתא)',
+      'Rent': 'Rent / Mortgage (שכר דירה / משכנתא)',
+      'Rent (שכר דירה)': 'Rent / Mortgage (שכר דירה / משכנתא)',
+      'חשמל': 'Electricity (חשמל)',
+      'Electricity': 'Electricity (חשמל)',
+      'Electricity (חשמל)': 'Electricity (חשמל)',
+      'מכולת': 'Supermarket (סופרמרקט)',
+      'Groceries': 'Supermarket (סופרמרקט)',
+      'Groceries (מכולת)': 'Supermarket (סופרמרקט)',
+      'מסעדות': 'Restaurants (מסעדות)',
+      'Restaurants': 'Restaurants (מסעדות)',
+      'Restaurants (מסעדות)': 'Restaurants (מסעדות)',
+      'תחבורה': 'Transportation (תחבורה)',
+      'Transportation': 'Transportation (תחבורה)',
+      'Transportation (תחבורה)': 'Transportation (תחבורה)',
+      'בילויים': 'Entertainment (בידור)',
+      'Entertainment': 'Entertainment (בידור)',
+      'Entertainment (בילויים)': 'Entertainment (בידור)',
+      'ביטוחים': 'Insurance (ביטוחים)',
+      'Insurance': 'Insurance (ביטוחים)',
+      'אחר': 'Miscellaneous (שונות)',
+      'Other': 'Miscellaneous (שונות)',
+      'Other (אחר)': 'Miscellaneous (שונות)',
+    };
+
+    // Get all existing categories
+    const oldCategories = await ctx.prisma.category.findMany({
+      where: { householdId: ctx.householdId },
+    });
+
+    if (oldCategories.length === 0) {
+      return {
+        success: false,
+        message: 'No categories to migrate',
+        stats: { oldCategories: 0, newCategories: 0, transactionsUpdated: 0 },
+      };
+    }
+
+    // Create new categories (reuse seedDefaults logic)
+    const incomeCategories = [
+      { name: 'Salary (משכורת)', icon: '💼', sortOrder: 1 },
+      { name: 'Freelance / Side Jobs (עבודות צד/פרילנס)', icon: '💻', sortOrder: 2 },
+      { name: 'Government Benefits (קצבאות והטבות)', icon: '🏛️', sortOrder: 3 },
+      { name: 'Refunds & Reimbursements (החזרי כספים)', icon: '↩️', sortOrder: 4 },
+      { name: 'Investments & Interest (השקעות וריבית)', icon: '📈', sortOrder: 5 },
+      { name: 'Gifts & Transfers (מתנות והעברות)', icon: '🎁', sortOrder: 6 },
+      { name: 'Other Income (הכנסה אחרת)', icon: '💰', sortOrder: 7 },
+    ];
+
+    const expenseCategories = [
+      {
+        name: 'Housing (דיור)',
+        icon: '🏠',
+        sortOrder: 1,
+        subcategories: [
+          { name: 'Rent / Mortgage (שכר דירה / משכנתא)', icon: '🏘️', sortOrder: 1 },
+          { name: 'Arnona (ארנונה)', icon: '🏛️', sortOrder: 2 },
+          { name: 'Building Fee (ועד בית)', icon: '🏢', sortOrder: 3 },
+          { name: 'Repairs & Maintenance (תיקונים ותחזוקה)', icon: '🔧', sortOrder: 4 },
+          { name: 'Home Insurance (ביטוח דירה)', icon: '🛡️', sortOrder: 5 },
+        ],
+      },
+      {
+        name: 'Utilities (חשמל ומים)',
+        icon: '💡',
+        sortOrder: 2,
+        subcategories: [
+          { name: 'Electricity (חשמל)', icon: '⚡', sortOrder: 1 },
+          { name: 'Water (מים)', icon: '💧', sortOrder: 2 },
+          { name: 'Gas (גז)', icon: '🔥', sortOrder: 3 },
+          { name: 'Internet (אינטרנט)', icon: '🌐', sortOrder: 4 },
+          { name: 'Cell Phones (סלולר)', icon: '📱', sortOrder: 5 },
+          { name: 'TV / Streaming (טלויזיה/סטרימינג)', icon: '📺', sortOrder: 6 },
+        ],
+      },
+      {
+        name: 'Groceries & Household (מזון ומשק בית)',
+        icon: '🛒',
+        sortOrder: 3,
+        subcategories: [
+          { name: 'Supermarket (סופרמרקט)', icon: '🏪', sortOrder: 1 },
+          { name: 'Household Supplies (חומרי ניקוי וציוד)', icon: '🧹', sortOrder: 2 },
+          { name: 'Baby Supplies (ציוד לתינוק)', icon: '👶', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Eating & Drinking (אוכל בחוץ)',
+        icon: '🍽️',
+        sortOrder: 4,
+        subcategories: [
+          { name: 'Restaurants (מסעדות)', icon: '🍴', sortOrder: 1 },
+          { name: 'Coffee & Snacks (קפה ונשנושים)', icon: '☕', sortOrder: 2 },
+          { name: 'Delivery (משלוחים)', icon: '🚚', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Transportation (תחבורה)',
+        icon: '🚗',
+        sortOrder: 5,
+        subcategories: [
+          { name: 'Fuel (דלק)', icon: '⛽', sortOrder: 1 },
+          { name: 'Public Transport (תחבורה ציבורית)', icon: '🚌', sortOrder: 2 },
+          { name: 'Taxi / Ride-Share (מוניות/שיתופי נסיעות)', icon: '🚕', sortOrder: 3 },
+          { name: 'Car Maintenance (טיפולים לרכב)', icon: '🔧', sortOrder: 4 },
+          { name: 'Car Insurance (ביטוח רכב)', icon: '🚙', sortOrder: 5 },
+          { name: 'Parking (חניה)', icon: '🅿️', sortOrder: 6 },
+        ],
+      },
+      {
+        name: 'Kids & Family (ילדים ומשפחה)',
+        icon: '👨‍👩‍👧‍👦',
+        sortOrder: 6,
+        subcategories: [
+          { name: 'Daycare (גן/מעון)', icon: '🏫', sortOrder: 1 },
+          { name: 'Activities (חוגים ופעילויות)', icon: '🎨', sortOrder: 2 },
+          { name: 'Clothing (בגדים)', icon: '👕', sortOrder: 3 },
+          { name: 'Health / Medicines (בריאות ותרופות)', icon: '💊', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Health & Wellness (בריאות וכושר)',
+        icon: '💊',
+        sortOrder: 7,
+        subcategories: [
+          { name: 'Health Insurance (ביטוח בריאות)', icon: '🏥', sortOrder: 1 },
+          { name: 'Medicines (תרופות)', icon: '💉', sortOrder: 2 },
+          { name: 'Doctor / Dentist (רופאים/שיניים)', icon: '🦷', sortOrder: 3 },
+          { name: 'Gym / Sports (חדר כושר/ספורט)', icon: '💪', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Insurance (ביטוחים)',
+        icon: '🛡️',
+        sortOrder: 8,
+        subcategories: [
+          { name: 'Life (ביטוח חיים)', icon: '❤️', sortOrder: 1 },
+          { name: 'Car (ביטוח רכב)', icon: '🚗', sortOrder: 2 },
+          { name: 'Home (ביטוח דירה)', icon: '🏠', sortOrder: 3 },
+          { name: 'Travel (ביטוח נסיעות)', icon: '✈️', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Education & Personal Growth (לימודים והתפתחות)',
+        icon: '📚',
+        sortOrder: 9,
+        subcategories: [
+          { name: 'Courses (קורסים)', icon: '🎓', sortOrder: 1 },
+          { name: 'Books (ספרים)', icon: '📖', sortOrder: 2 },
+          { name: 'Workshops (סדנאות)', icon: '🛠️', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Financial Commitments (התחייבויות פיננסיות)',
+        icon: '💳',
+        sortOrder: 10,
+        subcategories: [
+          { name: 'Loans (הלוואות)', icon: '🏦', sortOrder: 1 },
+          { name: 'Credit Card Interest (ריביות כרטיסי אשראי)', icon: '💳', sortOrder: 2 },
+          { name: 'Bank Fees (עמלות בנק)', icon: '🏧', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Subscriptions (מנויים)',
+        icon: '📱',
+        sortOrder: 11,
+        subcategories: [
+          { name: 'Software (תוכנות)', icon: '💻', sortOrder: 1 },
+          { name: 'Streaming (סטרימינג)', icon: '📺', sortOrder: 2 },
+          { name: 'Cloud Storage (אחסון בענן)', icon: '☁️', sortOrder: 3 },
+          { name: 'Other Services (שירותים נוספים)', icon: '🔄', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Leisure & Lifestyle (פנאי וסגנון חיים)',
+        icon: '🎭',
+        sortOrder: 12,
+        subcategories: [
+          { name: 'Hobbies (תחביבים)', icon: '🎨', sortOrder: 1 },
+          { name: 'Entertainment (בידור)', icon: '🎬', sortOrder: 2 },
+          { name: 'Vacations (חופשות)', icon: '🏖️', sortOrder: 3 },
+          { name: 'Gifts (מתנות)', icon: '🎁', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Pets (חיות מחמד)',
+        icon: '🐕',
+        sortOrder: 13,
+        subcategories: [
+          { name: 'Food (מזון)', icon: '🍖', sortOrder: 1 },
+          { name: 'Vet (וטרינר)', icon: '🏥', sortOrder: 2 },
+          { name: 'Supplies (ציוד)', icon: '🦴', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Charity & Donations (תרומות)',
+        icon: '❤️',
+        sortOrder: 14,
+        subcategories: [
+          { name: 'Nonprofits (עמותות)', icon: '🏛️', sortOrder: 1 },
+          { name: 'Community Giving (תרומות קהילה)', icon: '🤝', sortOrder: 2 },
+        ],
+      },
+      {
+        name: 'Savings & Investments (חסכונות והשקעות)',
+        icon: '💰',
+        sortOrder: 15,
+        subcategories: [
+          { name: 'Emergency Fund (קרן חירום)', icon: '🆘', sortOrder: 1 },
+          { name: 'Long-term Savings (חיסכון לטווח ארוך)', icon: '📊', sortOrder: 2 },
+          { name: 'Investments (השקעות)', icon: '📈', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Unexpected / Irregular (חד-פעמי / בלתי צפוי)',
+        icon: '❗',
+        sortOrder: 16,
+        subcategories: [
+          { name: 'Repairs (תיקונים)', icon: '🔧', sortOrder: 1 },
+          { name: 'One-time Purchases (רכישות גדולות)', icon: '🛍️', sortOrder: 2 },
+          { name: 'Miscellaneous (שונות)', icon: '📦', sortOrder: 3 },
+        ],
+      },
+    ];
+
+    // Create new categories
+    const newCategoryMap = new Map<string, string>();
+
+    for (const cat of incomeCategories) {
+      const created = await ctx.prisma.category.create({
+        data: {
+          householdId: ctx.householdId,
+          name: cat.name,
+          type: 'income',
+          icon: cat.icon,
+          sortOrder: cat.sortOrder,
+          isSystem: true,
+        },
+      });
+      newCategoryMap.set(cat.name, created.id);
+    }
+
+    for (const cat of expenseCategories) {
+      const parent = await ctx.prisma.category.create({
+        data: {
+          householdId: ctx.householdId,
+          name: cat.name,
+          type: 'expense',
+          icon: cat.icon,
+          sortOrder: cat.sortOrder,
+          isSystem: true,
+        },
+      });
+      newCategoryMap.set(cat.name, parent.id);
+
+      for (const subcat of cat.subcategories) {
+        const created = await ctx.prisma.category.create({
+          data: {
+            householdId: ctx.householdId,
+            name: subcat.name,
+            type: 'expense',
+            parentCategoryId: parent.id,
+            icon: subcat.icon,
+            sortOrder: subcat.sortOrder,
+            isSystem: true,
+          },
+        });
+        newCategoryMap.set(subcat.name, created.id);
+      }
+    }
+
+    // Build mapping from old to new
+    const idMapping = new Map<string, string>();
+    for (const oldCat of oldCategories) {
+      const mappedName = categoryMapping[oldCat.name];
+      if (mappedName && newCategoryMap.has(mappedName)) {
+        idMapping.set(oldCat.id, newCategoryMap.get(mappedName)!);
+      } else {
+        const fallbackId =
+          oldCat.type === 'income'
+            ? newCategoryMap.get('Other Income (הכנסה אחרת)')
+            : newCategoryMap.get('Miscellaneous (שונות)');
+        if (fallbackId) {
+          idMapping.set(oldCat.id, fallbackId);
+        }
+      }
+    }
+
+    // Update transactions
+    let transactionsUpdated = 0;
+    for (const [oldId, newId] of idMapping.entries()) {
+      const result = await ctx.prisma.transaction.updateMany({
+        where: { householdId: ctx.householdId, categoryId: oldId },
+        data: { categoryId: newId },
+      });
+      transactionsUpdated += result.count;
+    }
+
+    // Delete old budgets
+    await ctx.prisma.budget.deleteMany({
+      where: {
+        householdId: ctx.householdId,
+        categoryId: { in: Array.from(idMapping.keys()) },
+      },
+    });
+
+    // Update category rules
+    for (const [oldId, newId] of idMapping.entries()) {
+      await ctx.prisma.categoryRule.updateMany({
+        where: { householdId: ctx.householdId, categoryId: oldId },
+        data: { categoryId: newId },
+      });
+    }
+
+    // Update recurring templates
+    for (const [oldId, newId] of idMapping.entries()) {
+      await ctx.prisma.recurringTransactionTemplate.updateMany({
+        where: { householdId: ctx.householdId, defaultCategoryId: oldId },
+        data: { defaultCategoryId: newId },
+      });
+    }
+
+    // Delete old categories
+    await ctx.prisma.category.deleteMany({
+      where: {
+        householdId: ctx.householdId,
+        id: { in: oldCategories.map((c) => c.id) },
+      },
+    });
+
+    // Invalidate caches
+    revalidateTag('categories');
+    revalidateTag('category-tree');
+    revalidateTag(`household-${ctx.householdId}`);
+
+    return {
+      success: true,
+      message: `Migrated ${oldCategories.length} old categories to ${newCategoryMap.size} new categories`,
+      stats: {
+        oldCategories: oldCategories.length,
+        newCategories: newCategoryMap.size,
+        transactionsUpdated,
+      },
+    };
+  }),
 });
 
