@@ -55,7 +55,7 @@ export default function RootLayout({
               <Suspense>
                 <Sidebar />
               </Suspense>
-              <main className="flex-1 overflow-auto">
+              <main className="flex-1 overflow-auto pt-16 lg:pt-0">
                 <div className="container mx-auto max-w-7xl p-6">
                   {children}
                 </div>
