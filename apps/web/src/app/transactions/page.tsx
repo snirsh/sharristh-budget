@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
-import { serverTrpc } from '@/lib/trpc/server';
-import { TransactionsContent } from '@/components/transactions/TransactionsContent';
+import { TransactionsServer } from '@/components/transactions/TransactionsServer';
 import { Loader2 } from 'lucide-react';
 import { getCurrentMonth } from '@/lib/utils';
 
@@ -22,14 +21,11 @@ const TransactionsPageContent = async ({
   const params = await searchParams;
   const needsReview = params.needsReview === 'true';
   const month = params.month ?? getCurrentMonth();
-  const trpc = await serverTrpc();
-  const categories = await trpc.categories.list();
 
   return (
-    <TransactionsContent
-      categories={categories}
-      initialNeedsReview={needsReview}
+    <TransactionsServer
       month={month}
+      needsReview={needsReview}
     />
   );
 };

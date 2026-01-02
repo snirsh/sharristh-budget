@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { DashboardContent } from '@/components/dashboard/DashboardContent';
+import { DashboardServer } from '@/components/dashboard/DashboardServer';
 import { Loader2 } from 'lucide-react';
 
 // ISR: Revalidate every 60 seconds for dashboard data
@@ -15,7 +15,7 @@ const Loading = () => (
 export default function DashboardPage() {
   return (
     <Suspense fallback={<Loading />}>
-      <DashboardContent />
+      <DashboardServer />
     </Suspense>
   );
 }

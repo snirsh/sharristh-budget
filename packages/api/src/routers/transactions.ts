@@ -64,26 +64,49 @@ export const transactionsRouter = router({
       ];
     }
 
-    const [transactions, total] = await Promise.all([
-      ctx.prisma.transaction.findMany({
-        where,
-        include: {
-          category: {
-            select: { id: true, name: true, icon: true, color: true, type: true },
-          },
-          account: {
-            select: { id: true, name: true },
-          },
+    // Use cursor-based pagination if cursor is provided, otherwise use offset
+    const queryOptions: any = {
+      where,
+      include: {
+        category: {
+          select: { id: true, name: true, icon: true, color: true, type: true },
         },
-        orderBy: { date: 'desc' },
-        take: input.limit,
-        skip: input.offset,
-      }),
-      ctx.prisma.transaction.count({ where }),
+        account: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: [{ date: 'desc' }, { id: 'desc' }], // Secondary sort by ID for stable ordering
+      take: input.limit + 1, // Fetch one extra to check if there's more
+    };
+
+    // Cursor-based pagination (more efficient for large datasets)
+    if (input.cursor) {
+      queryOptions.cursor = { id: input.cursor };
+      queryOptions.skip = 1; // Skip the cursor itself
+    } else {
+      // Offset-based pagination (for backward compatibility)
+      queryOptions.skip = input.offset;
+      queryOptions.take = input.limit; // Don't fetch extra for offset pagination
+    }
+
+    const [transactions, total] = await Promise.all([
+      ctx.prisma.transaction.findMany(queryOptions),
+      // Only count if using offset pagination (expensive query)
+      input.cursor ? Promise.resolve(0) : ctx.prisma.transaction.count({ where }),
     ]);
 
+    // Check if there are more results (for cursor pagination)
+    const hasMore = input.cursor
+      ? transactions.length > input.limit
+      : input.offset + transactions.length < total;
+
+    // Remove the extra item we fetched for hasMore check (cursor pagination only)
+    const actualTransactions = input.cursor && transactions.length > input.limit
+      ? transactions.slice(0, -1)
+      : transactions;
+
     // Format data on server to reduce client-side computation
-    const formattedTransactions = transactions.map(tx => ({
+    const formattedTransactions = actualTransactions.map(tx => ({
       ...tx,
       // Pre-format currency on server (reduces client work)
       formattedAmount: new Intl.NumberFormat('en-US', {
@@ -104,10 +127,16 @@ export const transactionsRouter = router({
         : 'Uncategorized',
     }));
 
+    // Get the next cursor (last item's ID)
+    const nextCursor = hasMore && formattedTransactions.length > 0
+      ? formattedTransactions[formattedTransactions.length - 1]!.id
+      : undefined;
+
     return {
       transactions: formattedTransactions,
-      total,
-      hasMore: input.offset + transactions.length < total,
+      total: input.cursor ? undefined : total, // Only return total for offset pagination
+      hasMore,
+      nextCursor, // For cursor-based pagination
     };
   }),
 
