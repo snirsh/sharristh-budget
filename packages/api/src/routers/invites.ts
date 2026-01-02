@@ -41,7 +41,13 @@ const isHouseholdOwner = middleware(async ({ ctx, next }) => {
     });
   }
 
-  return next({ ctx });
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+      householdId: ctx.householdId,
+    },
+  });
 });
 
 /**
