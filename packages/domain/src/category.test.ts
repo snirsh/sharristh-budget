@@ -48,10 +48,10 @@ const mockCategories: Category[] = [
     sortOrder: 0,
   },
   {
-    id: 'cat-expected',
+    id: 'cat-expenses',
     householdId: 'h1',
-    name: 'Expected',
-    type: 'expected',
+    name: 'Expenses',
+    type: 'expense',
     parentCategoryId: null,
     isActive: true,
     isSystem: true,
@@ -61,8 +61,8 @@ const mockCategories: Category[] = [
     id: 'cat-housing',
     householdId: 'h1',
     name: 'Housing',
-    type: 'expected',
-    parentCategoryId: 'cat-expected',
+    type: 'expense',
+    parentCategoryId: 'cat-expenses',
     isActive: true,
     isSystem: false,
     sortOrder: 0,
@@ -71,7 +71,7 @@ const mockCategories: Category[] = [
     id: 'cat-rent',
     householdId: 'h1',
     name: 'Rent',
-    type: 'expected',
+    type: 'expense',
     parentCategoryId: 'cat-housing',
     isActive: true,
     isSystem: false,
@@ -81,37 +81,27 @@ const mockCategories: Category[] = [
     id: 'cat-utilities',
     householdId: 'h1',
     name: 'Utilities',
-    type: 'expected',
+    type: 'expense',
     parentCategoryId: 'cat-housing',
     isActive: true,
     isSystem: false,
     sortOrder: 1,
   },
   {
-    id: 'cat-varying',
-    householdId: 'h1',
-    name: 'Varying',
-    type: 'varying',
-    parentCategoryId: null,
-    isActive: true,
-    isSystem: true,
-    sortOrder: 2,
-  },
-  {
     id: 'cat-food',
     householdId: 'h1',
     name: 'Food',
-    type: 'varying',
-    parentCategoryId: 'cat-varying',
+    type: 'expense',
+    parentCategoryId: 'cat-expenses',
     isActive: true,
     isSystem: false,
-    sortOrder: 0,
+    sortOrder: 1,
   },
   {
     id: 'cat-groceries',
     householdId: 'h1',
     name: 'Groceries',
-    type: 'varying',
+    type: 'expense',
     parentCategoryId: 'cat-food',
     isActive: true,
     isSystem: false,
@@ -121,7 +111,7 @@ const mockCategories: Category[] = [
     id: 'cat-restaurants',
     householdId: 'h1',
     name: 'Restaurants',
-    type: 'varying',
+    type: 'expense',
     parentCategoryId: 'cat-food',
     isActive: true,
     isSystem: false,
@@ -131,7 +121,7 @@ const mockCategories: Category[] = [
     id: 'cat-inactive',
     householdId: 'h1',
     name: 'Inactive Category',
-    type: 'varying',
+    type: 'expense',
     parentCategoryId: null,
     isActive: false,
     isSystem: false,
@@ -255,21 +245,20 @@ describe('getAvailableParents', () => {
   });
 
   it('should filter by type when specified', () => {
-    const available = getAvailableParents('cat-rent', mockCategories, 'expected');
-    
-    // Should only include active expected categories (excluding cat-rent and descendants)
+    const available = getAvailableParents('cat-rent', mockCategories, 'expense');
+
+    // Should only include active expense categories (excluding cat-rent and descendants)
     for (const cat of available) {
-      expect(cat.type).toBe('expected');
+      expect(cat.type).toBe('expense');
     }
   });
 
   it('should return all root categories for new category', () => {
     const available = getAvailableParents(null, mockCategories);
-    
+
     // Should include all active root categories
     expect(available.some((c) => c.id === 'cat-income')).toBe(true);
-    expect(available.some((c) => c.id === 'cat-expected')).toBe(true);
-    expect(available.some((c) => c.id === 'cat-varying')).toBe(true);
+    expect(available.some((c) => c.id === 'cat-expenses')).toBe(true);
     // Should not include inactive
     expect(available.some((c) => c.id === 'cat-inactive')).toBe(false);
   });
@@ -303,7 +292,7 @@ describe('validateCategoryUpdate', () => {
   it('should allow type change for any category including system', () => {
     const result = validateCategoryUpdate(
       'cat-income',
-      { type: 'expected' },
+      { type: 'expense' },
       mockCategories,
       true
     );

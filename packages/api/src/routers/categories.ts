@@ -508,58 +508,247 @@ export const categoriesRouter = router({
     }
 
     // Default categories for Israeli household budgeting (Bilingual: English (עברית))
-    const defaultCategories = [
-      // Income categories
-      { name: 'Salary (משכורת)', type: 'income', icon: '💼', sortOrder: 1 },
-      { name: 'Freelance (פרילנס)', type: 'income', icon: '💻', sortOrder: 2 },
-      { name: 'Gifts (מתנות)', type: 'income', icon: '🎁', sortOrder: 3 },
-      { name: 'Other Income (הכנסה אחרת)', type: 'income', icon: '💰', sortOrder: 4 },
 
-      // Expected (Fixed) expenses
-      { name: 'Rent (שכר דירה)', type: 'expected', icon: '🏠', sortOrder: 1 },
-      { name: 'Electricity & Water (חשמל ומים)', type: 'expected', icon: '💡', sortOrder: 2 },
-      { name: 'Insurance (ביטוחים)', type: 'expected', icon: '🛡️', sortOrder: 3 },
-      { name: 'Phone & Internet (טלפון ואינטרנט)', type: 'expected', icon: '📱', sortOrder: 4 },
-      { name: 'Loan Repayment (החזר הלוואה)', type: 'expected', icon: '🏦', sortOrder: 5 },
-      { name: 'Income Tax (מס הכנסה)', type: 'expected', icon: '📊', sortOrder: 6 },
-      { name: 'National Insurance (ביטוח לאומי)', type: 'expected', icon: '🏥', sortOrder: 7 },
-
-      // Varying expenses
-      { name: 'Groceries (מכולת)', type: 'varying', icon: '🛒', sortOrder: 1 },
-      { name: 'Restaurants (מסעדות)', type: 'varying', icon: '🍽️', sortOrder: 2 },
-      { name: 'Transportation (תחבורה)', type: 'varying', icon: '🚗', sortOrder: 3 },
-      { name: 'Shopping (קניות)', type: 'varying', icon: '👕', sortOrder: 4 },
-      { name: 'Entertainment (בילויים)', type: 'varying', icon: '🎬', sortOrder: 5 },
-      { name: 'Healthcare (בריאות)', type: 'varying', icon: '💊', sortOrder: 6 },
-      { name: 'Education (חינוך)', type: 'varying', icon: '📚', sortOrder: 7 },
-      { name: 'Sports (ספורט)', type: 'varying', icon: '⚽', sortOrder: 8 },
-      { name: 'Beauty & Care (טיפוח)', type: 'varying', icon: '💅', sortOrder: 9 },
-      { name: 'Gifts & Events (מתנות ואירועים)', type: 'varying', icon: '🎉', sortOrder: 10 },
-      { name: 'Pets (חיות מחמד)', type: 'varying', icon: '🐕', sortOrder: 11 },
-      { name: 'Repairs (תיקונים)', type: 'varying', icon: '🔧', sortOrder: 12 },
-      { name: 'Other (אחר)', type: 'varying', icon: '📦', sortOrder: 13 },
+    // Income categories (flat, no subcategories)
+    const incomeCategories = [
+      { name: 'Salary (משכורת)', icon: '💼', sortOrder: 1 },
+      { name: 'Freelance / Side Jobs (עבודות צד/פרילנס)', icon: '💻', sortOrder: 2 },
+      { name: 'Government Benefits (קצבאות והטבות)', icon: '🏛️', sortOrder: 3 },
+      { name: 'Refunds & Reimbursements (החזרי כספים)', icon: '↩️', sortOrder: 4 },
+      { name: 'Investments & Interest (השקעות וריבית)', icon: '📈', sortOrder: 5 },
+      { name: 'Gifts & Transfers (מתנות והעברות)', icon: '🎁', sortOrder: 6 },
+      { name: 'Other Income (הכנסה אחרת)', icon: '💰', sortOrder: 7 },
     ];
 
-    // Create all categories
-    const created = await Promise.all(
-      defaultCategories.map((cat) =>
-        ctx.prisma.category.create({
+    // Expense categories with subcategories
+    const expenseCategories = [
+      {
+        name: 'Housing (דיור)',
+        icon: '🏠',
+        sortOrder: 1,
+        subcategories: [
+          { name: 'Rent / Mortgage (שכר דירה / משכנתא)', icon: '🏘️', sortOrder: 1 },
+          { name: 'Arnona (ארנונה)', icon: '🏛️', sortOrder: 2 },
+          { name: 'Building Fee (ועד בית)', icon: '🏢', sortOrder: 3 },
+          { name: 'Repairs & Maintenance (תיקונים ותחזוקה)', icon: '🔧', sortOrder: 4 },
+          { name: 'Home Insurance (ביטוח דירה)', icon: '🛡️', sortOrder: 5 },
+        ],
+      },
+      {
+        name: 'Utilities (חשמל ומים)',
+        icon: '💡',
+        sortOrder: 2,
+        subcategories: [
+          { name: 'Electricity (חשמל)', icon: '⚡', sortOrder: 1 },
+          { name: 'Water (מים)', icon: '💧', sortOrder: 2 },
+          { name: 'Gas (גז)', icon: '🔥', sortOrder: 3 },
+          { name: 'Internet (אינטרנט)', icon: '🌐', sortOrder: 4 },
+          { name: 'Cell Phones (סלולר)', icon: '📱', sortOrder: 5 },
+          { name: 'TV / Streaming (טלויזיה/סטרימינג)', icon: '📺', sortOrder: 6 },
+        ],
+      },
+      {
+        name: 'Groceries & Household (מזון ומשק בית)',
+        icon: '🛒',
+        sortOrder: 3,
+        subcategories: [
+          { name: 'Supermarket (סופרמרקט)', icon: '🏪', sortOrder: 1 },
+          { name: 'Household Supplies (חומרי ניקוי וציוד)', icon: '🧹', sortOrder: 2 },
+          { name: 'Baby Supplies (ציוד לתינוק)', icon: '👶', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Eating & Drinking (אוכל בחוץ)',
+        icon: '🍽️',
+        sortOrder: 4,
+        subcategories: [
+          { name: 'Restaurants (מסעדות)', icon: '🍴', sortOrder: 1 },
+          { name: 'Coffee & Snacks (קפה ונשנושים)', icon: '☕', sortOrder: 2 },
+          { name: 'Delivery (משלוחים)', icon: '🚚', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Transportation (תחבורה)',
+        icon: '🚗',
+        sortOrder: 5,
+        subcategories: [
+          { name: 'Fuel (דלק)', icon: '⛽', sortOrder: 1 },
+          { name: 'Public Transport (תחבורה ציבורית)', icon: '🚌', sortOrder: 2 },
+          { name: 'Taxi / Ride-Share (מוניות/שיתופי נסיעות)', icon: '🚕', sortOrder: 3 },
+          { name: 'Car Maintenance (טיפולים לרכב)', icon: '🔧', sortOrder: 4 },
+          { name: 'Car Insurance (ביטוח רכב)', icon: '🚙', sortOrder: 5 },
+          { name: 'Parking (חניה)', icon: '🅿️', sortOrder: 6 },
+        ],
+      },
+      {
+        name: 'Kids & Family (ילדים ומשפחה)',
+        icon: '👨‍👩‍👧‍👦',
+        sortOrder: 6,
+        subcategories: [
+          { name: 'Daycare (גן/מעון)', icon: '🏫', sortOrder: 1 },
+          { name: 'Activities (חוגים ופעילויות)', icon: '🎨', sortOrder: 2 },
+          { name: 'Clothing (בגדים)', icon: '👕', sortOrder: 3 },
+          { name: 'Health / Medicines (בריאות ותרופות)', icon: '💊', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Health & Wellness (בריאות וכושר)',
+        icon: '💊',
+        sortOrder: 7,
+        subcategories: [
+          { name: 'Health Insurance (ביטוח בריאות)', icon: '🏥', sortOrder: 1 },
+          { name: 'Medicines (תרופות)', icon: '💉', sortOrder: 2 },
+          { name: 'Doctor / Dentist (רופאים/שיניים)', icon: '🦷', sortOrder: 3 },
+          { name: 'Gym / Sports (חדר כושר/ספורט)', icon: '💪', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Insurance (ביטוחים)',
+        icon: '🛡️',
+        sortOrder: 8,
+        subcategories: [
+          { name: 'Life (ביטוח חיים)', icon: '❤️', sortOrder: 1 },
+          { name: 'Car (ביטוח רכב)', icon: '🚗', sortOrder: 2 },
+          { name: 'Home (ביטוח דירה)', icon: '🏠', sortOrder: 3 },
+          { name: 'Travel (ביטוח נסיעות)', icon: '✈️', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Education & Personal Growth (לימודים והתפתחות)',
+        icon: '📚',
+        sortOrder: 9,
+        subcategories: [
+          { name: 'Courses (קורסים)', icon: '🎓', sortOrder: 1 },
+          { name: 'Books (ספרים)', icon: '📖', sortOrder: 2 },
+          { name: 'Workshops (סדנאות)', icon: '🛠️', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Financial Commitments (התחייבויות פיננסיות)',
+        icon: '💳',
+        sortOrder: 10,
+        subcategories: [
+          { name: 'Loans (הלוואות)', icon: '🏦', sortOrder: 1 },
+          { name: 'Credit Card Interest (ריביות כרטיסי אשראי)', icon: '💳', sortOrder: 2 },
+          { name: 'Bank Fees (עמלות בנק)', icon: '🏧', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Subscriptions (מנויים)',
+        icon: '📱',
+        sortOrder: 11,
+        subcategories: [
+          { name: 'Software (תוכנות)', icon: '💻', sortOrder: 1 },
+          { name: 'Streaming (סטרימינג)', icon: '📺', sortOrder: 2 },
+          { name: 'Cloud Storage (אחסון בענן)', icon: '☁️', sortOrder: 3 },
+          { name: 'Other Services (שירותים נוספים)', icon: '🔄', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Leisure & Lifestyle (פנאי וסגנון חיים)',
+        icon: '🎭',
+        sortOrder: 12,
+        subcategories: [
+          { name: 'Hobbies (תחביבים)', icon: '🎨', sortOrder: 1 },
+          { name: 'Entertainment (בידור)', icon: '🎬', sortOrder: 2 },
+          { name: 'Vacations (חופשות)', icon: '🏖️', sortOrder: 3 },
+          { name: 'Gifts (מתנות)', icon: '🎁', sortOrder: 4 },
+        ],
+      },
+      {
+        name: 'Pets (חיות מחמד)',
+        icon: '🐕',
+        sortOrder: 13,
+        subcategories: [
+          { name: 'Food (מזון)', icon: '🍖', sortOrder: 1 },
+          { name: 'Vet (וטרינר)', icon: '🏥', sortOrder: 2 },
+          { name: 'Supplies (ציוד)', icon: '🦴', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Charity & Donations (תרומות)',
+        icon: '❤️',
+        sortOrder: 14,
+        subcategories: [
+          { name: 'Nonprofits (עמותות)', icon: '🏛️', sortOrder: 1 },
+          { name: 'Community Giving (תרומות קהילה)', icon: '🤝', sortOrder: 2 },
+        ],
+      },
+      {
+        name: 'Savings & Investments (חסכונות והשקעות)',
+        icon: '💰',
+        sortOrder: 15,
+        subcategories: [
+          { name: 'Emergency Fund (קרן חירום)', icon: '🆘', sortOrder: 1 },
+          { name: 'Long-term Savings (חיסכון לטווח ארוך)', icon: '📊', sortOrder: 2 },
+          { name: 'Investments (השקעות)', icon: '📈', sortOrder: 3 },
+        ],
+      },
+      {
+        name: 'Unexpected / Irregular (חד-פעמי / בלתי צפוי)',
+        icon: '❗',
+        sortOrder: 16,
+        subcategories: [
+          { name: 'Repairs (תיקונים)', icon: '🔧', sortOrder: 1 },
+          { name: 'One-time Purchases (רכישות גדולות)', icon: '🛍️', sortOrder: 2 },
+          { name: 'Miscellaneous (שונות)', icon: '📦', sortOrder: 3 },
+        ],
+      },
+    ];
+
+    let createdCount = 0;
+
+    // Create income categories
+    for (const cat of incomeCategories) {
+      await ctx.prisma.category.create({
+        data: {
+          householdId: ctx.householdId,
+          name: cat.name,
+          type: 'income',
+          icon: cat.icon,
+          sortOrder: cat.sortOrder,
+          isSystem: true,
+        },
+      });
+      createdCount++;
+    }
+
+    // Create expense categories with subcategories
+    for (const cat of expenseCategories) {
+      // Create parent category
+      const parent = await ctx.prisma.category.create({
+        data: {
+          householdId: ctx.householdId,
+          name: cat.name,
+          type: 'expense',
+          icon: cat.icon,
+          sortOrder: cat.sortOrder,
+          isSystem: true,
+        },
+      });
+      createdCount++;
+
+      // Create subcategories
+      for (const subcat of cat.subcategories) {
+        await ctx.prisma.category.create({
           data: {
             householdId: ctx.householdId,
-            name: cat.name,
-            type: cat.type as 'income' | 'expected' | 'varying',
-            icon: cat.icon,
-            sortOrder: cat.sortOrder,
-            isSystem: true, // Mark as system-created
+            name: subcat.name,
+            type: 'expense',
+            parentCategoryId: parent.id,
+            icon: subcat.icon,
+            sortOrder: subcat.sortOrder,
+            isSystem: true,
           },
-        })
-      )
-    );
+        });
+        createdCount++;
+      }
+    }
 
     return {
       success: true,
-      message: `Created ${created.length} default categories`,
-      categoriesCreated: created.length,
+      message: `Created ${createdCount} default categories`,
+      categoriesCreated: createdCount,
     };
   }),
 });

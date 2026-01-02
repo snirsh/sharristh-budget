@@ -159,7 +159,7 @@ model Category {
   id               String   @id @default(cuid())
   householdId      String
   name             String
-  type             String   // income | expected | varying
+  type             String   // income | expense
   parentCategoryId String?
   icon             String?
   color            String?

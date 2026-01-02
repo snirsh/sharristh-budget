@@ -5,7 +5,7 @@ import { z } from 'zod';
 // ============================================
 
 export const transactionDirectionSchema = z.enum(['income', 'expense', 'transfer']);
-export const categoryTypeSchema = z.enum(['income', 'expected', 'varying']);
+export const categoryTypeSchema = z.enum(['income', 'expense']);
 export const limitTypeSchema = z.enum(['soft', 'hard']);
 export const categorizationSourceSchema = z.enum([
   'manual',
