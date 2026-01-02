@@ -9,14 +9,14 @@ async function seedDemoDataForHousehold(prisma: PrismaClient, householdId: strin
   const defaultCategories = [
     { name: 'משכורת', type: 'income', icon: '💼', sortOrder: 1 },
     { name: 'הכנסה אחרת', type: 'income', icon: '💰', sortOrder: 2 },
-    { name: 'שכר דירה', type: 'expected', icon: '🏠', sortOrder: 1 },
-    { name: 'חשמל', type: 'expected', icon: '💡', sortOrder: 2 },
-    { name: 'ביטוחים', type: 'expected', icon: '🛡️', sortOrder: 3 },
-    { name: 'מכולת', type: 'varying', icon: '🛒', sortOrder: 1 },
-    { name: 'מסעדות', type: 'varying', icon: '🍽️', sortOrder: 2 },
-    { name: 'תחבורה', type: 'varying', icon: '🚗', sortOrder: 3 },
-    { name: 'קניות', type: 'varying', icon: '👕', sortOrder: 4 },
-    { name: 'בילויים', type: 'varying', icon: '🎬', sortOrder: 5 },
+    { name: 'שכר דירה', type: 'expense', icon: '🏠', sortOrder: 1 },
+    { name: 'חשמל', type: 'expense', icon: '💡', sortOrder: 2 },
+    { name: 'ביטוחים', type: 'expense', icon: '🛡️', sortOrder: 3 },
+    { name: 'מכולת', type: 'expense', icon: '🛒', sortOrder: 4 },
+    { name: 'מסעדות', type: 'expense', icon: '🍽️', sortOrder: 5 },
+    { name: 'תחבורה', type: 'expense', icon: '🚗', sortOrder: 6 },
+    { name: 'קניות', type: 'expense', icon: '👕', sortOrder: 7 },
+    { name: 'בילויים', type: 'expense', icon: '🎬', sortOrder: 8 },
   ];
 
   const categoryMap: Record<string, string> = {};
@@ -26,7 +26,7 @@ async function seedDemoDataForHousehold(prisma: PrismaClient, householdId: strin
       data: {
         householdId,
         name: cat.name,
-        type: cat.type as 'income' | 'expected' | 'varying',
+        type: cat.type as 'income' | 'expense',
         icon: cat.icon,
         sortOrder: cat.sortOrder,
         isSystem: true,
@@ -174,8 +174,8 @@ async function seedDemoDataForHousehold(prisma: PrismaClient, householdId: strin
     categoryId: categoryMap['חשמל'],
   });
 
-  // Random varying expenses
-  const varyingExpenses = [
+  // Random expenses
+  const randomExpenses = [
     { desc: 'רמי לוי', merchant: 'רמי לוי', category: 'מכולת', min: 150, max: 450 },
     { desc: 'שופרסל', merchant: 'שופרסל', category: 'מכולת', min: 100, max: 350 },
     { desc: 'מסעדה', merchant: 'טאיזו', category: 'מסעדות', min: 120, max: 280 },
@@ -190,7 +190,7 @@ async function seedDemoDataForHousehold(prisma: PrismaClient, householdId: strin
     const txCount = 10 + Math.floor(Math.random() * 6);
 
     for (let i = 0; i < txCount; i++) {
-      const expense = varyingExpenses[Math.floor(Math.random() * varyingExpenses.length)];
+      const expense = randomExpenses[Math.floor(Math.random() * randomExpenses.length)];
       const date = new Date(now);
       date.setMonth(date.getMonth() - monthsAgo);
       date.setDate(Math.floor(Math.random() * 28) + 1);

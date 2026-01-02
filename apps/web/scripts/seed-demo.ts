@@ -66,14 +66,14 @@ async function seedDemoData() {
   const defaultCategories = [
     { name: 'Salary (משכורת)', type: 'income', icon: '💼', sortOrder: 1 },
     { name: 'Other Income (הכנסה אחרת)', type: 'income', icon: '💰', sortOrder: 2 },
-    { name: 'Rent (שכר דירה)', type: 'expected', icon: '🏠', sortOrder: 1 },
-    { name: 'Electricity (חשמל)', type: 'expected', icon: '💡', sortOrder: 2 },
-    { name: 'Insurance (ביטוחים)', type: 'expected', icon: '🛡️', sortOrder: 3 },
-    { name: 'Groceries (מכולת)', type: 'varying', icon: '🛒', sortOrder: 1 },
-    { name: 'Restaurants (מסעדות)', type: 'varying', icon: '🍽️', sortOrder: 2 },
-    { name: 'Transportation (תחבורה)', type: 'varying', icon: '🚗', sortOrder: 3 },
-    { name: 'Shopping (קניות)', type: 'varying', icon: '👕', sortOrder: 4 },
-    { name: 'Entertainment (בילויים)', type: 'varying', icon: '🎬', sortOrder: 5 },
+    { name: 'Rent (שכר דירה)', type: 'expense', icon: '🏠', sortOrder: 1 },
+    { name: 'Electricity (חשמל)', type: 'expense', icon: '💡', sortOrder: 2 },
+    { name: 'Insurance (ביטוחים)', type: 'expense', icon: '🛡️', sortOrder: 3 },
+    { name: 'Groceries (מכולת)', type: 'expense', icon: '🛒', sortOrder: 4 },
+    { name: 'Restaurants (מסעדות)', type: 'expense', icon: '🍽️', sortOrder: 5 },
+    { name: 'Transportation (תחבורה)', type: 'expense', icon: '🚗', sortOrder: 6 },
+    { name: 'Shopping (קניות)', type: 'expense', icon: '👕', sortOrder: 7 },
+    { name: 'Entertainment (בילויים)', type: 'expense', icon: '🎬', sortOrder: 8 },
   ];
 
   const categoryMap: Record<string, string> = {};
@@ -83,7 +83,7 @@ async function seedDemoData() {
       data: {
         householdId: household.id,
         name: cat.name,
-        type: cat.type as 'income' | 'expected' | 'varying',
+        type: cat.type as 'income' | 'expense',
         icon: cat.icon,
         sortOrder: cat.sortOrder,
         isSystem: true,
@@ -231,8 +231,8 @@ async function seedDemoData() {
     categoryId: categoryMap['Electricity (חשמל)'],
   });
 
-  // Random varying expenses
-  const varyingExpenses = [
+  // Random expenses
+  const randomExpenses = [
     { desc: 'רמי לוי', merchant: 'רמי לוי', category: 'מכולת', min: 150, max: 450 },
     { desc: 'שופרסל', merchant: 'שופרסל', category: 'מכולת', min: 100, max: 350 },
     { desc: 'מסעדה', merchant: 'טאיזו', category: 'מסעדות', min: 120, max: 280 },
@@ -246,7 +246,7 @@ async function seedDemoData() {
     const txCount = 10 + Math.floor(Math.random() * 6);
 
     for (let i = 0; i < txCount; i++) {
-      const expense = varyingExpenses[Math.floor(Math.random() * varyingExpenses.length)];
+      const expense = randomExpenses[Math.floor(Math.random() * randomExpenses.length)];
       const date = new Date(now);
       date.setMonth(date.getMonth() - monthsAgo);
       date.setDate(Math.floor(Math.random() * 28) + 1);

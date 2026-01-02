@@ -21,7 +21,7 @@ import { suggestCategoryWithAI } from './ai-categorization';
  * 3. Keyword rule match → confidence=0.80
  * 4. Regex rule match → confidence=0.75
  * 5. AI suggestion (if enabled) → confidence=~0.85
- * 6. Fallback (varying/other income) → confidence=0.50
+ * 6. Fallback (uncategorized) → confidence=0.50
  */
 export async function categorizeTransaction(
   tx: TransactionInput,
@@ -191,7 +191,7 @@ function getFallbackCategory(direction: string): CategorizationResult {
     categoryId: null,
     confidence: 0.5,
     source: 'fallback',
-    reason: 'No matching rules found, needs varying expenses category',
+    reason: 'No matching rules found, needs categorization',
     matchedRule: null,
   };
 }

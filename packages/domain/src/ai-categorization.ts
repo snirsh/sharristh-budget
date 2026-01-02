@@ -124,9 +124,7 @@ export const suggestCategoryWithAI = async (
 const buildPrompt = (tx: TransactionInput, categories: CategoryForCategorization[]): string => {
   // Group categories by type for better context
   const incomeCategories = categories.filter((c) => c.type === 'income');
-  const expenseCategories = categories.filter(
-    (c) => c.type === 'expected' || c.type === 'varying'
-  );
+  const expenseCategories = categories.filter((c) => c.type === 'expense');
 
   const relevantCategories =
     tx.direction === 'income' ? incomeCategories : expenseCategories;
