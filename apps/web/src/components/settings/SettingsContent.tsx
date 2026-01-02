@@ -2,17 +2,38 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { PartnerInvites } from './PartnerInvites';
 
 export function SettingsContent() {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showMigrateConfirm, setShowMigrateConfirm] = useState(false);
 
   const clearDataMutation = trpc.demo.clearAllData.useMutation({
     onSuccess: (data) => {
       alert(data.message);
       setShowConfirm(false);
       window.location.reload();
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`);
+    },
+  });
+
+  const migrateCategoriesMutation = trpc.categories.migrateToNewSchema.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        alert(`✅ ${data.message}\n\n` +
+          `📊 Stats:\n` +
+          `- Old categories: ${data.stats.oldCategories}\n` +
+          `- New categories: ${data.stats.newCategories}\n` +
+          `- Transactions updated: ${data.stats.transactionsUpdated}`
+        );
+        setShowMigrateConfirm(false);
+        window.location.reload();
+      } else {
+        alert(data.message);
+      }
     },
     onError: (error) => {
       alert(`Error: ${error.message}`);
@@ -29,6 +50,60 @@ export function SettingsContent() {
 
       {/* Partner Invites */}
       <PartnerInvites />
+
+      {/* Category Migration */}
+      <div className="card border-blue-200 bg-blue-50">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-blue-100 rounded-lg">
+            <RefreshCw className="h-6 w-6 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-blue-900 mb-1">Migrate to New Categories</h2>
+            <p className="text-sm text-gray-600 mb-2">
+              Upgrade to the new bilingual category structure with 95 categories (7 income + 88 expense categories with subcategories).
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              <strong>What happens:</strong>
+            </p>
+            <ul className="text-sm text-gray-600 mb-4 list-disc list-inside space-y-1">
+              <li>All transactions will be preserved and remapped to new categories</li>
+              <li>Category rules will be updated automatically</li>
+              <li>Budgets will be deleted (you'll need to recreate them)</li>
+              <li>Old categories will be replaced with new ones</li>
+            </ul>
+            {!showMigrateConfirm ? (
+              <button
+                onClick={() => setShowMigrateConfirm(true)}
+                className="btn bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Migrate Categories
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-blue-700">
+                  Are you sure? This will replace all your categories with the new structure.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => migrateCategoriesMutation.mutate()}
+                    disabled={migrateCategoriesMutation.isPending}
+                    className="btn bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    {migrateCategoriesMutation.isPending ? 'Migrating...' : 'Yes, Migrate Now'}
+                  </button>
+                  <button
+                    onClick={() => setShowMigrateConfirm(false)}
+                    className="btn btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Danger Zone */}
       <div className="card border-danger-200">
