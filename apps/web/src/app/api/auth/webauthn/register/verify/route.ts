@@ -42,11 +42,21 @@ export async function POST(request: NextRequest) {
 
     const storedInvite = await prisma.inviteCode.findUnique({
       where: { code: hashedCode },
+      include: {
+        household: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     console.log('[WebAuthn Verify] Invite code lookup result:', {
       found: !!storedInvite,
       usedAt: storedInvite?.usedAt,
+      type: storedInvite?.type,
+      householdId: storedInvite?.householdId,
     });
 
     if (!storedInvite) {
@@ -57,12 +67,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (storedInvite?.usedAt) {
+    if (storedInvite.usedAt) {
       return NextResponse.json(
         { error: 'Invite code has already been used' },
         { status: 403 }
       );
     }
+
+    // Check if invite has expired
+    if (storedInvite.expiresAt && storedInvite.expiresAt < new Date()) {
+      return NextResponse.json(
+        { error: 'Invite code has expired' },
+        { status: 403 }
+      );
+    }
+
+    const isHouseholdInvite = storedInvite.type === 'household' && storedInvite.householdId;
 
     // Get RP configuration
     const { rpID, origin } = getRPConfig();
@@ -90,7 +110,7 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       // Create or get user
       let user = await tx.user.findUnique({ where: { email } });
-      
+
       if (!user) {
         user = await tx.user.create({
           data: {
@@ -100,21 +120,42 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Create default household for single-user setup
-        const household = await tx.household.create({
-          data: {
-            name: `${user.name}'s Household`,
-          },
-        });
-
-        // Add user as household owner
-        await tx.householdMember.create({
-          data: {
-            householdId: household.id,
+        if (isHouseholdInvite && storedInvite.householdId) {
+          // Household invite: Add user to existing household
+          console.log('[WebAuthn Verify] Adding user to existing household:', {
             userId: user.id,
-            role: 'owner',
-          },
-        });
+            householdId: storedInvite.householdId,
+            role: storedInvite.role,
+          });
+
+          await tx.householdMember.create({
+            data: {
+              householdId: storedInvite.householdId,
+              userId: user.id,
+              role: storedInvite.role,
+            },
+          });
+        } else {
+          // Global invite: Create new household for single-user setup
+          console.log('[WebAuthn Verify] Creating new household for user:', {
+            userId: user.id,
+          });
+
+          const household = await tx.household.create({
+            data: {
+              name: `${user.name}'s Household`,
+            },
+          });
+
+          // Add user as household owner
+          await tx.householdMember.create({
+            data: {
+              householdId: household.id,
+              userId: user.id,
+              role: 'owner',
+            },
+          });
+        }
       }
 
       // Store authenticator
@@ -130,16 +171,14 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Mark invite code as used (if it's a stored one, not the admin env var)
-      if (storedInvite) {
-        await tx.inviteCode.update({
-          where: { id: storedInvite.id },
-          data: {
-            usedAt: new Date(),
-            usedByUserId: user.id,
-          },
-        });
-      }
+      // Mark invite code as used
+      await tx.inviteCode.update({
+        where: { id: storedInvite.id },
+        data: {
+          usedAt: new Date(),
+          usedByUserId: user.id,
+        },
+      });
 
       return { user, authenticator };
     });

@@ -57,11 +57,21 @@ export async function POST(request: NextRequest) {
 
     const storedInvite = await prisma.inviteCode.findUnique({
       where: { code: hashedCode },
+      include: {
+        household: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     console.log('[WebAuthn Options] Invite code lookup result:', {
       found: !!storedInvite,
       usedAt: storedInvite?.usedAt,
+      type: storedInvite?.type,
+      householdId: storedInvite?.householdId,
     });
 
     if (!storedInvite) {
@@ -72,21 +82,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (storedInvite?.usedAt) {
+    if (storedInvite.usedAt) {
       return NextResponse.json(
         { error: 'Invite code has already been used' },
         { status: 403 }
       );
     }
 
-    // Check if any users exist (single-user system - block after first user)
-    const userCount = await prisma.user.count();
-    if (userCount > 0) {
-      console.log('[WebAuthn Options] Registration blocked - user already exists');
+    // Check if invite has expired
+    if (storedInvite.expiresAt && storedInvite.expiresAt < new Date()) {
       return NextResponse.json(
-        { error: 'Registration is closed. Only one user is allowed.' },
+        { error: 'Invite code has expired' },
         { status: 403 }
       );
+    }
+
+    // For global invites (creating new households), enforce single-user restriction
+    // For household invites (joining existing household), allow registration
+    const isHouseholdInvite = storedInvite.type === 'household' && storedInvite.householdId;
+
+    if (!isHouseholdInvite) {
+      // Check if any users exist (single-user system for global invites)
+      const userCount = await prisma.user.count();
+      if (userCount > 0) {
+        console.log('[WebAuthn Options] Registration blocked - user already exists (global invite)');
+        return NextResponse.json(
+          { error: 'Registration is closed. Only one user is allowed.' },
+          { status: 403 }
+        );
+      }
     }
 
     // Check if user already exists
