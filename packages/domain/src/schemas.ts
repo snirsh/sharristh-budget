@@ -230,8 +230,9 @@ export const transactionFiltersSchema = z.object({
   needsReview: z.boolean().optional(),
   includeIgnored: z.boolean().optional(),
   search: z.string().optional(),
-  limit: z.number().int().positive().max(100).default(50),
+  limit: z.number().int().positive().max(100).default(30),
   offset: z.number().int().min(0).default(0),
+  cursor: z.string().optional(), // For cursor-based pagination
 });
 
 export const monthSchema = z.string().regex(/^\d{4}-\d{2}$/);

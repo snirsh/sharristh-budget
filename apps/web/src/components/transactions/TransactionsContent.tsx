@@ -15,16 +15,25 @@ type Category = {
   icon?: string | null;
 };
 
+type TransactionsData = {
+  transactions: any[];
+  total?: number;
+  hasMore: boolean;
+  nextCursor?: string;
+};
+
 type TransactionsContentProps = {
   categories: Category[];
   initialNeedsReview?: boolean;
   month: string;
+  initialTransactions?: TransactionsData;
 };
 
 export const TransactionsContent = ({
   categories,
   initialNeedsReview = false,
   month: initialMonth,
+  initialTransactions,
 }: TransactionsContentProps) => {
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,8 +66,16 @@ export const TransactionsContent = ({
     );
   };
 
+  // Check if we should use initial data (no filters applied)
+  const shouldUseInitialData = initialTransactions &&
+    currentMonth === initialMonth &&
+    !needsReviewFilter &&
+    !showIgnored &&
+    !selectedCategory &&
+    !searchQuery;
+
   const { data: transactionsData } = trpc.transactions.list.useQuery({
-    limit: 100,
+    limit: 30,
     offset: 0,
     startDate,
     endDate,
@@ -66,6 +83,10 @@ export const TransactionsContent = ({
     categoryId: selectedCategory || undefined,
     search: searchQuery || undefined,
     includeIgnored: showIgnored || undefined,
+  }, {
+    initialData: shouldUseInitialData ? initialTransactions : undefined,
+    // Only refetch when filters change or month changes
+    enabled: !shouldUseInitialData,
   });
 
   const recategorizeMutation = trpc.transactions.recategorize.useMutation({

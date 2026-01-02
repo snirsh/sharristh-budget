@@ -181,6 +181,7 @@ model Category {
   @@index([householdId])
   @@index([parentCategoryId])
   @@index([type])
+  @@index([householdId, isActive, type])
   @@map("categories")
 }
 
@@ -227,6 +228,9 @@ model Transaction {
   @@index([householdId, date])
   @@index([recurringTemplateId])
   @@index([externalId])
+  @@index([householdId, isIgnored, date])
+  @@index([householdId, needsReview])
+  @@index([householdId, categoryId, date])
   @@map("transactions")
 }
 
@@ -253,6 +257,7 @@ model Budget {
   @@index([householdId])
   @@index([categoryId])
   @@index([month])
+  @@index([householdId, month])
   @@map("budgets")
 }
 

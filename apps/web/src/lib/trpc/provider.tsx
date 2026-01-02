@@ -17,9 +17,10 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 1000 * 60 * 5, // 5 minutes - budget data doesn't change frequently
-            cacheTime: 1000 * 60 * 10, // 10 minutes - keep cache longer for better navigation
-            refetchOnWindowFocus: false,
+            staleTime: 1000 * 60, // 1 minute - more responsive to data changes
+            gcTime: 1000 * 60 * 5, // 5 minutes - keep cache for navigation (renamed from cacheTime)
+            refetchOnWindowFocus: true, // Refetch when user returns to tab for fresh data
+            refetchOnMount: false, // Don't refetch if data is fresh (within staleTime)
             retry: 1, // Only retry failed requests once to avoid long delays
           },
         },
