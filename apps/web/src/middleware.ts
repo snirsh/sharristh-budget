@@ -2,31 +2,21 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Public routes that don't require authentication
- */
-const publicRoutes = [
-  '/login',
-  '/register',
-  '/api/auth',
-];
-
-/**
- * Check if a path matches any public route
- */
-function isPublicRoute(pathname: string): boolean {
-  return publicRoutes.some((route) => pathname.startsWith(route));
-}
-
-/**
- * Middleware to protect routes
- * Redirects unauthenticated users to login
- * Skips auth in demo mode
+ * Lightweight middleware for Edge runtime
+ * - Checks for session cookie presence (fast, edge-compatible)
+ * - Actual session validation happens in server components and API routes
+ * - Login page validates sessions server-side and redirects if already authenticated
+ * - Protected pages validate sessions via auth() calls
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
-  if (isPublicRoute(pathname)) {
+  if (
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/api/auth')
+  ) {
     return NextResponse.next();
   }
 
@@ -35,20 +25,24 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for session cookie
+  // Check for session cookie (lightweight check for Edge runtime)
   // Auth.js uses different cookie names based on environment
   const sessionCookie =
     request.cookies.get('authjs.session-token') ||
     request.cookies.get('__Secure-authjs.session-token');
 
-  // If no session, redirect to login
+  // If no session cookie, redirect to login
+  // Session validity (expiration) is validated by:
+  // - Server components (e.g., login page checks and redirects if authenticated)
+  // - API routes (validate session on each request)
   if (!sessionCookie) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Session exists, allow request
+  // Session cookie exists - allow request
+  // Individual routes will validate session validity as needed
   return NextResponse.next();
 }
 

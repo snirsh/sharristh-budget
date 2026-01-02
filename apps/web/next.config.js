@@ -10,6 +10,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    // Exclude heavy packages from Edge runtime bundles
+    serverComponentsExternalPackages: [
+      '@prisma/client',
+      '@prisma/engines',
+      'prisma',
+    ],
+  },
   serverExternalPackages: [
     'israeli-bank-scrapers',
     'puppeteer',
@@ -17,8 +25,10 @@ const nextConfig = {
     'bufferutil',
     'utf-8-validate',
     'ws',
+    '@prisma/client',
+    '@prisma/engines',
   ],
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, nextRuntime }) => {
     if (isServer) {
       // Add Prisma monorepo workaround plugin
       config.plugins = [...config.plugins, new PrismaPlugin()]
@@ -30,6 +40,22 @@ const nextConfig = {
         'utf-8-validate': 'commonjs utf-8-validate',
       });
     }
+
+    // Exclude heavy packages from Edge runtime (middleware)
+    if (nextRuntime === 'edge') {
+      config.externals = config.externals || [];
+      if (Array.isArray(config.externals)) {
+        config.externals.push(
+          '@prisma/client',
+          '@prisma/engines',
+          '@sfam/db',
+          '@sfam/api',
+          '@sfam/domain',
+          '@sfam/scraper',
+        );
+      }
+    }
+
     return config;
   },
   async headers() {
