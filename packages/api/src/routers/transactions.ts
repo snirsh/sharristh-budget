@@ -72,7 +72,7 @@ export const transactionsRouter = router({
             select: { id: true, name: true, icon: true, color: true, type: true },
           },
           account: {
-            select: { id: true, name: true, icon: true },
+            select: { id: true, name: true },
           },
         },
         orderBy: { date: 'desc' },
@@ -316,7 +316,7 @@ export const transactionsRouter = router({
           select: { id: true, name: true, icon: true, color: true, type: true },
         },
         account: {
-          select: { id: true, name: true, icon: true },
+          select: { id: true, name: true },
         },
       },
       orderBy: { date: 'desc' },
