@@ -163,5 +163,60 @@ export const rulesRouter = router({
 
       return { matches };
     }),
+
+  /**
+   * Clear all rules (delete all rules for the household)
+   */
+  clearAll: protectedProcedure.mutation(async ({ ctx }) => {
+    const result = await ctx.prisma.categoryRule.deleteMany({
+      where: { householdId: ctx.householdId },
+    });
+    return { deleted: result.count };
+  }),
+
+  /**
+   * Batch delete rules
+   */
+  batchDelete: protectedProcedure
+    .input(z.object({ ruleIds: z.array(z.string()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.prisma.categoryRule.deleteMany({
+        where: {
+          id: { in: input.ruleIds },
+          householdId: ctx.householdId,
+        },
+      });
+      return { deleted: result.count };
+    }),
+
+  /**
+   * Batch toggle rules (activate/deactivate)
+   */
+  batchToggle: protectedProcedure
+    .input(z.object({ ruleIds: z.array(z.string()).min(1), isActive: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.prisma.categoryRule.updateMany({
+        where: {
+          id: { in: input.ruleIds },
+          householdId: ctx.householdId,
+        },
+        data: {
+          isActive: input.isActive,
+        },
+      });
+      return { updated: result.count };
+    }),
+
+  /**
+   * Get rules with broken category references (category was deleted)
+   */
+  getBrokenRules: protectedProcedure.query(async ({ ctx }) => {
+    const rules = await ctx.prisma.categoryRule.findMany({
+      where: { householdId: ctx.householdId },
+      include: { category: true },
+    });
+    // Filter rules where category is null (category was deleted)
+    return rules.filter((rule) => !rule.category);
+  }),
 });
 
