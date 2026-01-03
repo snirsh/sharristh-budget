@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { formatCurrency, formatDate, formatMonth, cn } from '@/lib/utils';
-import { Search, Filter, Check, X, ChevronDown, ChevronLeft, ChevronRight, Plus, Wand2, EyeOff, Eye, Trash2, CheckCheck, Minus } from 'lucide-react';
+import { Search, Filter, Check, X, ChevronDown, ChevronLeft, ChevronRight, Plus, Wand2, EyeOff, Eye, Trash2, CheckCheck, Minus, Loader2 } from 'lucide-react';
 import { TransactionSummary } from './TransactionSummary';
 import { AddTransactionDialog } from './AddTransactionDialog';
 import { AICategoryBadgeCompact } from './AICategoryBadge';
@@ -146,6 +146,26 @@ export const TransactionsContent = ({
       setBatchCategoryId('');
     },
   });
+
+  // Infinite scroll: automatically load more when scrolling near bottom
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' } // Trigger 100px before reaching the element
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [hasMore, isFetchingNextPage, fetchNextPage]);
 
   // Selection helpers
   const toggleSelection = (id: string) => {
@@ -570,16 +590,24 @@ export const TransactionsContent = ({
             )}
           </tbody>
         </table>
-        {/* Load More Button - Desktop */}
-        {hasMore && (
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              className="btn btn-outline w-full"
-            >
-              {isFetchingNextPage ? 'Loading...' : `Load More (${total - transactions.length} remaining)`}
-            </button>
+        {/* Infinite scroll loading indicator - Desktop */}
+        {(hasMore || isFetchingNextPage) && (
+          <div
+            ref={loadMoreRef}
+            className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-center"
+          >
+            {isFetchingNextPage ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin text-gray-400 dark:text-gray-500" />
+                <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                  Loading more transactions...
+                </span>
+              </>
+            ) : (
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {total - transactions.length} more transactions available
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -768,15 +796,22 @@ export const TransactionsContent = ({
             </div>
           </div>
         )}
-        {/* Load More Button - Mobile */}
-        {hasMore && (
-          <button
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="btn btn-outline w-full"
-          >
-            {isFetchingNextPage ? 'Loading...' : `Load More (${total - transactions.length} remaining)`}
-          </button>
+        {/* Infinite scroll loading indicator - Mobile */}
+        {(hasMore || isFetchingNextPage) && (
+          <div className="card p-6 flex items-center justify-center">
+            {isFetchingNextPage ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin text-gray-400 dark:text-gray-500" />
+                <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                  Loading more...
+                </span>
+              </>
+            ) : (
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {total - transactions.length} more available
+              </span>
+            )}
+          </div>
         )}
       </div>
 
