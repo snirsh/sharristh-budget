@@ -43,13 +43,21 @@ export const TransactionsContent = ({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchCategoryId, setBatchCategoryId] = useState<string>('');
 
-  // Calculate date range for the current month
+  // Calculate date range for the current month in Israel timezone
   const { startDate, endDate } = useMemo(() => {
     const [year, monthNum] = currentMonth.split('-').map(Number);
+
+    // Create dates at midnight Israel time (UTC+2) to match server-side transaction dates
+    // First day of month at 00:00:00 Israel time
+    const firstDay = `${year}-${String(monthNum).padStart(2, '0')}-01T00:00:00+02:00`;
+
+    // Last day of month at 23:59:59.999 Israel time
+    const lastDay = new Date(year!, monthNum!, 0); // Gets last day number
+    const lastDayStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}T23:59:59.999+02:00`;
+
     return {
-      startDate: new Date(year!, monthNum! - 1, 1),
-      // End of last day of month (23:59:59.999) to include all transactions on that day
-      endDate: new Date(year!, monthNum!, 0, 23, 59, 59, 999),
+      startDate: new Date(firstDay),
+      endDate: new Date(lastDayStr),
     };
   }, [currentMonth]);
 
