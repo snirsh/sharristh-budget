@@ -49,6 +49,13 @@ const nextConfig = {
       }
     }
 
+    // Suppress known third-party dependency warnings from puppeteer/israeli-bank-scrapers
+    config.ignoreWarnings = [
+      // Ignore "Critical dependency" warnings from puppeteer dependencies
+      /Critical dependency: the request of a dependency is an expression/,
+      /Critical dependency: require function is used in a way in which dependencies cannot be statically extracted/,
+    ];
+
     return config;
   },
   async headers() {
