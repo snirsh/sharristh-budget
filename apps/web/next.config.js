@@ -10,14 +10,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    // Exclude heavy packages from Edge runtime bundles
-    serverComponentsExternalPackages: [
-      '@prisma/client',
-      '@prisma/engines',
-      'prisma',
-    ],
-  },
   serverExternalPackages: [
     'israeli-bank-scrapers',
     'puppeteer',
@@ -27,6 +19,7 @@ const nextConfig = {
     'ws',
     '@prisma/client',
     '@prisma/engines',
+    'prisma',
   ],
   webpack: (config, { isServer, nextRuntime }) => {
     if (isServer) {
