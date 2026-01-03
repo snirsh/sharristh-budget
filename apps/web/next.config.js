@@ -10,14 +10,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    // Exclude heavy packages from Edge runtime bundles
-    serverComponentsExternalPackages: [
-      '@prisma/client',
-      '@prisma/engines',
-      'prisma',
-    ],
-  },
   serverExternalPackages: [
     'israeli-bank-scrapers',
     'puppeteer',
@@ -27,6 +19,7 @@ const nextConfig = {
     'ws',
     '@prisma/client',
     '@prisma/engines',
+    'prisma',
   ],
   webpack: (config, { isServer, nextRuntime }) => {
     if (isServer) {
@@ -55,6 +48,13 @@ const nextConfig = {
         );
       }
     }
+
+    // Suppress known third-party dependency warnings from puppeteer/israeli-bank-scrapers
+    config.ignoreWarnings = [
+      // Ignore "Critical dependency" warnings from puppeteer dependencies
+      /Critical dependency: the request of a dependency is an expression/,
+      /Critical dependency: require function is used in a way in which dependencies cannot be statically extracted/,
+    ];
 
     return config;
   },
