@@ -354,9 +354,10 @@ export const transactionsRouter = router({
   }),
 
   /**
-   * Apply categorization rules to all uncategorized or low-confidence transactions
+   * Apply categorization rules to uncategorized transactions only
    * Limited to 20 transactions per call to avoid timeouts
    * AI calls are rate-limited to respect Gemini's 15 req/min limit
+   * Uses locking mechanism to prevent concurrent processing
    */
   applyCategorization: protectedProcedure
     .input(z.void())
@@ -364,15 +365,13 @@ export const transactionsRouter = router({
     const MAX_TRANSACTIONS = 20; // Limit per call to avoid timeouts
     const AI_DELAY_MS = 4500; // ~13 requests/min to stay under 15 req/min limit
 
-    // Get transactions that need categorization (limited)
+    // Get uncategorized transactions only (not being processed)
     const transactions = await ctx.prisma.transaction.findMany({
       where: {
         householdId: ctx.householdId,
-        OR: [
-          { categoryId: null },
-          { needsReview: true },
-          { confidence: { lt: 0.8 } },
-        ],
+        categoryId: null, // Only uncategorized transactions
+        isProcessing: false, // Not already being processed
+        isIgnored: false, // Don't process ignored transactions
       },
       take: MAX_TRANSACTIONS,
       orderBy: { date: 'desc' }, // Process most recent first
@@ -382,17 +381,27 @@ export const transactionsRouter = router({
     const totalNeedingCategorization = await ctx.prisma.transaction.count({
       where: {
         householdId: ctx.householdId,
-        OR: [
-          { categoryId: null },
-          { needsReview: true },
-          { confidence: { lt: 0.8 } },
-        ],
+        categoryId: null,
+        isProcessing: false,
+        isIgnored: false,
       },
     });
 
     if (transactions.length === 0) {
       return { updated: 0, message: 'No transactions need categorization' };
     }
+
+    // Lock all transactions for processing
+    const transactionIds = transactions.map(tx => tx.id);
+    await ctx.prisma.transaction.updateMany({
+      where: {
+        id: { in: transactionIds },
+        householdId: ctx.householdId,
+      },
+      data: {
+        isProcessing: true,
+      },
+    });
 
     // Parallelize getting rules and categories
     const [rulesRaw, categoriesRaw] = await Promise.all([
@@ -423,8 +432,9 @@ export const transactionsRouter = router({
     // Helper to delay between AI calls
     const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    // Apply rules to each transaction
-    for (const tx of transactions) {
+    try {
+      // Apply rules to each transaction
+      for (const tx of transactions) {
       // First try rule-based categorization (no AI, fast)
       const ruleResult = await categorizeTransaction(
         {
@@ -453,6 +463,7 @@ export const transactionsRouter = router({
               categorizationSource: ruleResult.source,
               confidence: ruleResult.confidence,
               needsReview: false,
+              isProcessing: false, // Unlock after successful categorization
             },
           });
           updatedCount++;
@@ -517,6 +528,7 @@ export const transactionsRouter = router({
                 categorizationSource: result.source,
                 confidence: result.confidence,
                 needsReview: result.source === 'ai_suggestion', // AI suggestions should be reviewed
+                isProcessing: false, // Unlock after successful categorization
               },
             });
             updatedCount++;
@@ -553,6 +565,18 @@ export const transactionsRouter = router({
           }
         }
       }
+      }
+    } finally {
+      // Always unlock transactions when done (success or error)
+      await ctx.prisma.transaction.updateMany({
+        where: {
+          id: { in: transactionIds },
+          householdId: ctx.householdId,
+        },
+        data: {
+          isProcessing: false,
+        },
+      });
     }
 
     const remaining = totalNeedingCategorization - updatedCount;

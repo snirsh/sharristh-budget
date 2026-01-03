@@ -205,6 +205,7 @@ model Transaction {
   notes                 String?
   needsReview           Boolean   @default(false)
   isIgnored             Boolean   @default(false)
+  isProcessing          Boolean   @default(false) // Lock for AI categorization processing
   isRecurringInstance   Boolean   @default(false)
   recurringTemplateId   String?
   recurringInstanceKey  String?   // templateId_YYYY-MM-DD for uniqueness
