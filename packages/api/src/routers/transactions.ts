@@ -580,7 +580,7 @@ export const transactionsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const transaction = await ctx.prisma.transaction.findUnique({
-        where: { id: input.transactionId },
+        where: { id: input.transactionId, householdId: ctx.householdId },
       });
 
       if (!transaction) {
@@ -589,7 +589,7 @@ export const transactionsRouter = router({
 
       // Update the transaction
       const updated = await ctx.prisma.transaction.update({
-        where: { id: input.transactionId },
+        where: { id: input.transactionId, householdId: ctx.householdId },
         data: {
           categoryId: input.categoryId,
           categorizationSource: 'manual',
