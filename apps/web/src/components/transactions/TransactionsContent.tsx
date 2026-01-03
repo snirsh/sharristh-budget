@@ -26,14 +26,12 @@ type TransactionsContentProps = {
   categories: Category[];
   initialNeedsReview?: boolean;
   initialMonth: string;
-  initialTransactions?: TransactionsData;
 };
 
 export const TransactionsContent = ({
   categories,
   initialNeedsReview = false,
   initialMonth,
-  initialTransactions,
 }: TransactionsContentProps) => {
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,8 +42,6 @@ export const TransactionsContent = ({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchCategoryId, setBatchCategoryId] = useState<string>('');
-
-  const utils = trpc.useUtils();
 
   // Calculate date range for the current month
   const { startDate, endDate } = useMemo(() => {
@@ -66,85 +62,90 @@ export const TransactionsContent = ({
     );
   };
 
-  // Check if we should use initial data (no filters applied)
-  const shouldUseInitialData = initialTransactions &&
-    currentMonth === initialMonth &&
-    !needsReviewFilter &&
-    !showIgnored &&
-    !selectedCategory &&
-    !searchQuery;
+  // Use infinite query for proper pagination
+  const {
+    data: transactionsPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = trpc.transactions.list.useInfiniteQuery(
+    {
+      limit: 100, // Max allowed by schema
+      startDate,
+      endDate,
+      needsReview: needsReviewFilter || undefined,
+      categoryId: selectedCategory || undefined,
+      search: searchQuery || undefined,
+      includeIgnored: showIgnored || undefined,
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      // Always enable the query so it can refetch after mutations
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+    }
+  );
 
-  const { data: transactionsData } = trpc.transactions.list.useQuery({
-    limit: 30,
-    offset: 0,
-    startDate,
-    endDate,
-    needsReview: needsReviewFilter || undefined,
-    categoryId: selectedCategory || undefined,
-    search: searchQuery || undefined,
-    includeIgnored: showIgnored || undefined,
-  }, {
-    initialData: shouldUseInitialData ? initialTransactions : undefined,
-    // Only refetch when filters change or month changes
-    enabled: !shouldUseInitialData,
-  });
+  // Flatten all pages into a single transactions array
+  const transactions = transactionsPages?.pages.flatMap(page => page.transactions) ?? [];
+  const total = transactionsPages?.pages[0]?.total ?? 0;
+  const hasMore = hasNextPage ?? false;
 
   const recategorizeMutation = trpc.transactions.recategorize.useMutation({
     onSuccess: () => {
-      utils.transactions.list.invalidate();
+      refetch();
       setEditingTransaction(null);
     },
   });
 
   const applyCategorizationMutation = trpc.transactions.applyCategorization.useMutation({
     onSuccess: (data) => {
-      utils.transactions.list.invalidate();
+      refetch();
       alert(data.message);
     },
   });
 
   const toggleIgnoreMutation = trpc.transactions.toggleIgnore.useMutation({
     onSuccess: () => {
-      utils.transactions.list.invalidate();
+      refetch();
     },
   });
 
   const deleteMutation = trpc.transactions.delete.useMutation({
     onSuccess: () => {
-      utils.transactions.list.invalidate();
+      refetch();
     },
   });
 
   const batchApproveMutation = trpc.transactions.batchApprove.useMutation({
     onSuccess: () => {
-      utils.transactions.list.invalidate();
+      refetch();
       setSelectedIds(new Set());
     },
   });
 
   const batchIgnoreMutation = trpc.transactions.batchIgnore.useMutation({
     onSuccess: () => {
-      utils.transactions.list.invalidate();
+      refetch();
       setSelectedIds(new Set());
     },
   });
 
   const batchDeleteMutation = trpc.transactions.batchDelete.useMutation({
     onSuccess: () => {
-      utils.transactions.list.invalidate();
+      refetch();
       setSelectedIds(new Set());
     },
   });
 
   const batchRecategorizeMutation = trpc.transactions.batchRecategorize.useMutation({
     onSuccess: () => {
-      utils.transactions.list.invalidate();
+      refetch();
       setSelectedIds(new Set());
       setBatchCategoryId('');
     },
   });
-
-  const transactions = transactionsData?.transactions ?? [];
 
   // Selection helpers
   const toggleSelection = (id: string) => {
@@ -222,7 +223,7 @@ export const TransactionsContent = ({
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
           <p className="text-gray-500 dark:text-gray-400">
-            {transactionsData?.total ?? 0} transactions
+            {transactions.length} {total > 0 && total !== transactions.length ? `of ${total}` : ''} transactions
             {needsReviewFilter && ' needing review'}
             {showIgnored && ' (including ignored)'}
           </p>
@@ -569,6 +570,18 @@ export const TransactionsContent = ({
             )}
           </tbody>
         </table>
+        {/* Load More Button - Desktop */}
+        {hasMore && (
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              className="btn btn-outline w-full"
+            >
+              {isFetchingNextPage ? 'Loading...' : `Load More (${total - transactions.length} remaining)`}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Transactions List - Mobile Card View */}
@@ -755,6 +768,16 @@ export const TransactionsContent = ({
             </div>
           </div>
         )}
+        {/* Load More Button - Mobile */}
+        {hasMore && (
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="btn btn-outline w-full"
+          >
+            {isFetchingNextPage ? 'Loading...' : `Load More (${total - transactions.length} remaining)`}
+          </button>
+        )}
       </div>
 
       {/* Add Transaction Dialog */}
@@ -762,7 +785,7 @@ export const TransactionsContent = ({
         categories={categories}
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
-        onSuccess={() => utils.transactions.list.invalidate()}
+        onSuccess={() => refetch()}
       />
     </div>
   );
