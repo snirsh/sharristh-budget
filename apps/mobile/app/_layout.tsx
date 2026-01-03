@@ -1,9 +1,8 @@
 import '../global.css';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
-import { ThemeProvider, useTheme } from '../lib/theme';
+import { ThemeProvider } from '../lib/theme';
+import { TRPCProvider } from '../lib/trpc-provider';
 import { useColorScheme } from 'nativewind';
 
 function StackNavigator() {
@@ -35,22 +34,11 @@ function StackNavigator() {
 }
 
 export default function RootLayout() {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 1000 * 60,
-          },
-        },
-      })
-  );
-
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
+      <TRPCProvider>
         <StackNavigator />
-      </QueryClientProvider>
+      </TRPCProvider>
     </ThemeProvider>
   );
 }

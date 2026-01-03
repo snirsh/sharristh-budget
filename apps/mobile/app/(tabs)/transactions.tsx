@@ -1,51 +1,52 @@
-import { View, Text, ScrollView, TextInput, Pressable, RefreshControl } from 'react-native';
-import { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TextInput, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
+import { useState, useCallback, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-
-// Mock data
-const mockTransactions = [
-  { id: '1', description: 'Monthly Rent', merchant: 'Landlord', amount: 5500, date: 'Dec 1', category: { name: 'Rent', icon: '🏠' }, direction: 'expense' },
-  { id: '2', description: "Alex's Salary", merchant: 'TechCorp', amount: 18000, date: 'Dec 1', category: { name: 'Salary', icon: '💰' }, direction: 'income' },
-  { id: '3', description: 'Weekly Groceries', merchant: 'Shufersal', amount: 350, date: 'Dec 3', category: { name: 'Supermarket', icon: '🛒' }, direction: 'expense' },
-  { id: '4', description: 'Coffee Meeting', merchant: 'Aroma', amount: 85, date: 'Dec 4', category: { name: 'Eating Outside', icon: '🍽️' }, direction: 'expense' },
-  { id: '5', description: 'Gas Station', merchant: 'Paz', amount: 280, date: 'Dec 5', category: { name: 'Car Expenses', icon: '🚗' }, direction: 'expense' },
-  { id: '6', description: 'Online Shopping', merchant: 'Amazon', amount: 450, date: 'Dec 6', category: { name: 'Varying Expenses', icon: '❓' }, direction: 'expense', needsReview: true },
-  { id: '7', description: 'Restaurant Dinner', merchant: 'Moses', amount: 280, date: 'Dec 7', category: { name: 'Eating Outside', icon: '🍽️' }, direction: 'expense' },
-  { id: '8', description: 'Pharmacy', merchant: 'Super-Pharm', amount: 120, date: 'Dec 8', category: { name: 'Pharmacy', icon: '💊' }, direction: 'expense' },
-  { id: '9', description: "Jordan's Salary", merchant: 'DesignStudio', amount: 15000, date: 'Dec 10', category: { name: 'Salary', icon: '💰' }, direction: 'income' },
-  { id: '10', description: 'Bus Card', merchant: 'Rav-Kav', amount: 100, date: 'Dec 12', category: { name: 'Transportation', icon: '🚌' }, direction: 'expense' },
-];
+import { trpc } from '../../lib/trpc';
 
 function formatCurrency(amount: number): string {
   return `₪${amount.toLocaleString()}`;
 }
 
+function formatDate(dateStr: string | Date): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export default function TransactionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'income' | 'expense' | 'review'>('all');
-  const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+  // Calculate current month date range
+  const { startDate, endDate } = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    return {
+      startDate: new Date(year, month, 1),
+      endDate: new Date(year, month + 1, 0, 23, 59, 59, 999),
+    };
   }, []);
 
-  const filteredTransactions = mockTransactions.filter((tx) => {
-    // Filter by type
+  // Fetch transactions from API
+  const { data, isLoading, refetch, isRefetching } = trpc.transactions.list.useQuery({
+    limit: 100,
+    startDate,
+    endDate,
+    needsReview: filter === 'review' ? true : undefined,
+    search: searchQuery || undefined,
+  });
+
+  const onRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const transactions = data?.transactions || [];
+
+  // Apply local filtering for direction
+  const filteredTransactions = transactions.filter((tx) => {
     if (filter === 'income' && tx.direction !== 'income') return false;
     if (filter === 'expense' && tx.direction !== 'expense') return false;
-    if (filter === 'review' && !('needsReview' in tx)) return false;
-
-    // Filter by search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        tx.description.toLowerCase().includes(query) ||
-        tx.merchant?.toLowerCase().includes(query) ||
-        tx.category.name.toLowerCase().includes(query)
-      );
-    }
-
     return true;
   });
 
@@ -99,25 +100,32 @@ export default function TransactionsScreen() {
       </View>
 
       {/* Transaction List */}
-      <ScrollView
-        className="flex-1"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View className="p-4">
-          {filteredTransactions.length === 0 ? (
-            <View className="items-center justify-center py-12">
-              <Ionicons name="receipt-outline" size={48} color="#9ca3af" />
-              <Text className="text-gray-500 mt-4">No transactions found</Text>
-            </View>
-          ) : (
-            filteredTransactions.map((tx) => (
-              <TransactionItem key={tx.id} transaction={tx} />
-            ))
-          )}
+      {isLoading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#00d7cd" />
+          <Text className="text-gray-500 mt-4">Loading transactions...</Text>
         </View>
-      </ScrollView>
+      ) : (
+        <ScrollView
+          className="flex-1"
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />
+          }
+        >
+          <View className="p-4">
+            {filteredTransactions.length === 0 ? (
+              <View className="items-center justify-center py-12">
+                <Ionicons name="receipt-outline" size={48} color="#9ca3af" />
+                <Text className="text-gray-500 mt-4">No transactions found</Text>
+              </View>
+            ) : (
+              filteredTransactions.map((tx) => (
+                <TransactionItem key={tx.id} transaction={tx} />
+              ))
+            )}
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -155,13 +163,9 @@ function FilterChip({
   );
 }
 
-function TransactionItem({
-  transaction,
-}: {
-  transaction: (typeof mockTransactions)[0];
-}) {
+function TransactionItem({ transaction }: { transaction: any }) {
   const isIncome = transaction.direction === 'income';
-  const needsReview = 'needsReview' in transaction && transaction.needsReview;
+  const needsReview = transaction.needsReview;
 
   return (
     <Pressable
@@ -169,13 +173,13 @@ function TransactionItem({
         needsReview ? 'border-l-4 border-warning-500' : ''
       }`}
     >
-      <Text className="text-2xl mr-3">{transaction.category.icon}</Text>
+      <Text className="text-2xl mr-3">{transaction.category?.icon || '❓'}</Text>
       <View className="flex-1">
         <Text className="font-medium text-gray-900">
           {transaction.description}
         </Text>
         <View className="flex-row items-center mt-0.5">
-          <Text className="text-xs text-gray-500">{transaction.date}</Text>
+          <Text className="text-xs text-gray-500">{formatDate(transaction.date)}</Text>
           {transaction.merchant && (
             <>
               <Text className="text-xs text-gray-300 mx-1">•</Text>
