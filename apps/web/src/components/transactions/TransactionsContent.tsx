@@ -92,9 +92,17 @@ export const TransactionsContent = ({
   const total = transactionsPages?.pages[0]?.total ?? 0;
   const hasMore = hasNextPage ?? false;
 
+  // Fetch monthly summary from server (calculates from ALL transactions in DB)
+  const { data: monthlySummary, refetch: refetchSummary } = trpc.transactions.monthlySummary.useQuery({
+    startDate,
+    endDate,
+    includeIgnored: showIgnored || undefined,
+  });
+
   const recategorizeMutation = trpc.transactions.recategorize.useMutation({
     onSuccess: () => {
       refetch();
+      refetchSummary();
       setEditingTransaction(null);
     },
   });
@@ -102,6 +110,7 @@ export const TransactionsContent = ({
   const applyCategorizationMutation = trpc.transactions.applyCategorization.useMutation({
     onSuccess: (data) => {
       refetch();
+      refetchSummary();
       alert(data.message);
     },
   });
@@ -109,12 +118,14 @@ export const TransactionsContent = ({
   const toggleIgnoreMutation = trpc.transactions.toggleIgnore.useMutation({
     onSuccess: () => {
       refetch();
+      refetchSummary();
     },
   });
 
   const deleteMutation = trpc.transactions.delete.useMutation({
     onSuccess: () => {
       refetch();
+      refetchSummary();
     },
   });
 
@@ -128,6 +139,7 @@ export const TransactionsContent = ({
   const batchIgnoreMutation = trpc.transactions.batchIgnore.useMutation({
     onSuccess: () => {
       refetch();
+      refetchSummary();
       setSelectedIds(new Set());
     },
   });
@@ -135,6 +147,7 @@ export const TransactionsContent = ({
   const batchDeleteMutation = trpc.transactions.batchDelete.useMutation({
     onSuccess: () => {
       refetch();
+      refetchSummary();
       setSelectedIds(new Set());
     },
   });
@@ -142,6 +155,7 @@ export const TransactionsContent = ({
   const batchRecategorizeMutation = trpc.transactions.batchRecategorize.useMutation({
     onSuccess: () => {
       refetch();
+      refetchSummary();
       setSelectedIds(new Set());
       setBatchCategoryId('');
     },
@@ -277,7 +291,11 @@ export const TransactionsContent = ({
       </div>
 
       {/* Transaction Summary */}
-      <TransactionSummary transactions={transactions} />
+      <TransactionSummary
+        totalIncome={monthlySummary?.totalIncome ?? 0}
+        totalExpenses={monthlySummary?.totalExpenses ?? 0}
+        netBalance={monthlySummary?.netBalance ?? 0}
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
@@ -820,7 +838,10 @@ export const TransactionsContent = ({
         categories={categories}
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
-        onSuccess={() => refetch()}
+        onSuccess={() => {
+          refetch();
+          refetchSummary();
+        }}
       />
     </div>
   );
