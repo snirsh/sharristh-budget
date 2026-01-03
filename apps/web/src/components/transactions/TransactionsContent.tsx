@@ -163,9 +163,13 @@ export const TransactionsContent = ({
 
   // Infinite scroll: automatically load more when scrolling near bottom
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadMoreRefMobile = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!loadMoreRef.current || !hasMore || isFetchingNextPage) return;
+    const desktopElement = loadMoreRef.current;
+    const mobileElement = loadMoreRefMobile.current;
+
+    if ((!desktopElement && !mobileElement) || !hasMore || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -176,7 +180,9 @@ export const TransactionsContent = ({
       { threshold: 0.1, rootMargin: '100px' } // Trigger 100px before reaching the element
     );
 
-    observer.observe(loadMoreRef.current);
+    // Observe both desktop and mobile elements (only one will be visible at a time)
+    if (desktopElement) observer.observe(desktopElement);
+    if (mobileElement) observer.observe(mobileElement);
 
     return () => observer.disconnect();
   }, [hasMore, isFetchingNextPage, fetchNextPage]);
@@ -816,7 +822,10 @@ export const TransactionsContent = ({
         )}
         {/* Infinite scroll loading indicator - Mobile */}
         {(hasMore || isFetchingNextPage) && (
-          <div className="card p-6 flex items-center justify-center">
+          <div
+            ref={loadMoreRefMobile}
+            className="card p-6 flex items-center justify-center"
+          >
             {isFetchingNextPage ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin text-gray-400 dark:text-gray-500" />
