@@ -26,9 +26,15 @@ export function mapTransaction(
   // Generate external ID for deduplication
   const externalId = generateExternalId(txn, externalAccountId);
 
+  // Parse transaction date in Israel timezone to avoid timezone shifts
+  // If txn.date is "2026-01-01", create it at midnight Israel time, not UTC
+  // This ensures transaction dates are consistent regardless of where the scraper runs
+  const dateStr = txn.date.split('T')[0]!; // Extract date part (YYYY-MM-DD)
+  const date = new Date(dateStr + 'T00:00:00+02:00'); // Israel Standard Time (UTC+2)
+
   return {
     externalId,
-    date: new Date(txn.date),
+    date,
     description: txn.description,
     merchant: extractMerchant(txn.description),
     amount,
@@ -47,10 +53,8 @@ export function mapAccountTransactions(accounts: ScrapedAccount[]): MappedTransa
 
   for (const account of accounts) {
     for (const txn of account.txns) {
-      // Skip pending transactions
-      if (txn.status === 'pending') {
-        continue;
-      }
+      // Include all transactions (both pending and completed)
+      // Users want to see pending transactions to get the most up-to-date view
       transactions.push(mapTransaction(txn, account.accountNumber));
     }
   }
