@@ -196,10 +196,10 @@ export function ConnectionsContent() {
   return (
     <div className="space-y-6 animate-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bank Connections</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">
             Connect your bank accounts and credit cards for automatic transaction sync
           </p>
         </div>
@@ -211,19 +211,19 @@ export function ConnectionsContent() {
               className="btn btn-outline"
             >
               {syncAllMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
               ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4 md:mr-2" />
               )}
-              Sync All
+              <span className="hidden md:inline">Sync All</span>
             </button>
           )}
           <button
             onClick={() => setShowAddForm(true)}
             className="btn btn-primary"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Connection
+            <Plus className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Add Connection</span>
           </button>
         </div>
       </div>
@@ -321,7 +321,7 @@ export function ConnectionsContent() {
           ) : (
             // New Connection Form
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     Provider
@@ -360,7 +360,7 @@ export function ConnectionsContent() {
 
               {formData.provider === 'onezero' ? (
                 // OneZero credentials
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       Email
@@ -410,7 +410,7 @@ export function ConnectionsContent() {
                 </div>
               ) : (
                 // Isracard credentials
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                       ID Number
@@ -498,8 +498,8 @@ export function ConnectionsContent() {
         </div>
       )}
 
-      {/* Connections List */}
-      <div className="card p-0 overflow-hidden">
+      {/* Connections List - Desktop Table View */}
+      <div className="hidden md:block card p-0 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <tr>
@@ -662,6 +662,153 @@ export function ConnectionsContent() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Connections List - Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {connections?.map((connection) => (
+          <div
+            key={connection.id}
+            className={cn(
+              'card p-4 relative',
+              !connection.isActive && 'opacity-75 bg-gray-50 dark:bg-gray-800'
+            )}
+          >
+            {/* Provider Icon and Name */}
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className={cn(
+                  'flex h-12 w-12 items-center justify-center rounded-lg',
+                  connection.isActive
+                    ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                )}
+              >
+                {getProviderIcon(connection.provider)}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {connection.displayName}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {connection.providerDisplayName}
+                  {connection.requiresTwoFactor && !connection.isActive && (
+                    <span className="ml-2 badge badge-warning text-xs">
+                      2FA Required
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Status and Last Sync */}
+            <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 mb-1">Status</p>
+                <div className="flex items-center gap-2">
+                  {getStatusIcon(connection.lastSyncStatus)}
+                  <span
+                    className={cn(
+                      connection.lastSyncStatus === 'success' && 'text-success-600 dark:text-success-400',
+                      connection.lastSyncStatus === 'error' && 'text-error-600 dark:text-error-400',
+                      connection.lastSyncStatus === 'auth_required' && 'text-warning-600 dark:text-warning-400',
+                      !connection.lastSyncStatus && 'text-gray-400 dark:text-gray-500'
+                    )}
+                  >
+                    {getStatusLabel(connection.lastSyncStatus)}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 mb-1">Last Sync</p>
+                <p className="text-gray-900 dark:text-white">
+                  {connection.lastSyncAt ? formatDate(connection.lastSyncAt) : 'Never'}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Added {formatDate(connection.createdAt)}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {/* Re-authenticate button for auth_required status */}
+              {connection.lastSyncStatus === 'auth_required' && connection.requiresTwoFactor && (
+                <button
+                  onClick={() => {
+                    setTwoFactorConnectionId(connection.id);
+                    setShowAddForm(true);
+                    initTwoFactorMutation.mutate({
+                      connectionId: connection.id,
+                    });
+                  }}
+                  className="flex-1 btn btn-sm btn-warning"
+                >
+                  <KeyRound className="h-4 w-4 mr-1" />
+                  Re-authenticate
+                </button>
+              )}
+              {/* Sync button for active connections without auth issues */}
+              {connection.isActive && connection.lastSyncStatus !== 'auth_required' && (
+                <button
+                  onClick={() => syncMutation.mutate({ connectionId: connection.id })}
+                  disabled={syncMutation.isPending}
+                  className="flex-1 btn btn-sm btn-primary"
+                >
+                  {syncMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                  )}
+                  Sync
+                </button>
+              )}
+              {/* Setup 2FA for inactive connections */}
+              {!connection.isActive && connection.requiresTwoFactor && (
+                <button
+                  onClick={() => {
+                    setTwoFactorConnectionId(connection.id);
+                    setShowAddForm(true);
+                    initTwoFactorMutation.mutate({
+                      connectionId: connection.id,
+                    });
+                  }}
+                  className="flex-1 btn btn-sm btn-primary"
+                >
+                  <KeyRound className="h-4 w-4 mr-1" />
+                  Setup 2FA
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (confirm('Are you sure you want to delete this connection?')) {
+                    deleteMutation.mutate(connection.id);
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+                className="btn btn-sm btn-outline text-error-600 dark:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/30"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+        {(!connections || connections.length === 0) && (
+          <div className="card p-12 text-center text-gray-500">
+            <div className="flex flex-col items-center gap-3">
+              <Building2 className="h-16 w-16 text-gray-300" />
+              <p className="text-lg">No bank connections yet</p>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="btn btn-primary mt-2"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add your first connection
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Sync Status Messages */}
