@@ -11,27 +11,12 @@ export async function TransactionsServer({ month, needsReview = false }: Transac
   const trpc = await serverTrpc();
 
   try {
-    // Calculate date range for the month
-    const [year, monthNum] = month.split('-').map(Number);
-    const startDate = new Date(year!, monthNum! - 1, 1);
-    const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
-
-    // Pre-fetch transactions and categories on the server
-    const [transactionsData, categories] = await Promise.all([
-      trpc.transactions.list({
-        limit: 30,
-        offset: 0,
-        startDate,
-        endDate,
-        needsReview: needsReview || undefined,
-      }),
-      trpc.categories.list(),
-    ]);
+    // Pre-fetch categories on the server
+    const categories = await trpc.categories.list();
 
     // Pass pre-fetched data to client component
     return (
       <TransactionsClient
-        initialTransactions={transactionsData}
         categories={categories}
         initialNeedsReview={needsReview}
         initialMonth={month}

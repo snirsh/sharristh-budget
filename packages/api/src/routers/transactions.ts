@@ -756,5 +756,59 @@ export const transactionsRouter = router({
 
       return { updated: result.count };
     }),
+
+  /**
+   * Get monthly summary (totals) for a date range
+   * Calculates income, expenses, and net from ALL transactions in the database
+   */
+  monthlySummary: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.coerce.date(),
+        endDate: z.coerce.date(),
+        includeIgnored: z.boolean().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Record<string, unknown> = {
+        householdId: ctx.householdId,
+        date: {
+          gte: input.startDate,
+          lte: input.endDate,
+        },
+      };
+
+      // Filter out ignored transactions by default
+      if (!input.includeIgnored) {
+        where.isIgnored = false;
+      }
+
+      // Get all transactions for the period (only the fields we need for aggregation)
+      const transactions = await ctx.prisma.transaction.findMany({
+        where,
+        select: {
+          amount: true,
+          direction: true,
+        },
+      });
+
+      // Calculate totals
+      const totalIncome = transactions
+        .filter((t) => t.direction === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const totalExpenses = transactions
+        .filter((t) => t.direction === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const netBalance = totalIncome - totalExpenses;
+
+      return {
+        totalIncome,
+        totalExpenses,
+        netBalance,
+        transactionCount: transactions.length,
+      };
+    }),
 });
 
