@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { formatCurrency, cn } from '@/lib/utils';
-import { X, TrendingUp, Calendar, DollarSign, Sparkles, Loader2, Check } from 'lucide-react';
+import { X, TrendingUp, Calendar, DollarSign, Sparkles, Loader2, Check, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 
 interface PatternDetectionDialogProps {
   isOpen: boolean;
@@ -54,9 +54,10 @@ export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDe
     const mostRecentTx = pattern.transactions[pattern.transactions.length - 1];
     if (!mostRecentTx) return;
 
-    // Find a category that matches the merchant name
+    // Find a category that matches the merchant name and direction
     const matchedCategory = categories.find((cat) =>
-      cat.name.toLowerCase().includes(pattern.normalizedMerchant.toLowerCase())
+      cat.name.toLowerCase().includes(pattern.normalizedMerchant.toLowerCase()) &&
+      cat.type === pattern.direction
     );
 
     setCreatingPattern(pattern.merchant);
@@ -69,6 +70,7 @@ export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDe
       interval: pattern.estimatedInterval,
       byMonthDay: pattern.estimatedDayOfMonth,
       startDate: new Date(mostRecentTx.date),
+      direction: pattern.direction,
     });
   };
 
@@ -188,6 +190,7 @@ interface PatternCardProps {
     estimatedDayOfMonth?: number;
     confidence: number;
     reason: string;
+    direction: 'income' | 'expense';
   };
   isExpanded: boolean;
   onToggle: () => void;
@@ -205,6 +208,7 @@ function PatternCard({
   isAdded,
 }: PatternCardProps) {
   const confidencePercent = Math.round(pattern.confidence * 100);
+  const isIncome = pattern.direction === 'income';
 
   const confidenceColor =
     confidencePercent >= 80
@@ -212,6 +216,10 @@ function PatternCard({
       : confidencePercent >= 60
       ? 'text-warning-700 dark:text-warning-400 bg-warning-100 dark:bg-warning-900/30 border-warning-200 dark:border-warning-800'
       : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600';
+
+  const directionBadgeColor = isIncome
+    ? 'text-success-700 dark:text-success-400 bg-success-100 dark:bg-success-900/30 border-success-200 dark:border-success-800'
+    : 'text-danger-700 dark:text-danger-400 bg-danger-100 dark:bg-danger-900/30 border-danger-200 dark:border-danger-800';
 
   const formatFrequency = () => {
     if (pattern.estimatedInterval === 1) {
@@ -238,6 +246,8 @@ function PatternCard({
       "card p-0 overflow-hidden border",
       isAdded 
         ? "border-success-300 dark:border-success-700 bg-success-50/50 dark:bg-success-900/20" 
+        : isIncome
+        ? "border-success-200 dark:border-success-800"
         : "border-gray-200 dark:border-gray-700"
     )}>
       {/* Header */}
@@ -253,7 +263,22 @@ function PatternCard({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3">
+              {/* Direction icon */}
+              {isIncome ? (
+                <ArrowUpCircle className="h-5 w-5 text-success-500 flex-shrink-0" />
+              ) : (
+                <ArrowDownCircle className="h-5 w-5 text-danger-500 flex-shrink-0" />
+              )}
               <h3 className="font-semibold text-gray-900 dark:text-white">{pattern.merchant}</h3>
+              {/* Direction badge */}
+              <span
+                className={cn(
+                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+                  directionBadgeColor
+                )}
+              >
+                {isIncome ? 'Income' : 'Expense'}
+              </span>
               {isAdded ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border text-success-700 dark:text-success-400 bg-success-100 dark:bg-success-900/30 border-success-200 dark:border-success-800">
                   <Check className="h-3 w-3" />
@@ -277,10 +302,13 @@ function PatternCard({
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mt-4">
           <div className="flex items-center gap-2 text-sm">
-            <DollarSign className="h-4 w-4 text-gray-400" />
+            <DollarSign className={cn("h-4 w-4", isIncome ? "text-success-500" : "text-gray-400")} />
             <div>
-              <div className="font-medium text-gray-900 dark:text-white">
-                {formatCurrency(pattern.averageAmount)}
+              <div className={cn(
+                "font-medium",
+                isIncome ? "text-success-600 dark:text-success-400" : "text-gray-900 dark:text-white"
+              )}>
+                {isIncome ? '+' : ''}{formatCurrency(pattern.averageAmount)}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">Average amount</div>
             </div>

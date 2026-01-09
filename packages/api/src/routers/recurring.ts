@@ -441,15 +441,16 @@ export const recurringRouter = router({
         .object({
           lookbackMonths: z.number().min(1).max(24).optional(),
           minOccurrences: z.number().min(2).max(10).optional(),
+          direction: z.enum(['income', 'expense', 'both']).optional(),
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      // Get all expense transactions for the household
+      // Get all income and expense transactions for the household
       const transactions = await ctx.prisma.transaction.findMany({
         where: {
           householdId: ctx.householdId,
-          direction: 'expense',
+          direction: { in: ['income', 'expense'] },
           isRecurringInstance: false, // Exclude existing recurring instances
         },
         orderBy: { date: 'desc' },
@@ -463,15 +464,20 @@ export const recurringRouter = router({
         },
         select: {
           merchant: true,
+          direction: true,
         },
       });
 
-      // Create set of existing merchants (normalized for comparison)
-      const existingMerchants = new Set(
-        existingTemplates
-          .filter((t: typeof existingTemplates[number]) => t.merchant)
-          .map((t: typeof existingTemplates[number]) => normalizeMerchantForComparison(t.merchant!))
-      );
+      // Create set of existing merchants by direction (normalized for comparison)
+      const existingMerchantsByDirection = new Map<string, Set<string>>();
+      existingMerchantsByDirection.set('income', new Set());
+      existingMerchantsByDirection.set('expense', new Set());
+      
+      for (const t of existingTemplates) {
+        if (t.merchant && (t.direction === 'income' || t.direction === 'expense')) {
+          existingMerchantsByDirection.get(t.direction)?.add(normalizeMerchantForComparison(t.merchant));
+        }
+      }
 
       // Map to domain type
       const domainTransactions = transactions.map((tx: typeof transactions[number]) => ({
@@ -483,13 +489,17 @@ export const recurringRouter = router({
         direction: tx.direction as 'income' | 'expense' | 'transfer',
       }));
 
-      // Detect patterns
-      const allPatterns = detectRecurringPatterns(domainTransactions, input);
+      // Detect patterns (pass direction filter if provided)
+      const allPatterns = detectRecurringPatterns(domainTransactions, {
+        ...input,
+        direction: input?.direction ?? 'both',
+      });
 
-      // Filter out patterns for merchants that already have templates
-      const newPatterns = allPatterns.filter(
-        (pattern) => !existingMerchants.has(normalizeMerchantForComparison(pattern.merchant))
-      );
+      // Filter out patterns for merchants that already have templates (per direction)
+      const newPatterns = allPatterns.filter((pattern) => {
+        const existingForDirection = existingMerchantsByDirection.get(pattern.direction);
+        return !existingForDirection?.has(normalizeMerchantForComparison(pattern.merchant));
+      });
 
       return newPatterns;
     }),
@@ -508,6 +518,7 @@ export const recurringRouter = router({
         byMonthDay: z.number().int().min(1).max(31).optional(),
         startDate: z.date(),
         accountId: z.string().optional(),
+        direction: z.enum(['income', 'expense']).default('expense'),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -543,9 +554,9 @@ export const recurringRouter = router({
       const template = await ctx.prisma.recurringTransactionTemplate.create({
         data: {
           householdId: ctx.householdId,
-          name: `${input.merchant} (recurring)`,
+          name: `${input.merchant} (recurring ${input.direction})`,
           merchant: input.merchant,
-          direction: 'expense',
+          direction: input.direction,
           amount: input.amount,
           defaultCategoryId: input.categoryId,
           accountId: input.accountId,
@@ -560,7 +571,7 @@ export const recurringRouter = router({
               id: '',
               householdId: ctx.householdId,
               name: input.merchant,
-              direction: 'expense',
+              direction: input.direction,
               amount: input.amount,
               frequency: input.frequency,
               interval: input.interval,

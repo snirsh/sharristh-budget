@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { formatCurrency, formatPercent, getStatusBadgeClass, getStatusLabel, cn, formatDate } from '@/lib/utils';
 import {
   TrendingUp,
@@ -12,7 +13,6 @@ import {
   Calendar,
   Repeat,
   RefreshCw,
-  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { MonthSelector } from '@/components/layout/MonthSelector';
@@ -65,6 +65,35 @@ type DashboardClientProps = {
 
 export const DashboardClient = ({ initialData, initialMonth, initialInsights }: DashboardClientProps) => {
   const { currentMonth } = useMonth();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const utils = trpc.useUtils();
+
+  // Sync all bank connections
+  const syncAllMutation = trpc.bankConnections.syncAll.useMutation({
+    onMutate: () => {
+      setIsSyncing(true);
+    },
+    onSuccess: (data) => {
+      // Invalidate and refetch dashboard data after sync
+      utils.dashboard.getFullDashboard.invalidate();
+      utils.dashboard.getExpenseInsights.invalidate();
+      utils.transactions.list.invalidate();
+      
+      const newCount = data.results?.reduce((sum, r) => sum + (r.transactionsNew ?? 0), 0) ?? 0;
+      if (newCount > 0) {
+        console.log(`[Sync] Added ${newCount} new transactions`);
+      }
+    },
+    onSettled: () => {
+      setIsSyncing(false);
+    },
+  });
+
+  const handleSyncNow = () => {
+    if (!isSyncing) {
+      syncAllMutation.mutate({});
+    }
+  };
 
   // Only refetch if month changes from initial
   const { data: dashboardData } = trpc.dashboard.getFullDashboard.useQuery(
@@ -109,15 +138,30 @@ export const DashboardClient = ({ initialData, initialMonth, initialInsights }: 
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-gray-500 dark:text-gray-400">Overview for the selected month</p>
-            {insights?.lastSyncAt && (
-              <div className={cn(
-                'flex items-center gap-1.5 text-xs',
-                getSyncStatusColor(insights.lastSyncAt)
-              )}>
-                <RefreshCw className="h-3 w-3" />
-                <span>Synced {formatRelativeTime(insights.lastSyncAt)}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {insights?.lastSyncAt && (
+                <div className={cn(
+                  'flex items-center gap-1.5 text-xs',
+                  getSyncStatusColor(insights.lastSyncAt)
+                )}>
+                  <RefreshCw className="h-3 w-3" />
+                  <span>Synced {formatRelativeTime(insights.lastSyncAt)}</span>
+                </div>
+              )}
+              <button
+                onClick={handleSyncNow}
+                disabled={isSyncing}
+                className={cn(
+                  'flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors',
+                  'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300',
+                  'hover:bg-primary-200 dark:hover:bg-primary-900/50',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+              >
+                <RefreshCw className={cn('h-3 w-3', isSyncing && 'animate-spin')} />
+                <span>{isSyncing ? 'Syncing...' : 'Sync now'}</span>
+              </button>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">

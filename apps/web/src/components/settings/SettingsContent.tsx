@@ -40,7 +40,7 @@ export function SettingsContent() {
     },
   });
 
-  const fixCCAccountsMutation = trpc.accounts.fixCreditCardAccountTypes.useMutation({
+  const fixAccountTypesMutation = trpc.accounts.fixAccountTypes.useMutation({
     onSuccess: (data) => {
       alert(`✅ ${data.message}`);
       window.location.reload();
@@ -61,25 +61,26 @@ export function SettingsContent() {
       {/* Partner Invites */}
       <PartnerInvites />
 
-      {/* Fix Credit Card Account Types */}
+      {/* Fix Account Types */}
       <div className="card border-purple-200 bg-purple-50">
         <div className="flex items-start gap-4">
           <div className="p-3 bg-purple-100 rounded-lg">
             <CreditCard className="h-6 w-6 text-purple-600" />
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-purple-900 mb-1">Fix Credit Card Accounts</h2>
+            <h2 className="text-lg font-semibold text-purple-900 mb-1">Fix Account Types</h2>
             <p className="text-sm text-gray-600 mb-4">
-              If your credit card transactions aren&apos;t showing in the dashboard&apos;s &quot;Credit Card&quot; total,
-              click this button to fix account types for Isracard connections.
+              Fix account types based on bank connection provider:
+              Isracard → Credit Card, OneZero → Checking.
+              This ensures the dashboard shows correct Credit Card totals.
             </p>
             <button
-              onClick={() => fixCCAccountsMutation.mutate()}
-              disabled={fixCCAccountsMutation.isPending}
+              onClick={() => fixAccountTypesMutation.mutate()}
+              disabled={fixAccountTypesMutation.isPending}
               className="btn bg-purple-600 text-white hover:bg-purple-700"
             >
               <CreditCard className="h-4 w-4" />
-              {fixCCAccountsMutation.isPending ? 'Fixing...' : 'Fix CC Account Types'}
+              {fixAccountTypesMutation.isPending ? 'Fixing...' : 'Fix Account Types'}
             </button>
           </div>
         </div>

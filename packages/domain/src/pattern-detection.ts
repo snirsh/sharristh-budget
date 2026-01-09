@@ -26,6 +26,7 @@ export interface TransactionPattern {
   estimatedDayOfMonth?: number;
   confidence: number; // 0-1
   reason: string;
+  direction: 'income' | 'expense';
 }
 
 export interface PatternDetectionConfig {
@@ -33,6 +34,7 @@ export interface PatternDetectionConfig {
   minOccurrences?: number; // Default: 2
   amountConsistencyThreshold?: number; // Default: 0.85 (85%)
   dateVarianceDays?: number; // Default: 3
+  direction?: 'income' | 'expense' | 'both'; // Default: 'both'
 }
 
 interface DatePattern {
@@ -47,6 +49,7 @@ const DEFAULT_CONFIG: Required<PatternDetectionConfig> = {
   minOccurrences: 2,
   amountConsistencyThreshold: 0.85,
   dateVarianceDays: 3,
+  direction: 'both',
 };
 
 /**
@@ -58,21 +61,27 @@ export function detectRecurringPatterns(
 ): TransactionPattern[] {
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
-  // 1. Filter to lookback period
+  // 1. Filter to lookback period and direction
   const cutoffDate = new Date();
   cutoffDate.setMonth(cutoffDate.getMonth() - cfg.lookbackMonths);
 
-  const recentTransactions = transactions.filter(
-    (tx) => tx.date >= cutoffDate && tx.direction === 'expense' // Only expenses for now
-  );
+  const recentTransactions = transactions.filter((tx) => {
+    if (tx.date < cutoffDate) return false;
+    if (cfg.direction === 'both') return tx.direction === 'income' || tx.direction === 'expense';
+    return tx.direction === cfg.direction;
+  });
 
-  // 2. Group by normalized merchant
-  const merchantGroups = groupByMerchant(recentTransactions);
+  // 2. Group by normalized merchant AND direction (income vs expense)
+  const merchantGroups = groupByMerchantAndDirection(recentTransactions);
 
   // 3. Analyze each group for patterns
   const patterns: TransactionPattern[] = [];
 
-  for (const [normalizedMerchant, txs] of Object.entries(merchantGroups)) {
+  for (const [key, group] of Object.entries(merchantGroups)) {
+    const { transactions: txs, direction } = group;
+    // Extract the normalized merchant name from the key (remove __direction suffix)
+    const normalizedMerchant = key.split('__')[0]!;
+    
     // Skip if not enough occurrences
     if (txs.length < cfg.minOccurrences) {
       continue;
@@ -127,7 +136,8 @@ export function detectRecurringPatterns(
       estimatedInterval: datePattern.interval,
       estimatedDayOfMonth: datePattern.dayOfMonth,
       confidence,
-      reason: buildReasonString(txs.length, amountConsistency, datePattern),
+      reason: buildReasonString(txs.length, amountConsistency, datePattern, direction),
+      direction,
     });
   }
 
@@ -136,18 +146,24 @@ export function detectRecurringPatterns(
 }
 
 /**
- * Group transactions by normalized merchant name
+ * Group transactions by normalized merchant name AND direction
+ * This ensures income and expense patterns are detected separately
  */
-function groupByMerchant(transactions: Transaction[]): Record<string, Transaction[]> {
-  const groups: Record<string, Transaction[]> = {};
+function groupByMerchantAndDirection(
+  transactions: Transaction[]
+): Record<string, { transactions: Transaction[]; direction: 'income' | 'expense' }> {
+  const groups: Record<string, { transactions: Transaction[]; direction: 'income' | 'expense' }> = {};
 
   for (const tx of transactions) {
+    if (tx.direction === 'transfer') continue; // Skip transfers
+    
     const normalized = normalizeMerchantName(tx.merchant || tx.description);
+    const key = `${normalized}__${tx.direction}`;
 
-    if (!groups[normalized]) {
-      groups[normalized] = [];
+    if (!groups[key]) {
+      groups[key] = { transactions: [], direction: tx.direction };
     }
-    groups[normalized]!.push(tx);
+    groups[key]!.transactions.push(tx);
   }
 
   return groups;
@@ -325,12 +341,14 @@ function calculatePatternConfidence(
 function buildReasonString(
   occurrences: number,
   amountConsistency: number,
-  datePattern: DatePattern
+  datePattern: DatePattern,
+  direction: 'income' | 'expense'
 ): string {
   const frequencyStr = formatFrequency(datePattern.frequency, datePattern.interval);
   const consistencyPercent = Math.round(amountConsistency * 100);
+  const directionStr = direction === 'income' ? 'income' : 'expense';
 
-  let reason = `Found ${occurrences} ${frequencyStr} transactions with ${consistencyPercent}% amount consistency`;
+  let reason = `Found ${occurrences} ${frequencyStr} ${directionStr} transactions with ${consistencyPercent}% amount consistency`;
 
   if (datePattern.dayOfMonth) {
     reason += ` on day ${datePattern.dayOfMonth} of month`;

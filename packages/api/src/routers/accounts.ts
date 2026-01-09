@@ -118,65 +118,82 @@ export const accountsRouter = router({
     }),
 
   /**
-   * Fix account types for credit card providers (Isracard)
-   * Updates accounts linked to credit card bank connections to have type 'credit'
+   * Fix account types based on bank connection provider
+   * - Isracard connections -> credit accounts
+   * - OneZero connections -> checking accounts
    */
-  fixCreditCardAccountTypes: protectedProcedure.mutation(async ({ ctx }) => {
-    // Find all Isracard bank connections for this household
-    const creditCardConnections = await ctx.prisma.bankConnection.findMany({
+  fixAccountTypes: protectedProcedure.mutation(async ({ ctx }) => {
+    // Get all bank connections with their account mappings
+    const allConnections = await ctx.prisma.bankConnection.findMany({
       where: {
         householdId: ctx.householdId,
-        provider: 'isracard',
       },
       select: {
         id: true,
+        provider: true,
         accountMappings: true,
       },
     });
 
-    // Collect all account IDs from account mappings
-    const accountIdsToFix = new Set<string>();
-    for (const conn of creditCardConnections) {
+    const creditAccountIds = new Set<string>();
+    const checkingAccountIds = new Set<string>();
+
+    for (const conn of allConnections) {
       if (conn.accountMappings) {
         const mappings = JSON.parse(conn.accountMappings) as Record<string, string>;
-        Object.values(mappings).forEach(id => accountIdsToFix.add(id));
+        const accountIds = Object.values(mappings);
+        
+        if (conn.provider === 'isracard') {
+          // Isracard = credit card provider
+          accountIds.forEach(id => creditAccountIds.add(id));
+        } else {
+          // OneZero and others = checking/bank accounts
+          accountIds.forEach(id => checkingAccountIds.add(id));
+        }
       }
     }
 
-    // Also find accounts with externalAccountId that were auto-created by Isracard syncs
-    const accountsWithExternalIds = await ctx.prisma.account.findMany({
-      where: {
-        householdId: ctx.householdId,
-        externalAccountId: { not: null },
-        type: { not: 'credit' },
-      },
-      select: { id: true, externalAccountId: true },
+    // Remove any overlap (if somehow an account is in both, prefer the specific provider's type)
+    // Credit card takes precedence
+    checkingAccountIds.forEach(id => {
+      if (creditAccountIds.has(id)) {
+        checkingAccountIds.delete(id);
+      }
     });
 
-    // Add accounts that have transactions from Isracard connections
-    for (const account of accountsWithExternalIds) {
-      accountIdsToFix.add(account.id);
+    let creditUpdated = 0;
+    let checkingUpdated = 0;
+
+    // Update credit card accounts
+    if (creditAccountIds.size > 0) {
+      const result = await ctx.prisma.account.updateMany({
+        where: {
+          id: { in: Array.from(creditAccountIds) },
+          householdId: ctx.householdId,
+          type: { not: 'credit' },
+        },
+        data: { type: 'credit' },
+      });
+      creditUpdated = result.count;
     }
 
-    if (accountIdsToFix.size === 0) {
-      return { updated: 0, message: 'No accounts needed fixing' };
+    // Update checking accounts (fix any that were incorrectly marked as credit)
+    if (checkingAccountIds.size > 0) {
+      const result = await ctx.prisma.account.updateMany({
+        where: {
+          id: { in: Array.from(checkingAccountIds) },
+          householdId: ctx.householdId,
+          type: { not: 'checking' },
+        },
+        data: { type: 'checking' },
+      });
+      checkingUpdated = result.count;
     }
-
-    // Update all identified accounts to type 'credit'
-    const result = await ctx.prisma.account.updateMany({
-      where: {
-        id: { in: Array.from(accountIdsToFix) },
-        householdId: ctx.householdId,
-        type: { not: 'credit' }, // Only update if not already credit
-      },
-      data: {
-        type: 'credit',
-      },
-    });
 
     return {
-      updated: result.count,
-      message: `Fixed ${result.count} account(s) to credit card type`,
+      creditUpdated,
+      checkingUpdated,
+      message: `Updated ${creditUpdated} account(s) to credit, ${checkingUpdated} account(s) to checking`,
     };
   }),
 });

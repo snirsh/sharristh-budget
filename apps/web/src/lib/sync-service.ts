@@ -79,6 +79,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
         encryptedCreds: connection.encryptedCreds,
         longTermToken: connection.longTermToken,
         accountMappings: connection.accountMappings,
+        lastSyncAt: connection.lastSyncAt,
       });
 
       if (result.success) {
@@ -174,6 +175,7 @@ export async function syncStaleConnectionsForHousehold(
         encryptedCreds: connection.encryptedCreds,
         longTermToken: connection.longTermToken,
         accountMappings: connection.accountMappings,
+        lastSyncAt: connection.lastSyncAt,
       });
 
       if (result.success) {
@@ -232,6 +234,8 @@ export async function hasStaleConnections(
 
 /**
  * Sync a single bank connection
+ * @param connection - The bank connection to sync
+ * @param lastSyncAt - Optional date of last successful sync (for incremental fetching)
  */
 async function syncSingleConnection(connection: {
   id: string;
@@ -240,6 +244,7 @@ async function syncSingleConnection(connection: {
   encryptedCreds: string;
   longTermToken: string | null;
   accountMappings: string | null;
+  lastSyncAt?: Date | null;
 }): Promise<ConnectionSyncResult> {
   // Create a sync job
   const syncJob = await prisma.syncJob.create({
@@ -263,6 +268,18 @@ async function syncSingleConnection(connection: {
       existingTransactions.map((t) => t.externalId).filter((id): id is string => id !== null)
     );
 
+    // Calculate start date for fetching transactions
+    // Use lastSyncAt with a 3-day buffer to catch delayed transactions
+    // Falls back to scraper's default (90 days) if no previous sync
+    let startDate: Date | undefined;
+    if (connection.lastSyncAt) {
+      startDate = new Date(connection.lastSyncAt);
+      startDate.setDate(startDate.getDate() - 3); // 3-day buffer for delayed transactions
+      console.log(`[SyncService] Fetching transactions since ${startDate.toISOString()} (last sync: ${connection.lastSyncAt.toISOString()})`);
+    } else {
+      console.log('[SyncService] No previous sync, using default lookback period');
+    }
+
     // Perform the sync
     const { result, transactions } = await scraperService.syncConnection(
       {
@@ -271,7 +288,8 @@ async function syncSingleConnection(connection: {
         encryptedCreds: connection.encryptedCreds,
         longTermToken: connection.longTermToken,
       },
-      existingExternalIds
+      existingExternalIds,
+      startDate
     );
 
     if (!result.success) {
