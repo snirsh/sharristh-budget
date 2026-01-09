@@ -1,2 +1,4 @@
-# Run typecheck on changed packages (excluding ui, mobile, api, and web with pre-existing errors)
-pnpm exec turbo typecheck --filter=!@sfam/ui --filter=!@sfam/mobile --filter=!@sfam/api --filter=!@sfam/web --ui=stream
+# Fast pre-commit: format + lint staged files only (~2-5 seconds)
+# Full typecheck is deferred to pre-push for speed
+
+pnpm exec lint-staged
