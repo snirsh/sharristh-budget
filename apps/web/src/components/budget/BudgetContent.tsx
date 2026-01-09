@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import {
   formatCurrency,
@@ -11,8 +11,25 @@ import {
 } from '@/lib/utils';
 import { Edit2, Save, X, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { AddBudgetDialog } from './AddBudgetDialog';
+import { BudgetEmptyState } from './BudgetEmptyState';
+import { BudgetCard } from './BudgetCard';
+import { CopyBudgetsDialog } from './CopyBudgetsDialog';
 import { MonthSelector } from '@/components/layout/MonthSelector';
 import { useMonth } from '@/lib/useMonth';
+
+// Helper to get previous month in YYYY-MM format
+function getPreviousMonth(currentMonth: string): string {
+  const [year, month] = currentMonth.split('-').map(Number);
+  const prevDate = new Date(year!, month! - 2, 1); // month is 0-indexed, so -2
+  return `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Helper to get progress bar color class based on percentage
+function getProgressBarColor(percentUsed: number): string {
+  if (percentUsed > 1.0) return 'bg-danger-500'; // Red: exceeded (>100%)
+  if (percentUsed > 0.7) return 'bg-warning-500'; // Yellow: nearing limit (70-100%)
+  return 'bg-success-500'; // Green: on track (0-70%)
+}
 
 export const BudgetContent = () => {
   const { currentMonth } = useMonth();
@@ -23,10 +40,18 @@ export const BudgetContent = () => {
     limitType: string | null;
   }>({ plannedAmount: 0, limitAmount: null, limitType: null });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
+
+  const previousMonth = useMemo(() => getPreviousMonth(currentMonth), [currentMonth]);
 
   const utils = trpc.useUtils();
 
   const { data: budgets = [], isLoading, isError, error } = trpc.budgets.forMonth.useQuery(currentMonth);
+
+  // Check if previous month has budgets (for copy feature)
+  const { data: previousMonthSummary } = trpc.budgets.summaryForMonth.useQuery(previousMonth, {
+    enabled: budgets.length === 0 && !isLoading, // Only fetch when current month is empty
+  });
 
   const upsertMutation = trpc.budgets.upsert.useMutation({
     onSuccess: () => {
@@ -142,8 +167,22 @@ export const BudgetContent = () => {
             </div>
           </div>
 
-          {/* Budget List */}
-          <div className="card p-0 overflow-hidden">
+          {/* Budget Cards (Mobile View) */}
+          {budgets.length > 0 && (
+            <div className="grid gap-4 md:hidden">
+              {budgets.map((evaluation: BudgetEvaluation) => (
+                <BudgetCard
+                  key={evaluation.budget.id}
+                  evaluation={evaluation}
+                  onEdit={() => startEditing(evaluation)}
+                  onDelete={() => handleDelete(evaluation.budget.id)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Budget Table (Desktop View) */}
+          <div className="card p-0 overflow-hidden hidden md:block">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <tr>
@@ -261,10 +300,7 @@ export const BudgetContent = () => {
                       <div
                         className={cn(
                           'h-full rounded-full transition-all',
-                          // Green for 0-100%, red only when exceeded (>100%)
-                          evaluation.percentUsed <= 1.0
-                            ? 'bg-success-500'
-                            : 'bg-danger-500'
+                          getProgressBarColor(evaluation.percentUsed)
                         )}
                         style={{ width: `${progressWidth}%` }}
                       />
@@ -321,17 +357,21 @@ export const BudgetContent = () => {
                 </tr>
               );
             })}
-            {budgets.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
-                  No budgets set for this month
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
           </div>
         </>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !isError && budgets.length === 0 && (
+        <BudgetEmptyState
+          currentMonth={currentMonth}
+          previousMonth={previousMonth}
+          hasPreviousBudgets={(previousMonthSummary?.count ?? 0) > 0}
+          onCopyFromPrevious={() => setIsCopyDialogOpen(true)}
+          onStartFromScratch={() => setIsCreateDialogOpen(true)}
+        />
       )}
 
       {/* Add Budget Dialog */}
@@ -339,6 +379,14 @@ export const BudgetContent = () => {
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         currentMonth={currentMonth}
+      />
+
+      {/* Copy Budgets Dialog */}
+      <CopyBudgetsDialog
+        isOpen={isCopyDialogOpen}
+        onClose={() => setIsCopyDialogOpen(false)}
+        fromMonth={previousMonth}
+        toMonth={currentMonth}
       />
     </div>
   );

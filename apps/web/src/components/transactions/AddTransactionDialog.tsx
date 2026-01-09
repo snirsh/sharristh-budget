@@ -93,7 +93,7 @@ export function AddTransactionDialog({
   // Filter categories by direction
   const filteredCategories = categories.filter((cat) => {
     if (direction === 'income') return cat.type === 'income';
-    return cat.type === 'expected' || cat.type === 'varying';
+    return cat.type === 'expense';
   });
 
   if (!isOpen) return null;

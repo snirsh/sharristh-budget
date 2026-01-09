@@ -187,7 +187,7 @@ export const transactionsRouter = router({
 
     const categories = categoriesRaw.map((c: typeof categoriesRaw[number]) => ({
       ...c,
-      type: c.type as 'income' | 'expected' | 'varying',
+      type: c.type as 'income' | 'expense',
     }));
 
     // Auto-categorize if no category provided
@@ -211,17 +211,17 @@ export const transactionsRouter = router({
         }
       );
 
-      // If categorization returned null (fallback), find a default category from the database
-      if (result.categoryId === null && result.source === 'fallback') {
-        // Find the first active category matching the direction
-        const fallbackCategory = await ctx.prisma.category.findFirst({
-          where: {
-            householdId: ctx.householdId,
-            isActive: true,
-            type: input.direction === 'income' ? 'income' : 'varying',
-          },
-          orderBy: { sortOrder: 'asc' },
-        });
+        // If categorization returned null (fallback), find a default category from the database
+        if (result.categoryId === null && result.source === 'fallback') {
+          // Find the first active category matching the direction
+          const fallbackCategory = await ctx.prisma.category.findFirst({
+            where: {
+              householdId: ctx.householdId,
+              isActive: true,
+              type: input.direction === 'income' ? 'income' : 'expense',
+            },
+            orderBy: { sortOrder: 'asc' },
+          });
 
         categoryId = fallbackCategory?.id ?? null;
       } else {
@@ -423,7 +423,7 @@ export const transactionsRouter = router({
 
     const categories = categoriesRaw.map((c: typeof categoriesRaw[number]) => ({
       ...c,
-      type: c.type as 'income' | 'expected' | 'varying',
+      type: c.type as 'income' | 'expense',
     }));
 
     let updatedCount = 0;
@@ -503,7 +503,7 @@ export const transactionsRouter = router({
             where: {
               householdId: ctx.householdId,
               isActive: true,
-              type: tx.direction === 'income' ? 'income' : 'varying',
+              type: tx.direction === 'income' ? 'income' : 'expense',
             },
             orderBy: { sortOrder: 'asc' },
           });

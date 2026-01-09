@@ -105,7 +105,7 @@ export const createTestFixtures = async (prisma: PrismaClient) => {
       nameHe: 'מכולת',
       icon: '🛒',
       color: '#3b82f6',
-      type: 'varying',
+      type: 'expense',
       sortOrder: 2,
     },
   });
@@ -118,7 +118,7 @@ export const createTestFixtures = async (prisma: PrismaClient) => {
       nameHe: 'אחר',
       icon: '❓',
       color: '#6b7280',
-      type: 'varying',
+      type: 'expense',
       sortOrder: 3,
     },
   });
@@ -183,7 +183,7 @@ export const createSecondTestHousehold = async (prisma: PrismaClient) => {
       nameHe: 'קטגוריה 2',
       icon: '🏠',
       color: '#8b5cf6',
-      type: 'expected',
+      type: 'expense',
       sortOrder: 1,
     },
   });

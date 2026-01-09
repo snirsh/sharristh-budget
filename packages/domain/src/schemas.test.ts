@@ -8,13 +8,13 @@ import {
 describe('categoryTypeSchema', () => {
   it('should accept valid category types', () => {
     expect(categoryTypeSchema.safeParse('income').success).toBe(true);
-    expect(categoryTypeSchema.safeParse('expected').success).toBe(true);
-    expect(categoryTypeSchema.safeParse('varying').success).toBe(true);
+    expect(categoryTypeSchema.safeParse('expense').success).toBe(true);
   });
 
   it('should reject invalid category types', () => {
     expect(categoryTypeSchema.safeParse('invalid').success).toBe(false);
-    expect(categoryTypeSchema.safeParse('expense').success).toBe(false);
+    expect(categoryTypeSchema.safeParse('expected').success).toBe(false);
+    expect(categoryTypeSchema.safeParse('varying').success).toBe(false);
     expect(categoryTypeSchema.safeParse('').success).toBe(false);
   });
 });
@@ -23,7 +23,7 @@ describe('createCategorySchema', () => {
   it('should accept valid category data', () => {
     const result = createCategorySchema.safeParse({
       name: 'Test Category',
-      type: 'varying',
+      type: 'expense',
     });
     
     expect(result.success).toBe(true);
@@ -51,7 +51,7 @@ describe('createCategorySchema', () => {
   it('should reject empty name', () => {
     const result = createCategorySchema.safeParse({
       name: '',
-      type: 'varying',
+      type: 'expense',
     });
     
     expect(result.success).toBe(false);
@@ -60,7 +60,7 @@ describe('createCategorySchema', () => {
   it('should reject name exceeding 50 characters', () => {
     const result = createCategorySchema.safeParse({
       name: 'A'.repeat(51),
-      type: 'varying',
+      type: 'expense',
     });
     
     expect(result.success).toBe(false);
@@ -110,12 +110,12 @@ describe('updateCategorySchema', () => {
 
   it('should accept type change', () => {
     const result = updateCategorySchema.safeParse({
-      type: 'expected',
+      type: 'expense',
     });
     
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.type).toBe('expected');
+      expect(result.data.type).toBe('expense');
     }
   });
 
@@ -190,7 +190,7 @@ describe('updateCategorySchema', () => {
   it('should accept full update with all fields', () => {
     const result = updateCategorySchema.safeParse({
       name: 'Updated Category',
-      type: 'varying',
+      type: 'expense',
       parentCategoryId: 'new-parent',
       icon: '🏠',
       color: '#ff0000',
@@ -201,7 +201,7 @@ describe('updateCategorySchema', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.name).toBe('Updated Category');
-      expect(result.data.type).toBe('varying');
+      expect(result.data.type).toBe('expense');
       expect(result.data.parentCategoryId).toBe('new-parent');
       expect(result.data.icon).toBe('🏠');
       expect(result.data.color).toBe('#ff0000');

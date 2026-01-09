@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GroupedCategorySelect } from './GroupedCategorySelect';
 
 interface AddBudgetDialogProps {
   isOpen: boolean;
@@ -28,15 +29,10 @@ export function AddBudgetDialog({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Fetch categories (expected and varying only, not income)
+  // Fetch categories (GroupedCategorySelect handles filtering by type)
   const { data: categories = [] } = trpc.categories.list.useQuery({
     includeInactive: false,
   });
-
-  type Category = (typeof categories)[number];
-  const budgetableCategories = categories.filter(
-    (cat: Category) => cat.type === 'expected' || cat.type === 'varying'
-  );
 
   const createMutation = trpc.budgets.upsert.useMutation({
     onSuccess: () => {
@@ -127,23 +123,16 @@ export function AddBudgetDialog({
             <label className="label">
               Category <span className="text-danger-500">*</span>
             </label>
-            <select
+            <GroupedCategorySelect
+              categories={categories}
               value={formData.categoryId}
-              onChange={(e) =>
-                setFormData({ ...formData, categoryId: e.target.value })
+              onChange={(categoryId) =>
+                setFormData({ ...formData, categoryId })
               }
-              className={cn(
-                'input',
-                errors.categoryId && 'border-danger-500 focus:ring-danger-500'
-              )}
-            >
-              <option value="">Select category...</option>
-              {budgetableCategories.map((cat: Category) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Select category..."
+              error={!!errors.categoryId}
+              filterType="expense"
+            />
             {errors.categoryId && (
               <p className="text-sm text-danger-600 mt-1">{errors.categoryId}</p>
             )}

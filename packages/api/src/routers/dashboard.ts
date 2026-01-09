@@ -93,9 +93,9 @@ export const dashboardRouter = router({
           where: { householdId: ctx.householdId, month: input.month },
           include: { category: true },
         }),
-        // Varying category
+        // Expense category (for uncategorized expenses)
         ctx.prisma.category.findFirst({
-          where: { householdId: ctx.householdId, type: 'varying' },
+          where: { householdId: ctx.householdId, type: 'expense' },
         }),
         // Needs review count
         ctx.prisma.transaction.count({
@@ -110,7 +110,7 @@ export const dashboardRouter = router({
           where: {
             householdId: ctx.householdId,
             isActive: true,
-            type: { in: ['expected', 'varying'] },
+            type: 'expense',
           },
           include: {
             budgets: { where: { month: input.month } },
@@ -312,11 +312,11 @@ export const dashboardRouter = router({
           category: true,
         },
       }),
-      // Get varying category
+      // Get expense category (for uncategorized expenses)
       ctx.prisma.category.findFirst({
         where: {
           householdId: ctx.householdId,
-          type: 'varying',
+          type: 'expense',
         },
       }),
       // Get transactions needing review count
@@ -398,7 +398,7 @@ export const dashboardRouter = router({
         where: {
           householdId: ctx.householdId,
           isActive: true,
-          type: { in: ['expected', 'varying'] },
+          type: 'expense',
         },
         include: {
           budgets: {

@@ -1029,7 +1029,7 @@ async function importTransactions(
           where: {
             householdId: ctx.householdId,
             name: txn.externalCategory,
-            type: 'varying', // External categories from Isracard are expenses
+            type: 'expense', // External categories from bank scrapers are expenses
           },
         });
 
@@ -1037,11 +1037,11 @@ async function importTransactions(
         if (!category) {
           console.log(`[ImportTransactions] Auto-creating category from external: ${txn.externalCategory}`);
 
-          // Get max sort order for varying categories
+          // Get max sort order for expense categories
           const maxSort = await ctx.prisma.category.aggregate({
             where: {
               householdId: ctx.householdId,
-              type: 'varying',
+              type: 'expense',
             },
             _max: { sortOrder: true },
           });
@@ -1051,7 +1051,7 @@ async function importTransactions(
               data: {
                 householdId: ctx.householdId,
                 name: txn.externalCategory,
-                type: 'varying',
+                type: 'expense',
                 icon: '📦', // Default icon for auto-created categories
                 sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
                 isSystem: false,

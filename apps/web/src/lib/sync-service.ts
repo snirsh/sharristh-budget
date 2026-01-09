@@ -438,7 +438,7 @@ async function importTransactions(
           where: {
             householdId: connection.householdId,
             name: txn.externalCategory,
-            type: 'varying',
+            type: 'expense',
           },
         });
 
@@ -447,7 +447,7 @@ async function importTransactions(
           const maxSort = await prisma.category.aggregate({
             where: {
               householdId: connection.householdId,
-              type: 'varying',
+              type: 'expense',
             },
             _max: { sortOrder: true },
           });
@@ -457,7 +457,7 @@ async function importTransactions(
               data: {
                 householdId: connection.householdId,
                 name: txn.externalCategory,
-                type: 'varying',
+                type: 'expense',
                 icon: '📦',
                 sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
                 isSystem: false,

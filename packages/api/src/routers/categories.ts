@@ -11,7 +11,7 @@ export const categoriesRouter = router({
     .input(
       z
         .object({
-          type: z.enum(['income', 'expected', 'varying']).optional(),
+          type: z.enum(['income', 'expense']).optional(),
           includeInactive: z.boolean().default(false),
         })
         .optional()
@@ -178,7 +178,7 @@ export const categoriesRouter = router({
 
           // When setting a parent, inherit the type from the parent
           if (!input.data.type && parent.type !== existingCategory.type) {
-            input.data.type = parent.type as 'income' | 'expected' | 'varying';
+            input.data.type = parent.type as 'income' | 'expense';
           }
         }
       }

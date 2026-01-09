@@ -239,6 +239,39 @@ export const budgetsRouter = router({
     }),
 
   /**
+   * Get budget summary for a month (used for copy preview)
+   */
+  summaryForMonth: protectedProcedure
+    .input(monthSchema)
+    .query(async ({ ctx, input }) => {
+      const budgets = await ctx.prisma.budget.findMany({
+        where: {
+          householdId: ctx.householdId,
+          month: input,
+        },
+        include: {
+          category: {
+            select: { id: true, name: true, icon: true },
+          },
+        },
+      });
+
+      const totalPlanned = budgets.reduce((sum, b) => sum + b.plannedAmount, 0);
+
+      return {
+        month: input,
+        count: budgets.length,
+        totalPlanned,
+        budgets: budgets.map((b) => ({
+          categoryId: b.categoryId,
+          categoryName: b.category.name,
+          categoryIcon: b.category.icon,
+          plannedAmount: b.plannedAmount,
+        })),
+      };
+    }),
+
+  /**
    * Copy budgets from one month to another
    */
   copyMonth: protectedProcedure
