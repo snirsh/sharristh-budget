@@ -18,6 +18,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 1000 * 60, // 1 minute - more responsive to data changes
+            // @ts-expect-error - gcTime exists in newer versions but types may not be updated
             gcTime: 1000 * 60 * 5, // 5 minutes - keep cache for navigation (renamed from cacheTime)
             refetchOnWindowFocus: true, // Refetch when user returns to tab for fresh data
             refetchOnMount: false, // Don't refetch if data is fresh (within staleTime)

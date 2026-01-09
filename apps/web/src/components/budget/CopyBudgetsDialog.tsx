@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { X, Copy, Loader2, CheckCircle2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';

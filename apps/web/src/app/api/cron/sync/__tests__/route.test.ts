@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 /**
@@ -8,26 +9,30 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
  */
 
 describe('Cron Sync Route', () => {
-  const originalEnv = process.env;
+  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.resetModules();
-    process.env = { ...originalEnv };
+    // Reset to original env
+    Object.keys(process.env).forEach(key => {
+      if (!(key in originalEnv)) {
+        delete process.env[key];
+      }
+    });
+    Object.assign(process.env, originalEnv);
   });
 
   afterEach(() => {
-    process.env = originalEnv;
     vi.clearAllMocks();
   });
 
   describe('Authorization', () => {
     it('should require CRON_SECRET in production', () => {
-      process.env.NODE_ENV = 'production';
-      process.env.CRON_SECRET = undefined;
+      const testEnv = { NODE_ENV: 'production', CRON_SECRET: undefined };
 
       // In production without CRON_SECRET, should return 500
-      const cronSecret = process.env.CRON_SECRET;
-      const isProduction = process.env.NODE_ENV === 'production';
+      const cronSecret = testEnv.CRON_SECRET;
+      const isProduction = testEnv.NODE_ENV === 'production';
 
       expect(isProduction).toBe(true);
       expect(cronSecret).toBeUndefined();
@@ -62,11 +67,10 @@ describe('Cron Sync Route', () => {
     });
 
     it('should allow requests in development without CRON_SECRET', () => {
-      process.env.NODE_ENV = 'development';
-      process.env.CRON_SECRET = undefined;
+      const testEnv = { NODE_ENV: 'development', CRON_SECRET: undefined };
 
-      const isProduction = process.env.NODE_ENV === 'production';
-      const cronSecret = process.env.CRON_SECRET;
+      const isProduction = testEnv.NODE_ENV === 'production';
+      const cronSecret = testEnv.CRON_SECRET;
 
       // In development without CRON_SECRET, should still allow
       const shouldFailOnMissingSecret = isProduction && !cronSecret;

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Copy, Plus, Sparkles, PiggyBank } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

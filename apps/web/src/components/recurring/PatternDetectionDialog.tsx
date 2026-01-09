@@ -129,7 +129,7 @@ export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDe
 
           {!isLoading && patterns.length > 0 && (
             <div className="space-y-4">
-              {sortedPatterns.map((pattern, idx) => {
+              {sortedPatterns.map((pattern) => {
                 const isAdded = addedPatterns.has(pattern.merchant);
                 const isCreatingThis = creatingPattern === pattern.merchant;
                 return (

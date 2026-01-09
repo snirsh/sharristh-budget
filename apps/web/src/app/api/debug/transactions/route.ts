@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@sfam/db';
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
 
 /**
  * Debug endpoint to diagnose transaction date issues
@@ -14,9 +13,7 @@ import { headers } from 'next/headers';
  */
 export async function GET() {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const session = await auth();
 
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
