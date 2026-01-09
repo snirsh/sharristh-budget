@@ -112,8 +112,30 @@ export class ScraperService {
     // Map transactions to our format
     const allTransactions = mapAccountTransactions(scrapeResult.accounts);
     
+    // Log transaction date range for debugging
+    if (allTransactions.length > 0) {
+      const dates = allTransactions.map(t => t.date.toISOString().split('T')[0]);
+      const uniqueDates = [...new Set(dates)].sort();
+      console.log(`[ScraperService] Transaction dates from bank: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]} (${uniqueDates.length} unique days, ${allTransactions.length} transactions)`);
+    } else {
+      console.log('[ScraperService] No transactions returned from bank');
+    }
+    
     // Filter out existing transactions
     const newTransactions = filterNewTransactions(allTransactions, existingExternalIds);
+    
+    // Log deduplication results
+    const duplicateCount = allTransactions.length - newTransactions.length;
+    if (duplicateCount > 0) {
+      console.log(`[ScraperService] Deduplication: ${duplicateCount} transactions already exist, ${newTransactions.length} are new`);
+      
+      // Log sample of duplicated external IDs for debugging
+      const duplicatedIds = allTransactions
+        .filter(t => existingExternalIds.has(t.externalId))
+        .slice(0, 5)
+        .map(t => ({ externalId: t.externalId, date: t.date.toISOString().split('T')[0], desc: t.description.substring(0, 30) }));
+      console.log('[ScraperService] Sample duplicates:', JSON.stringify(duplicatedIds));
+    }
 
     return {
       result: {

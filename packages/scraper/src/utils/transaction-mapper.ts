@@ -52,6 +52,13 @@ export function mapAccountTransactions(accounts: ScrapedAccount[]): MappedTransa
   const transactions: MappedTransaction[] = [];
 
   for (const account of accounts) {
+    // Log a sample of raw dates from the bank for debugging
+    if (account.txns.length > 0) {
+      const sampleTxns = account.txns.slice(0, 3);
+      console.log(`[TransactionMapper] Sample raw dates from bank (account ${account.accountNumber}):`, 
+        sampleTxns.map(t => ({ raw: t.date, desc: t.description?.substring(0, 20) })));
+    }
+    
     for (const txn of account.txns) {
       // Include all transactions (both pending and completed)
       // Users want to see pending transactions to get the most up-to-date view

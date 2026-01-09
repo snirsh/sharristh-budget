@@ -66,6 +66,17 @@ class IsracardAdapter implements ScraperAdapter {
       }
 
       console.log('[Isracard] Scrape successful, accounts:', result.accounts?.length || 0);
+      
+      // Log transaction date range for debugging
+      for (const acc of result.accounts || []) {
+        if (acc.txns.length > 0) {
+          const dates = acc.txns.map(t => t.date.split('T')[0]);
+          const uniqueDates = [...new Set(dates)].sort();
+          console.log(`[Isracard] Account ${acc.accountNumber}: ${acc.txns.length} transactions, dates: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]}`);
+        } else {
+          console.log(`[Isracard] Account ${acc.accountNumber}: 0 transactions`);
+        }
+      }
 
       // Map the accounts to our format
       const accounts: ScrapedAccount[] = (result.accounts || []).map((acc) => ({

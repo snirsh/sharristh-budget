@@ -834,5 +834,84 @@ export const transactionsRouter = router({
         transactionCount: transactions.length,
       };
     }),
+
+  /**
+   * Debug endpoint to diagnose transaction date issues
+   * Shows transaction counts by date and reveals any date range problems
+   */
+  debugDateRange: protectedProcedure.query(async ({ ctx }) => {
+    // Get all transactions for this household, grouped by date
+    const transactions = await ctx.prisma.transaction.findMany({
+      where: { householdId: ctx.householdId },
+      select: {
+        date: true,
+        isIgnored: true,
+        externalId: true,
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    // Group by date (formatted in Israel timezone)
+    const byDate: Record<string, number> = {};
+    const byDateUTC: Record<string, number> = {};
+    
+    for (const tx of transactions) {
+      // Format in Israel timezone
+      const israelDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Jerusalem',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(tx.date);
+      
+      // Also track UTC date for comparison
+      const utcDate = tx.date.toISOString().split('T')[0];
+      
+      byDate[israelDate] = (byDate[israelDate] || 0) + 1;
+      byDateUTC[utcDate!] = (byDateUTC[utcDate!] || 0) + 1;
+    }
+
+    // Get last 10 transactions with their raw dates
+    const recentTransactions = await ctx.prisma.transaction.findMany({
+      where: { householdId: ctx.householdId },
+      select: {
+        id: true,
+        date: true,
+        description: true,
+        externalId: true,
+      },
+      orderBy: { date: 'desc' },
+      take: 10,
+    });
+
+    return {
+      totalTransactions: transactions.length,
+      uniqueDates: Object.keys(byDate).length,
+      dateRange: {
+        earliest: Object.keys(byDate).sort()[0] || null,
+        latest: Object.keys(byDate).sort().pop() || null,
+      },
+      transactionsByDate: Object.entries(byDate)
+        .sort(([a], [b]) => b.localeCompare(a))
+        .slice(0, 20)
+        .map(([date, count]) => ({ date, count })),
+      transactionsByDateUTC: Object.entries(byDateUTC)
+        .sort(([a], [b]) => b.localeCompare(a))
+        .slice(0, 20)
+        .map(([date, count]) => ({ date, count })),
+      recentTransactions: recentTransactions.map(tx => ({
+        id: tx.id,
+        dateISO: tx.date.toISOString(),
+        dateIsrael: new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Jerusalem',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(tx.date),
+        description: tx.description.substring(0, 40),
+        externalId: tx.externalId?.substring(0, 30),
+      })),
+    };
+  }),
 });
 

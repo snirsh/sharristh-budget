@@ -651,6 +651,62 @@ export const bankConnectionsRouter = router({
   }),
 
   /**
+   * Debug endpoint to see recent sync history across all connections
+   * Helps diagnose sync issues
+   */
+  debugSyncHistory: protectedProcedure.query(async ({ ctx }) => {
+    // Get all connections for the household
+    const connections = await ctx.prisma.bankConnection.findMany({
+      where: { householdId: ctx.householdId },
+      select: {
+        id: true,
+        displayName: true,
+        provider: true,
+        lastSyncAt: true,
+        lastSyncStatus: true,
+        isActive: true,
+      },
+    });
+
+    // Get recent sync jobs
+    const syncJobs = await ctx.prisma.syncJob.findMany({
+      where: {
+        connection: {
+          householdId: ctx.householdId,
+        },
+      },
+      include: {
+        connection: {
+          select: { displayName: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    return {
+      connections: connections.map(c => ({
+        id: c.id,
+        displayName: c.displayName,
+        provider: c.provider,
+        lastSyncAt: c.lastSyncAt?.toISOString() || null,
+        lastSyncStatus: c.lastSyncStatus,
+        isActive: c.isActive,
+      })),
+      recentSyncJobs: syncJobs.map(job => ({
+        id: job.id,
+        connectionName: job.connection.displayName,
+        status: job.status,
+        startedAt: job.startedAt?.toISOString() || null,
+        completedAt: job.completedAt?.toISOString() || null,
+        transactionsFound: job.transactionsFound,
+        transactionsNew: job.transactionsNew,
+        errorMessage: job.errorMessage,
+      })),
+    };
+  }),
+
+  /**
    * Check if connections need syncing and return status
    * Used by the frontend to determine if a background sync should be triggered
    * 
