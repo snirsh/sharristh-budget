@@ -110,15 +110,12 @@ export const TransactionsContent = ({
   const hasMore = hasNextPage ?? false;
 
   // Fetch monthly summary from server (calculates from ALL transactions in DB)
-  // Only fetch when we have a specific month selected (not "all time" mode)
+  // Works for both specific month and all-time views
   const { data: monthlySummary, refetch: refetchSummary } = trpc.transactions.monthlySummary.useQuery(
     {
-      startDate: startDate!,
-      endDate: endDate!,
+      startDate,
+      endDate,
       includeIgnored: showIgnored || undefined,
-    },
-    {
-      enabled: !!startDate && !!endDate, // Only run query when dates are available
     }
   );
 

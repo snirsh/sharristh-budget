@@ -874,23 +874,28 @@ export const transactionsRouter = router({
   /**
    * Get monthly summary (totals) for a date range
    * Calculates income, expenses, and net from ALL transactions in the database
+   * If no dates provided, returns summary for all transactions
    */
   monthlySummary: protectedProcedure
     .input(
       z.object({
-        startDate: z.coerce.date(),
-        endDate: z.coerce.date(),
+        startDate: z.coerce.date().optional(),
+        endDate: z.coerce.date().optional(),
         includeIgnored: z.boolean().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {
         householdId: ctx.householdId,
-        date: {
+      };
+
+      // Only add date filter if both dates are provided
+      if (input.startDate && input.endDate) {
+        where.date = {
           gte: input.startDate,
           lte: input.endDate,
-        },
-      };
+        };
+      }
 
       // Filter out ignored transactions by default
       if (!input.includeIgnored) {
