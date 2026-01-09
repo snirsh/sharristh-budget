@@ -1,6 +1,6 @@
-import { initTRPC, TRPCError } from '@trpc/server';
-import superjson from 'superjson';
 import type { PrismaClient } from '@sfam/db';
+import { TRPCError, initTRPC } from '@trpc/server';
+import superjson from 'superjson';
 
 /**
  * Session user type from auth
@@ -48,7 +48,10 @@ export const createCallerFactory = t.createCallerFactory;
  */
 const isAuthed = middleware(async ({ ctx, next }) => {
   if (!ctx.user || !ctx.householdId) {
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You must be logged in to perform this action' });
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in to perform this action',
+    });
   }
   return next({
     ctx: {
@@ -63,4 +66,3 @@ const isAuthed = middleware(async ({ ctx, next }) => {
  * Protected procedure - requires authentication
  */
 export const protectedProcedure = t.procedure.use(isAuthed);
-

@@ -1,4 +1,4 @@
-import { View, Text, Pressable, type ViewProps } from 'react-native';
+import { Pressable, Text, View, type ViewProps } from 'react-native';
 import { cn } from '../utils';
 
 export interface Tab {
@@ -50,12 +50,7 @@ export function Tabs({
             )}
           >
             {tab.icon && <View className="mr-2">{tab.icon}</View>}
-            <Text
-              className={cn(
-                'font-medium',
-                isActive ? 'text-primary-600' : 'text-gray-500'
-              )}
-            >
+            <Text className={cn('font-medium', isActive ? 'text-primary-600' : 'text-gray-500')}>
               {tab.label}
             </Text>
           </Pressable>
@@ -72,13 +67,7 @@ export interface TabContentProps extends ViewProps {
   children: React.ReactNode;
 }
 
-export function TabContent({
-  className,
-  activeTab,
-  tabId,
-  children,
-  ...props
-}: TabContentProps) {
+export function TabContent({ className, activeTab, tabId, children, ...props }: TabContentProps) {
   if (activeTab !== tabId) return null;
 
   return (
@@ -87,4 +76,3 @@ export function TabContent({
     </View>
   );
 }
-

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.mjs", "playwright.config.ts"],
+      "project": ["scripts/**/*.{ts,mjs}"],
+      "ignoreDependencies": ["@sparticuz/chromium", "puppeteer-core", "@playwright/test"]
+    },
+    "apps/web": {
+      "entry": [
+        "src/app/**/*.{ts,tsx}",
+        "src/components/**/*.{ts,tsx}",
+        "src/lib/**/*.{ts,tsx}",
+        "src/middleware.ts",
+        "next.config.js"
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignore": ["src/**/*.d.ts", "next-env.d.ts"],
+      "ignoreDependencies": ["autoprefixer", "postcss"]
+    },
+    "apps/mobile": {
+      "entry": ["app/**/*.tsx", "lib/**/*.{ts,tsx}", "metro.config.js", "babel.config.js"],
+      "project": ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+      "ignore": ["**/*.d.ts"],
+      "ignoreDependencies": ["expo-*", "nativewind"]
+    },
+    "packages/api": {
+      "entry": ["src/index.ts", "vitest.config.ts", "tsdown.config.ts"],
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/__tests__/**"]
+    },
+    "packages/db": {
+      "entry": ["src/index.ts", "src/client.ts", "src/seed.ts", "tsdown.config.ts"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["prisma", "pg"]
+    },
+    "packages/domain": {
+      "entry": ["src/index.ts", "src/schemas.ts", "vitest.config.ts", "tsdown.config.ts"],
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/**/*.test.ts"]
+    },
+    "packages/scraper": {
+      "entry": ["src/index.ts", "vitest.config.ts", "tsdown.config.ts"],
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/__tests__/**"]
+    },
+    "packages/ui": {
+      "entry": ["src/index.tsx", "src/index.native.tsx"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignore": ["**/*.d.ts"],
+      "ignoreDependencies": ["nativewind", "react-native"]
+    },
+    "packages/config": {
+      "entry": ["tailwind/index.js", "tsconfig/*.json"]
+    }
+  },
+  "ignore": ["**/*.test.ts", "**/*.spec.ts", "**/__tests__/**", "**/tests/**"],
+  "ignoreDependencies": [
+    "@sfam/config",
+    "typescript",
+    "tsdown",
+    "vitest",
+    "@rolldown/binding-darwin-arm64"
+  ]
+}

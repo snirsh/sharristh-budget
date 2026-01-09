@@ -1,18 +1,18 @@
-import { z } from 'zod';
-import { router, protectedProcedure } from '../trpc';
+import {
+  type RecurringOverride,
+  type RecurringTransactionTemplate,
+  calculateNextRunAt,
+  detectRecurringPatterns,
+  expandRecurringToMonth,
+  getScheduleDescription,
+} from '@sfam/domain';
 import {
   createRecurringTemplateSchema,
-  updateRecurringTemplateSchema,
   recurringOverrideSchema,
+  updateRecurringTemplateSchema,
 } from '@sfam/domain/schemas';
-import {
-  expandRecurringToMonth,
-  calculateNextRunAt,
-  getScheduleDescription,
-  detectRecurringPatterns,
-  type RecurringTransactionTemplate,
-  type RecurringOverride,
-} from '@sfam/domain';
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
 
 /**
  * Normalize merchant name for comparison (matches pattern-detection logic)
@@ -57,16 +57,18 @@ function toRecurringTemplate(t: {
   };
 }
 
-function toRecurringOverrides(overrides: Array<{
-  id: string;
-  templateId: string;
-  instanceKey: string;
-  action: string;
-  amount?: number | null;
-  categoryId?: string | null;
-  description?: string | null;
-}>): RecurringOverride[] {
-  return overrides.map(o => ({
+function toRecurringOverrides(
+  overrides: Array<{
+    id: string;
+    templateId: string;
+    instanceKey: string;
+    action: string;
+    amount?: number | null;
+    categoryId?: string | null;
+    description?: string | null;
+  }>
+): RecurringOverride[] {
+  return overrides.map((o) => ({
     ...o,
     action: o.action as 'skip' | 'modify',
   }));
@@ -96,7 +98,7 @@ export const recurringRouter = router({
         orderBy: { name: 'asc' },
       });
 
-      return templates.map((t: typeof templates[number]) => ({
+      return templates.map((t: (typeof templates)[number]) => ({
         ...t,
         scheduleDescription: getScheduleDescription(toRecurringTemplate(t)),
       }));
@@ -132,40 +134,42 @@ export const recurringRouter = router({
   /**
    * Create a new recurring template
    */
-  create: protectedProcedure.input(createRecurringTemplateSchema).mutation(async ({ ctx, input }) => {
-    const nextRunAt = calculateNextRunAt({
-      ...input,
-      id: '',
-      householdId: ctx.householdId,
-      timezone: 'Asia/Jerusalem',
-      isActive: true,
-    } as Parameters<typeof calculateNextRunAt>[0]);
-
-    return ctx.prisma.recurringTransactionTemplate.create({
-      data: {
+  create: protectedProcedure
+    .input(createRecurringTemplateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const nextRunAt = calculateNextRunAt({
+        ...input,
+        id: '',
         householdId: ctx.householdId,
-        name: input.name,
-        direction: input.direction,
-        amount: input.amount,
-        defaultCategoryId: input.defaultCategoryId,
-        description: input.description,
-        merchant: input.merchant,
-        accountId: input.accountId,
-        frequency: input.frequency,
-        interval: input.interval,
-        byWeekday: input.byWeekday,
-        byMonthDay: input.byMonthDay,
-        startDate: input.startDate,
-        endDate: input.endDate,
         timezone: 'Asia/Jerusalem',
         isActive: true,
-        nextRunAt,
-      },
-      include: {
-        category: true,
-      },
-    });
-  }),
+      } as Parameters<typeof calculateNextRunAt>[0]);
+
+      return ctx.prisma.recurringTransactionTemplate.create({
+        data: {
+          householdId: ctx.householdId,
+          name: input.name,
+          direction: input.direction,
+          amount: input.amount,
+          defaultCategoryId: input.defaultCategoryId,
+          description: input.description,
+          merchant: input.merchant,
+          accountId: input.accountId,
+          frequency: input.frequency,
+          interval: input.interval,
+          byWeekday: input.byWeekday,
+          byMonthDay: input.byMonthDay,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          timezone: 'Asia/Jerusalem',
+          isActive: true,
+          nextRunAt,
+        },
+        include: {
+          category: true,
+        },
+      });
+    }),
 
   /**
    * Update a recurring template (affects future only)
@@ -274,11 +278,14 @@ export const recurringRouter = router({
       });
 
       const existingKeys = new Set(
-        existingTransactions.map((t: typeof existingTransactions[number]) => `${t.recurringTemplateId}_${t.recurringInstanceKey}`)
+        existingTransactions.map(
+          (t: (typeof existingTransactions)[number]) =>
+            `${t.recurringTemplateId}_${t.recurringInstanceKey}`
+        )
       );
 
       // Expand all templates
-      const allOccurrences = templates.flatMap((template: typeof templates[number]) => {
+      const allOccurrences = templates.flatMap((template: (typeof templates)[number]) => {
         const occurrences = expandRecurringToMonth(
           toRecurringTemplate(template),
           input.year,
@@ -294,7 +301,10 @@ export const recurringRouter = router({
         }));
       });
 
-      return allOccurrences.sort((a: typeof allOccurrences[number], b: typeof allOccurrences[number]) => a.date.getTime() - b.date.getTime());
+      return allOccurrences.sort(
+        (a: (typeof allOccurrences)[number], b: (typeof allOccurrences)[number]) =>
+          a.date.getTime() - b.date.getTime()
+      );
     }),
 
   /**
@@ -375,7 +385,9 @@ export const recurringRouter = router({
           },
         });
 
-        const existingKeys = new Set(existing.map((t: typeof existing[number]) => t.recurringInstanceKey));
+        const existingKeys = new Set(
+          existing.map((t: (typeof existing)[number]) => t.recurringInstanceKey)
+        );
 
         // Expand to get all occurrences
         const occurrences = expandRecurringToMonth(
@@ -420,10 +432,7 @@ export const recurringRouter = router({
             where: { id: template.id },
             data: {
               lastRunAt: lastOcc?.date,
-              nextRunAt: calculateNextRunAt(
-                toRecurringTemplate(template),
-                lastOcc?.date
-              ),
+              nextRunAt: calculateNextRunAt(toRecurringTemplate(template), lastOcc?.date),
             },
           });
         }
@@ -472,15 +481,17 @@ export const recurringRouter = router({
       const existingMerchantsByDirection = new Map<string, Set<string>>();
       existingMerchantsByDirection.set('income', new Set());
       existingMerchantsByDirection.set('expense', new Set());
-      
+
       for (const t of existingTemplates) {
         if (t.merchant && (t.direction === 'income' || t.direction === 'expense')) {
-          existingMerchantsByDirection.get(t.direction)?.add(normalizeMerchantForComparison(t.merchant));
+          existingMerchantsByDirection
+            .get(t.direction)
+            ?.add(normalizeMerchantForComparison(t.merchant));
         }
       }
 
       // Map to domain type
-      const domainTransactions = transactions.map((tx: typeof transactions[number]) => ({
+      const domainTransactions = transactions.map((tx: (typeof transactions)[number]) => ({
         id: tx.id,
         date: tx.date,
         description: tx.description,
@@ -591,4 +602,3 @@ export const recurringRouter = router({
       return template;
     }),
 });
-

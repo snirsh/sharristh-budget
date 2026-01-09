@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Search, Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Check, ChevronDown, Search, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface CategoryOption {
   id: string;
@@ -59,9 +59,7 @@ export const CategoryCombobox = ({
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(
-        (cat) =>
-          cat.name.toLowerCase().includes(query) ||
-          (cat.icon && cat.icon.includes(query))
+        (cat) => cat.name.toLowerCase().includes(query) || (cat.icon && cat.icon.includes(query))
       );
     }
 
@@ -85,9 +83,7 @@ export const CategoryCombobox = ({
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setHighlightedIndex((prev) =>
-            prev < filteredCategories.length - 1 ? prev + 1 : prev
-          );
+          setHighlightedIndex((prev) => (prev < filteredCategories.length - 1 ? prev + 1 : prev));
           break;
         case 'ArrowUp':
           e.preventDefault();
@@ -123,9 +119,7 @@ export const CategoryCombobox = ({
   // Scroll highlighted item into view
   useEffect(() => {
     if (isOpen && listRef.current) {
-      const highlightedElement = listRef.current.children[
-        highlightedIndex
-      ] as HTMLElement;
+      const highlightedElement = listRef.current.children[highlightedIndex] as HTMLElement;
       if (highlightedElement) {
         highlightedElement.scrollIntoView({ block: 'nearest' });
       }
@@ -147,10 +141,7 @@ export const CategoryCombobox = ({
   // Close on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
         setSearchQuery('');
       }
@@ -195,10 +186,7 @@ export const CategoryCombobox = ({
           <span className="flex-1">{placeholder}</span>
         )}
         <ChevronDown
-          className={cn(
-            'h-4 w-4 text-gray-400 transition-transform',
-            isOpen && 'rotate-180'
-          )}
+          className={cn('h-4 w-4 text-gray-400 transition-transform', isOpen && 'rotate-180')}
         />
       </button>
 
@@ -231,11 +219,7 @@ export const CategoryCombobox = ({
           </div>
 
           {/* Category List */}
-          <ul
-            ref={listRef}
-            className="max-h-60 overflow-y-auto py-1"
-            role="listbox"
-          >
+          <ul ref={listRef} className="max-h-60 overflow-y-auto py-1" role="listbox">
             {filteredCategories.length === 0 ? (
               <li className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
                 No categories found
@@ -250,10 +234,8 @@ export const CategoryCombobox = ({
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={cn(
                     'flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors',
-                    index === highlightedIndex &&
-                      'bg-primary-50 dark:bg-primary-900/30',
-                    category.id === value &&
-                      'bg-primary-100 dark:bg-primary-900/50'
+                    index === highlightedIndex && 'bg-primary-50 dark:bg-primary-900/30',
+                    category.id === value && 'bg-primary-100 dark:bg-primary-900/50'
                   )}
                 >
                   <span className="text-lg">{category.icon || '📁'}</span>

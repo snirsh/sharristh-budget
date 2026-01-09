@@ -5,9 +5,9 @@
  */
 
 import type {
-  TransactionInput,
-  CategoryForCategorization,
   CategorizationResult as BaseCategorizationResult,
+  CategoryForCategorization,
+  TransactionInput,
 } from './types';
 
 type GeminiResponse = {
@@ -126,12 +126,9 @@ const buildPrompt = (tx: TransactionInput, categories: CategoryForCategorization
   const incomeCategories = categories.filter((c) => c.type === 'income');
   const expenseCategories = categories.filter((c) => c.type === 'expense');
 
-  const relevantCategories =
-    tx.direction === 'income' ? incomeCategories : expenseCategories;
+  const relevantCategories = tx.direction === 'income' ? incomeCategories : expenseCategories;
 
-  const categoryList = relevantCategories
-    .map((c) => `- ${c.id}: ${c.name}`)
-    .join('\n');
+  const categoryList = relevantCategories.map((c) => `- ${c.id}: ${c.name}`).join('\n');
 
   return `You are a financial transaction categorization assistant for a Hebrew/Israeli user. Categorize this transaction into one of the available categories.
 
@@ -164,7 +161,10 @@ const parseResponse = (
 ): ParsedAIResponse => {
   try {
     // Clean up response - remove markdown code blocks if present
-    let cleaned = response.replace(/```json?\s*/gi, '').replace(/```\s*/g, '').trim();
+    const cleaned = response
+      .replace(/```json?\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim();
 
     // Extract JSON from response (AI might add extra text)
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
@@ -208,8 +208,8 @@ const parseResponse = (
 
     if (!isValidCategory) {
       // Try to find a partial match (AI might return slightly different ID)
-      const partialMatch = categories.find((c) =>
-        c.id.includes(parsed.categoryId || '') || (parsed.categoryId || '').includes(c.id)
+      const partialMatch = categories.find(
+        (c) => c.id.includes(parsed.categoryId || '') || (parsed.categoryId || '').includes(c.id)
       );
       if (partialMatch) {
         return {
@@ -229,9 +229,7 @@ const parseResponse = (
     return {
       categoryId: parsed.categoryId || null,
       confidence:
-        typeof parsed.confidence === 'number'
-          ? Math.max(0, Math.min(1, parsed.confidence))
-          : 0,
+        typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : 0,
       reasoning: parsed.reasoning || 'No reasoning provided',
     };
   } catch (error) {

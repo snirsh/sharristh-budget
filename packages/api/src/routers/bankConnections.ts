@@ -1,14 +1,14 @@
-import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../trpc';
+import { categorizeTransaction } from '@sfam/domain';
 import {
-  scraperService,
-  oneZeroCredentialsSchema,
-  israCardCredentialsSchema,
   type BankProvider,
   type MappedTransaction,
+  israCardCredentialsSchema,
+  oneZeroCredentialsSchema,
+  scraperService,
 } from '@sfam/scraper';
-import { categorizeTransaction } from '@sfam/domain';
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
 
 // Schema for creating a new connection
 const createConnectionSchema = z.discriminatedUnion('provider', [
@@ -44,7 +44,7 @@ export const bankConnectionsRouter = router({
       orderBy: { createdAt: 'desc' },
     });
 
-    return connections.map((conn: typeof connections[number]) => ({
+    return connections.map((conn: (typeof connections)[number]) => ({
       ...conn,
       requiresTwoFactor: scraperService.requiresTwoFactor(conn.provider as BankProvider),
       providerDisplayName: scraperService.getProviderDisplayName(conn.provider as BankProvider),
@@ -78,9 +78,7 @@ export const bankConnectionsRouter = router({
 
     return {
       ...connection,
-      accountMappings: connection.accountMappings
-        ? JSON.parse(connection.accountMappings)
-        : null,
+      accountMappings: connection.accountMappings ? JSON.parse(connection.accountMappings) : null,
       requiresTwoFactor: scraperService.requiresTwoFactor(connection.provider as BankProvider),
     };
   }),
@@ -285,7 +283,9 @@ export const bankConnectionsRouter = router({
           select: { externalId: true },
         });
         const existingExternalIds = new Set<string>(
-          existingTransactions.map((t: typeof existingTransactions[number]) => t.externalId).filter((id: string | null): id is string => id !== null)
+          existingTransactions
+            .map((t: (typeof existingTransactions)[number]) => t.externalId)
+            .filter((id: string | null): id is string => id !== null)
         );
 
         // Perform the sync
@@ -302,7 +302,7 @@ export const bankConnectionsRouter = router({
 
         if (!result.success) {
           // Check if this is an authentication error that requires re-authentication
-          const isAuthError = 
+          const isAuthError =
             result.errorType === 'AUTH_REQUIRED' ||
             result.errorMessage?.includes('re-authenticate') ||
             result.errorMessage?.includes('expired') ||
@@ -393,9 +393,11 @@ export const bankConnectionsRouter = router({
    */
   syncAll: protectedProcedure
     .input(
-      z.object({
-        startDate: z.date().optional(),
-      }).optional()
+      z
+        .object({
+          startDate: z.date().optional(),
+        })
+        .optional()
     )
     .mutation(async ({ ctx, input }) => {
       const connections = await ctx.prisma.bankConnection.findMany({
@@ -442,7 +444,9 @@ export const bankConnectionsRouter = router({
             select: { externalId: true },
           });
           const existingExternalIds = new Set<string>(
-            existingTransactions.map((t: typeof existingTransactions[number]) => t.externalId).filter((id: string | null): id is string => id !== null)
+            existingTransactions
+              .map((t: (typeof existingTransactions)[number]) => t.externalId)
+              .filter((id: string | null): id is string => id !== null)
           );
 
           // Perform the sync
@@ -459,7 +463,7 @@ export const bankConnectionsRouter = router({
 
           if (!result.success) {
             // Check if this is an authentication error that requires re-authentication
-            const isAuthError = 
+            const isAuthError =
               result.errorType === 'AUTH_REQUIRED' ||
               result.errorMessage?.includes('re-authenticate') ||
               result.errorMessage?.includes('expired') ||
@@ -489,7 +493,7 @@ export const bankConnectionsRouter = router({
               connectionId: connection.id,
               displayName: connection.displayName,
               success: false,
-              errorMessage: isAuthError 
+              errorMessage: isAuthError
                 ? `${result.errorMessage} Please re-authenticate this connection.`
                 : result.errorMessage,
             });
@@ -685,7 +689,7 @@ export const bankConnectionsRouter = router({
     });
 
     return {
-      connections: connections.map(c => ({
+      connections: connections.map((c) => ({
         id: c.id,
         displayName: c.displayName,
         provider: c.provider,
@@ -693,7 +697,7 @@ export const bankConnectionsRouter = router({
         lastSyncStatus: c.lastSyncStatus,
         isActive: c.isActive,
       })),
-      recentSyncJobs: syncJobs.map(job => ({
+      recentSyncJobs: syncJobs.map((job) => ({
         id: job.id,
         connectionName: job.connection.displayName,
         status: job.status,
@@ -709,7 +713,7 @@ export const bankConnectionsRouter = router({
   /**
    * Check if connections need syncing and return status
    * Used by the frontend to determine if a background sync should be triggered
-   * 
+   *
    * This is a lightweight check that doesn't perform the actual sync,
    * allowing the frontend to decide whether to trigger a background sync.
    */
@@ -740,10 +744,7 @@ export const bankConnectionsRouter = router({
       where: {
         householdId: ctx.householdId,
         isActive: true,
-        OR: [
-          { lastSyncAt: null },
-          { lastSyncAt: { lt: staleThreshold } },
-        ],
+        OR: [{ lastSyncAt: null }, { lastSyncAt: { lt: staleThreshold } }],
       },
     });
 
@@ -769,16 +770,18 @@ export const bankConnectionsRouter = router({
   /**
    * Sync stale connections in the background
    * Only syncs connections that haven't been synced in the last 12 hours
-   * 
+   *
    * This is designed to be called after checkSyncStatus indicates stale connections.
    * It runs synchronously but is meant to be called in a "fire and forget" manner
    * by the frontend (not awaiting the result for UI purposes).
    */
   syncStaleConnections: protectedProcedure
     .input(
-      z.object({
-        staleThresholdHours: z.number().min(1).max(48).default(12),
-      }).optional()
+      z
+        .object({
+          staleThresholdHours: z.number().min(1).max(48).default(12),
+        })
+        .optional()
     )
     .mutation(async ({ ctx, input }) => {
       const thresholdHours = input?.staleThresholdHours ?? 12;
@@ -790,10 +793,7 @@ export const bankConnectionsRouter = router({
         where: {
           householdId: ctx.householdId,
           isActive: true,
-          OR: [
-            { lastSyncAt: null },
-            { lastSyncAt: { lt: staleThreshold } },
-          ],
+          OR: [{ lastSyncAt: null }, { lastSyncAt: { lt: staleThreshold } }],
         },
       });
 
@@ -807,7 +807,9 @@ export const bankConnectionsRouter = router({
         };
       }
 
-      console.log(`[SyncStale] Found ${staleConnections.length} stale connection(s) for household ${ctx.householdId}`);
+      console.log(
+        `[SyncStale] Found ${staleConnections.length} stale connection(s) for household ${ctx.householdId}`
+      );
 
       const results: Array<{
         connectionId: string;
@@ -841,7 +843,7 @@ export const bankConnectionsRouter = router({
           });
           const existingExternalIds = new Set<string>(
             existingTransactions
-              .map((t: typeof existingTransactions[number]) => t.externalId)
+              .map((t: (typeof existingTransactions)[number]) => t.externalId)
               .filter((id: string | null): id is string => id !== null)
           );
 
@@ -857,7 +859,7 @@ export const bankConnectionsRouter = router({
           );
 
           if (!result.success) {
-            const isAuthError = 
+            const isAuthError =
               result.errorType === 'AUTH_REQUIRED' ||
               result.errorMessage?.includes('re-authenticate') ||
               result.errorMessage?.includes('expired');
@@ -975,7 +977,9 @@ async function importTransactions(
       if (mappedAccount) {
         accountIdMap.set(externalId, mappedAccount.id);
       } else {
-        console.warn(`[ImportTransactions] Mapped account ${accountMappings[externalId]} not found or doesn't belong to household, creating new account for ${externalId}`);
+        console.warn(
+          `[ImportTransactions] Mapped account ${accountMappings[externalId]} not found or doesn't belong to household, creating new account for ${externalId}`
+        );
         // Create a new account since the mapping is invalid
         const newAccount = await ctx.prisma.account.create({
           data: {
@@ -1006,7 +1010,7 @@ async function importTransactions(
   const rulesRaw = await ctx.prisma.categoryRule.findMany({
     where: { householdId: ctx.householdId, isActive: true },
   });
-  const rules = rulesRaw.map((r: typeof rulesRaw[number]) => ({
+  const rules = rulesRaw.map((r: (typeof rulesRaw)[number]) => ({
     ...r,
     type: r.type as 'merchant' | 'keyword' | 'regex',
   }));
@@ -1015,17 +1019,21 @@ async function importTransactions(
   for (const txn of transactions) {
     const accountId = accountIdMap.get(txn.externalAccountId);
     if (!accountId) {
-      console.warn(`[ImportTransactions] No account ID found for external account: ${txn.externalAccountId}, skipping transaction`);
+      console.warn(
+        `[ImportTransactions] No account ID found for external account: ${txn.externalAccountId}, skipping transaction`
+      );
       continue;
     }
 
     try {
       // Try to use external category (e.g., Isracard sector) first
       let validCategoryId: string | null = null;
-      let categorizationSource: string = 'fallback';
+      let categorizationSource = 'fallback';
 
       if (txn.externalCategory) {
-        console.log(`[ImportTransactions] Transaction has external category: ${txn.externalCategory}`);
+        console.log(
+          `[ImportTransactions] Transaction has external category: ${txn.externalCategory}`
+        );
 
         // Look for existing category with this name
         let category = await ctx.prisma.category.findFirst({
@@ -1038,7 +1046,9 @@ async function importTransactions(
 
         // If category doesn't exist, create it
         if (!category) {
-          console.log(`[ImportTransactions] Auto-creating category from external: ${txn.externalCategory}`);
+          console.log(
+            `[ImportTransactions] Auto-creating category from external: ${txn.externalCategory}`
+          );
 
           // Get max sort order for expense categories
           const maxSort = await ctx.prisma.category.aggregate({
@@ -1062,7 +1072,10 @@ async function importTransactions(
             });
             console.log(`[ImportTransactions] Created category: ${category.name} (${category.id})`);
           } catch (createError) {
-            console.error(`[ImportTransactions] Failed to create category "${txn.externalCategory}":`, createError);
+            console.error(
+              `[ImportTransactions] Failed to create category "${txn.externalCategory}":`,
+              createError
+            );
             // Fall through to use rule-based categorization
             category = null;
           }
@@ -1100,7 +1113,9 @@ async function importTransactions(
           if (category) {
             validCategoryId = category.id;
           } else {
-            console.warn(`[ImportTransactions] Category ${categorizationResult.categoryId} not found or doesn't belong to household, setting to null`);
+            console.warn(
+              `[ImportTransactions] Category ${categorizationResult.categoryId} not found or doesn't belong to household, setting to null`
+            );
           }
         }
       }
@@ -1133,4 +1148,3 @@ async function importTransactions(
     }
   }
 }
-

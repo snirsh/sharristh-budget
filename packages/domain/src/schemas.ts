@@ -254,4 +254,3 @@ export type CreateRecurringTemplateSchema = z.infer<typeof createRecurringTempla
 export type UpdateRecurringTemplateSchema = z.infer<typeof updateRecurringTemplateSchema>;
 export type RecurringOverrideSchema = z.infer<typeof recurringOverrideSchema>;
 export type TransactionFiltersSchema = z.infer<typeof transactionFiltersSchema>;
-

@@ -1,7 +1,7 @@
-import { Suspense } from 'react';
-import { Shield, Loader2 } from 'lucide-react';
 import { auth } from '@/lib/auth';
+import { Loader2, Shield } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import LoginFormClient from './LoginFormClient';
 
 function LoginFormFallback() {
@@ -34,12 +34,8 @@ export default async function LoginPage({
         <div className="mx-auto w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/30">
           <Shield className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">
-          Sharristh Budget
-        </h1>
-        <p className="mt-2 text-slate-400">
-          Sign in with your passkey
-        </p>
+        <h1 className="text-3xl font-bold text-white tracking-tight">Sharristh Budget</h1>
+        <p className="mt-2 text-slate-400">Sign in with your passkey</p>
       </div>
 
       {/* Card */}

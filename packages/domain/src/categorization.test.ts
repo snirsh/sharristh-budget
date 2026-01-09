@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { categorizeTransaction, suggestRuleFromCorrection } from './categorization';
 import type { CategoryRule, TransactionInput } from './types';
 
@@ -207,4 +207,3 @@ describe('suggestRuleFromCorrection', () => {
     expect(suggestion).toBeNull();
   });
 });
-

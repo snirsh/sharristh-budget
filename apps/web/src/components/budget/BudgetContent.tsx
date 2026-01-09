@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { MonthSelector } from '@/components/layout/MonthSelector';
 import { trpc } from '@/lib/trpc/client';
+import { useMonth } from '@/lib/useMonth';
 import {
+  cn,
   formatCurrency,
   formatPercent,
   getStatusBadgeClass,
   getStatusLabel,
-  cn,
 } from '@/lib/utils';
-import { Edit2, Save, X, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle, Edit2, Loader2, Plus, Save, Trash2, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { AddBudgetDialog } from './AddBudgetDialog';
-import { BudgetEmptyState } from './BudgetEmptyState';
 import { BudgetCard } from './BudgetCard';
+import { BudgetEmptyState } from './BudgetEmptyState';
 import { CopyBudgetsDialog } from './CopyBudgetsDialog';
-import { MonthSelector } from '@/components/layout/MonthSelector';
-import { useMonth } from '@/lib/useMonth';
 
 // Helper to get previous month in YYYY-MM format
 function getPreviousMonth(currentMonth: string): string {
@@ -46,7 +46,12 @@ export const BudgetContent = () => {
 
   const utils = trpc.useUtils();
 
-  const { data: budgets = [], isLoading, isError, error } = trpc.budgets.forMonth.useQuery(currentMonth);
+  const {
+    data: budgets = [],
+    isLoading,
+    isError,
+    error,
+  } = trpc.budgets.forMonth.useQuery(currentMonth);
 
   // Check if previous month has budgets (for copy feature)
   const { data: previousMonthSummary } = trpc.budgets.summaryForMonth.useQuery(previousMonth, {
@@ -92,7 +97,10 @@ export const BudgetContent = () => {
   };
 
   type BudgetEvaluation = (typeof budgets)[number];
-  const totalPlanned = budgets.reduce((sum: number, b: BudgetEvaluation) => sum + b.budget.plannedAmount, 0);
+  const totalPlanned = budgets.reduce(
+    (sum: number, b: BudgetEvaluation) => sum + b.budget.plannedAmount,
+    0
+  );
   const totalActual = budgets.reduce((sum: number, b: BudgetEvaluation) => sum + b.actualAmount, 0);
 
   return (
@@ -104,10 +112,7 @@ export const BudgetContent = () => {
           <p className="text-gray-500 dark:text-gray-400">Manage your monthly spending limits</p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="btn btn-primary"
-          >
+          <button onClick={() => setIsCreateDialogOpen(true)} className="btn btn-primary">
             <Plus className="h-4 w-4" />
             Add Budget
           </button>
@@ -157,9 +162,7 @@ export const BudgetContent = () => {
               <p
                 className={cn(
                   'text-2xl font-bold',
-                  totalPlanned - totalActual >= 0
-                    ? 'text-success-600'
-                    : 'text-danger-600'
+                  totalPlanned - totalActual >= 0 ? 'text-success-600' : 'text-danger-600'
                 )}
               >
                 {formatCurrency(totalPlanned - totalActual)}
@@ -183,182 +186,175 @@ export const BudgetContent = () => {
 
           {/* Budget Table (Desktop View) */}
           <div className="card p-0 overflow-hidden hidden md:block">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Planned
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Limit
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Spent
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-48">
-                Progress
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-            {budgets.map((evaluation: BudgetEvaluation) => {
-              const isEditing = editingBudget === evaluation.budget.categoryId;
-              const progressWidth = Math.min(evaluation.percentUsed * 100, 100);
-
-              return (
-                <tr key={evaluation.budget.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">
-                        {evaluation.category?.icon || '📁'}
-                      </span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {evaluation.category?.name || 'Unknown'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        value={editValues.plannedAmount}
-                        onChange={(e) =>
-                          setEditValues({
-                            ...editValues,
-                            plannedAmount: Number(e.target.value),
-                          })
-                        }
-                        className="input text-right w-28 py-1"
-                      />
-                    ) : (
-                      <span className="text-gray-900 dark:text-white">
-                        {formatCurrency(evaluation.budget.plannedAmount)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {isEditing ? (
-                      <div className="flex items-center justify-end gap-1">
-                        <input
-                          type="number"
-                          value={editValues.limitAmount || ''}
-                          onChange={(e) =>
-                            setEditValues({
-                              ...editValues,
-                              limitAmount: e.target.value
-                                ? Number(e.target.value)
-                                : null,
-                            })
-                          }
-                          placeholder="No limit"
-                          className="input text-right w-24 py-1"
-                        />
-                        <select
-                          value={editValues.limitType || ''}
-                          onChange={(e) =>
-                            setEditValues({
-                              ...editValues,
-                              limitType: e.target.value || null,
-                            })
-                          }
-                          className="input w-20 py-1 text-xs"
-                        >
-                          <option value="">None</option>
-                          <option value="soft">Soft</option>
-                          <option value="hard">Hard</option>
-                        </select>
-                      </div>
-                    ) : (
-                      <span className="text-gray-500 dark:text-gray-400">
-                        {evaluation.budget.limitAmount
-                          ? `${formatCurrency(evaluation.budget.limitAmount)} (${evaluation.budget.limitType})`
-                          : '—'}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span
-                      className={cn(
-                        'font-medium',
-                        evaluation.isOverLimit && 'text-danger-600'
-                      )}
-                    >
-                      {formatCurrency(evaluation.actualAmount)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full rounded-full transition-all',
-                          getProgressBarColor(evaluation.percentUsed)
-                        )}
-                        style={{ width: `${progressWidth}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {formatPercent(evaluation.percentUsed)} used
-                    </p>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span
-                      className={cn(
-                        'badge text-xs',
-                        getStatusBadgeClass(evaluation.status)
-                      )}
-                    >
-                      {getStatusLabel(evaluation.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {isEditing ? (
-                      <div className="flex justify-end gap-1">
-                        <button
-                          onClick={() => saveEdit(evaluation.budget.categoryId)}
-                          className="p-1 text-success-600 hover:bg-success-50 dark:hover:bg-success-900/30 rounded"
-                        >
-                          <Save className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setEditingBudget(null)}
-                          className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex justify-end gap-1">
-                        <button
-                          onClick={() => startEditing(evaluation)}
-                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                          title="Edit budget"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(evaluation.budget.id)}
-                          className="p-1 text-danger-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/30 rounded"
-                          title="Delete budget"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
-                  </td>
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Planned
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Limit
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Spent
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-48">
+                    Progress
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {budgets.map((evaluation: BudgetEvaluation) => {
+                  const isEditing = editingBudget === evaluation.budget.categoryId;
+                  const progressWidth = Math.min(evaluation.percentUsed * 100, 100);
+
+                  return (
+                    <tr
+                      key={evaluation.budget.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{evaluation.category?.icon || '📁'}</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {evaluation.category?.name || 'Unknown'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            value={editValues.plannedAmount}
+                            onChange={(e) =>
+                              setEditValues({
+                                ...editValues,
+                                plannedAmount: Number(e.target.value),
+                              })
+                            }
+                            className="input text-right w-28 py-1"
+                          />
+                        ) : (
+                          <span className="text-gray-900 dark:text-white">
+                            {formatCurrency(evaluation.budget.plannedAmount)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {isEditing ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <input
+                              type="number"
+                              value={editValues.limitAmount || ''}
+                              onChange={(e) =>
+                                setEditValues({
+                                  ...editValues,
+                                  limitAmount: e.target.value ? Number(e.target.value) : null,
+                                })
+                              }
+                              placeholder="No limit"
+                              className="input text-right w-24 py-1"
+                            />
+                            <select
+                              value={editValues.limitType || ''}
+                              onChange={(e) =>
+                                setEditValues({
+                                  ...editValues,
+                                  limitType: e.target.value || null,
+                                })
+                              }
+                              className="input w-20 py-1 text-xs"
+                            >
+                              <option value="">None</option>
+                              <option value="soft">Soft</option>
+                              <option value="hard">Hard</option>
+                            </select>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 dark:text-gray-400">
+                            {evaluation.budget.limitAmount
+                              ? `${formatCurrency(evaluation.budget.limitAmount)} (${evaluation.budget.limitType})`
+                              : '—'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={cn('font-medium', evaluation.isOverLimit && 'text-danger-600')}
+                        >
+                          {formatCurrency(evaluation.actualAmount)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              'h-full rounded-full transition-all',
+                              getProgressBarColor(evaluation.percentUsed)
+                            )}
+                            style={{ width: `${progressWidth}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {formatPercent(evaluation.percentUsed)} used
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span
+                          className={cn('badge text-xs', getStatusBadgeClass(evaluation.status))}
+                        >
+                          {getStatusLabel(evaluation.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {isEditing ? (
+                          <div className="flex justify-end gap-1">
+                            <button
+                              onClick={() => saveEdit(evaluation.budget.categoryId)}
+                              className="p-1 text-success-600 hover:bg-success-50 dark:hover:bg-success-900/30 rounded"
+                            >
+                              <Save className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => setEditingBudget(null)}
+                              className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end gap-1">
+                            <button
+                              onClick={() => startEditing(evaluation)}
+                              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                              title="Edit budget"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(evaluation.budget.id)}
+                              className="p-1 text-danger-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/30 rounded"
+                              title="Delete budget"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </>
       )}
@@ -390,4 +386,4 @@ export const BudgetContent = () => {
       />
     </div>
   );
-}
+};

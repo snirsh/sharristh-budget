@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Suspense } from 'react';
 import './globals.css';
-import { TRPCProvider } from '@/lib/trpc/provider';
-import { ThemeProvider } from '@/lib/theme';
-import { Sidebar } from '@/components/layout/Sidebar';
 import { WebVitals } from '@/components/analytics/WebVitals';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { ThemeProvider } from '@/lib/theme';
+import { TRPCProvider } from '@/lib/trpc/provider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -61,9 +61,7 @@ export default function RootLayout({
                 <Sidebar />
               </Suspense>
               <main className="flex-1 overflow-auto pt-16 lg:pt-0">
-                <div className="container mx-auto max-w-7xl p-6">
-                  {children}
-                </div>
+                <div className="container mx-auto max-w-7xl p-6">{children}</div>
               </main>
             </div>
           </TRPCProvider>
@@ -72,4 +70,3 @@ export default function RootLayout({
     </html>
   );
 }
-

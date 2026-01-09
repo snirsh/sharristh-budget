@@ -1,11 +1,11 @@
-import { z } from 'zod';
-import { router, protectedProcedure } from '../trpc';
+import { categorizeTransaction } from '@sfam/domain';
 import {
   createTransactionSchema,
-  updateTransactionSchema,
   transactionFiltersSchema,
+  updateTransactionSchema,
 } from '@sfam/domain/schemas';
-import { categorizeTransaction } from '@sfam/domain';
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
 
 /**
  * Extract the most meaningful keyword from a description for rule creation
@@ -45,10 +45,10 @@ export const transactionsRouter = router({
     where.isRecurringInstance = false;
 
     if (input.startDate) {
-      where.date = { ...(where.date as Record<string, unknown> || {}), gte: input.startDate };
+      where.date = { ...((where.date as Record<string, unknown>) || {}), gte: input.startDate };
     }
     if (input.endDate) {
-      where.date = { ...(where.date as Record<string, unknown> || {}), lte: input.endDate };
+      where.date = { ...((where.date as Record<string, unknown>) || {}), lte: input.endDate };
     }
     if (input.categoryId) {
       where.categoryId = input.categoryId;
@@ -114,13 +114,17 @@ export const transactionsRouter = router({
     }
 
     // Type for transaction with includes
-    type TransactionWithRelations = Awaited<ReturnType<typeof ctx.prisma.transaction.findFirst<{
-      include: {
-        category: { select: { id: true; name: true; icon: true; color: true; type: true } };
-        account: { select: { id: true; name: true } };
-        template: { select: { id: true; name: true; frequency: true } };
-      };
-    }>>>;
+    type TransactionWithRelations = Awaited<
+      ReturnType<
+        typeof ctx.prisma.transaction.findFirst<{
+          include: {
+            category: { select: { id: true; name: true; icon: true; color: true; type: true } };
+            account: { select: { id: true; name: true } };
+            template: { select: { id: true; name: true; frequency: true } };
+          };
+        }>
+      >
+    >;
 
     const [transactionsRaw, total] = await Promise.all([
       ctx.prisma.transaction.findMany(queryOptions),
@@ -137,12 +141,11 @@ export const transactionsRouter = router({
       : input.offset + transactions.length < total;
 
     // Remove the extra item we fetched for hasMore check (cursor pagination only)
-    const actualTransactions = input.cursor && transactions.length > input.limit
-      ? transactions.slice(0, -1)
-      : transactions;
+    const actualTransactions =
+      input.cursor && transactions.length > input.limit ? transactions.slice(0, -1) : transactions;
 
     // Helper function to match transaction with recurring templates
-    const findMatchingRecurringTemplate = (tx: typeof actualTransactions[number]) => {
+    const findMatchingRecurringTemplate = (tx: (typeof actualTransactions)[number]) => {
       // If already linked to a template, use that
       if (tx.template) {
         return {
@@ -187,9 +190,9 @@ export const transactionsRouter = router({
     };
 
     // Format data on server to reduce client-side computation
-    const formattedTransactions = actualTransactions.map(tx => {
+    const formattedTransactions = actualTransactions.map((tx) => {
       const recurringTemplate = findMatchingRecurringTemplate(tx);
-      
+
       return {
         ...tx,
         // Pre-format currency on server (reduces client work)
@@ -206,18 +209,17 @@ export const transactionsRouter = router({
           year: 'numeric',
         }).format(new Date(tx.date)),
         // Build category path on server
-        categoryPath: tx.category
-          ? tx.category.name
-          : 'Uncategorized',
+        categoryPath: tx.category ? tx.category.name : 'Uncategorized',
         // Add recurring template info if matched
         recurringTemplate,
       };
     });
 
     // Get the next cursor (last item's ID)
-    const nextCursor = hasMore && formattedTransactions.length > 0
-      ? formattedTransactions[formattedTransactions.length - 1]!.id
-      : undefined;
+    const nextCursor =
+      hasMore && formattedTransactions.length > 0
+        ? formattedTransactions[formattedTransactions.length - 1]!.id
+        : undefined;
 
     return {
       transactions: formattedTransactions,
@@ -267,12 +269,12 @@ export const transactionsRouter = router({
     }
 
     // Map to domain types
-    const rules = rulesRaw.map((r: typeof rulesRaw[number]) => ({
+    const rules = rulesRaw.map((r: (typeof rulesRaw)[number]) => ({
       ...r,
       type: r.type as 'merchant' | 'keyword' | 'regex',
     }));
 
-    const categories = categoriesRaw.map((c: typeof categoriesRaw[number]) => ({
+    const categories = categoriesRaw.map((c: (typeof categoriesRaw)[number]) => ({
       ...c,
       type: c.type as 'income' | 'expense',
     }));
@@ -298,17 +300,17 @@ export const transactionsRouter = router({
         }
       );
 
-        // If categorization returned null (fallback), find a default category from the database
-        if (result.categoryId === null && result.source === 'fallback') {
-          // Find the first active category matching the direction
-          const fallbackCategory = await ctx.prisma.category.findFirst({
-            where: {
-              householdId: ctx.householdId,
-              isActive: true,
-              type: input.direction === 'income' ? 'income' : 'expense',
-            },
-            orderBy: { sortOrder: 'asc' },
-          });
+      // If categorization returned null (fallback), find a default category from the database
+      if (result.categoryId === null && result.source === 'fallback') {
+        // Find the first active category matching the direction
+        const fallbackCategory = await ctx.prisma.category.findFirst({
+          where: {
+            householdId: ctx.householdId,
+            isActive: true,
+            type: input.direction === 'income' ? 'income' : 'expense',
+          },
+          orderBy: { sortOrder: 'asc' },
+        });
 
         categoryId = fallbackCategory?.id ?? null;
       } else {
@@ -446,9 +448,7 @@ export const transactionsRouter = router({
    * AI calls are rate-limited to respect Gemini's 15 req/min limit
    * Uses locking mechanism to prevent concurrent processing
    */
-  applyCategorization: protectedProcedure
-    .input(z.void())
-    .mutation(async ({ ctx }) => {
+  applyCategorization: protectedProcedure.input(z.void()).mutation(async ({ ctx }) => {
     const MAX_TRANSACTIONS = 20; // Limit per call to avoid timeouts
     const AI_DELAY_MS = 4500; // ~13 requests/min to stay under 15 req/min limit
 
@@ -479,7 +479,7 @@ export const transactionsRouter = router({
     }
 
     // Lock all transactions for processing
-    const transactionIds = transactions.map(tx => tx.id);
+    const transactionIds = transactions.map((tx) => tx.id);
     await ctx.prisma.transaction.updateMany({
       where: {
         id: { in: transactionIds },
@@ -503,12 +503,12 @@ export const transactionsRouter = router({
       }),
     ]);
 
-    const rules = rulesRaw.map((r: typeof rulesRaw[number]) => ({
+    const rules = rulesRaw.map((r: (typeof rulesRaw)[number]) => ({
       ...r,
       type: r.type as 'merchant' | 'keyword' | 'regex',
     }));
 
-    const categories = categoriesRaw.map((c: typeof categoriesRaw[number]) => ({
+    const categories = categoriesRaw.map((c: (typeof categoriesRaw)[number]) => ({
       ...c,
       type: c.type as 'income' | 'expense',
     }));
@@ -522,51 +522,8 @@ export const transactionsRouter = router({
     try {
       // Apply rules to each transaction
       for (const tx of transactions) {
-      // First try rule-based categorization (no AI, fast)
-      const ruleResult = await categorizeTransaction(
-        {
-          description: tx.description,
-          merchant: tx.merchant,
-          amount: tx.amount,
-          direction: tx.direction as 'income' | 'expense',
-        },
-        rules,
-        categories,
-        {
-          enableAI: false, // First pass: rules only
-        }
-      );
-
-      // If rules found a match, use it
-      if (ruleResult.categoryId && ruleResult.source !== 'fallback') {
-        const category = await ctx.prisma.category.findFirst({
-          where: { id: ruleResult.categoryId, householdId: ctx.householdId },
-        });
-        if (category) {
-          await ctx.prisma.transaction.update({
-            where: { id: tx.id },
-            data: {
-              categoryId: ruleResult.categoryId,
-              categorizationSource: ruleResult.source,
-              confidence: ruleResult.confidence,
-              needsReview: false,
-              isProcessing: false, // Unlock after successful categorization
-            },
-          });
-          updatedCount++;
-          continue;
-        }
-      }
-
-      // No rule match - try AI if enabled (with rate limiting)
-      if (process.env.GEMINI_API_KEY) {
-        // Rate limit AI calls
-        if (aiCallCount > 0) {
-          await delay(AI_DELAY_MS);
-        }
-        aiCallCount++;
-
-        const result = await categorizeTransaction(
+        // First try rule-based categorization (no AI, fast)
+        const ruleResult = await categorizeTransaction(
           {
             description: tx.description,
             merchant: tx.merchant,
@@ -576,82 +533,125 @@ export const transactionsRouter = router({
           rules,
           categories,
           {
-            enableAI: true,
-            aiApiKey: process.env.GEMINI_API_KEY,
+            enableAI: false, // First pass: rules only
           }
         );
 
-        // Determine categoryId (handle fallback case)
-        let finalCategoryId = result.categoryId;
-
-        if (result.categoryId === null && result.source === 'fallback') {
-          // Find the first active category matching the direction
-          const fallbackCategory = await ctx.prisma.category.findFirst({
-            where: {
-              householdId: ctx.householdId,
-              isActive: true,
-              type: tx.direction === 'income' ? 'income' : 'expense',
-            },
-            orderBy: { sortOrder: 'asc' },
-          });
-          finalCategoryId = fallbackCategory?.id ?? null;
-        }
-
-        // Only update if we got a category (not null)
-        if (finalCategoryId) {
-          // Validate category exists in household
+        // If rules found a match, use it
+        if (ruleResult.categoryId && ruleResult.source !== 'fallback') {
           const category = await ctx.prisma.category.findFirst({
-            where: {
-              id: finalCategoryId,
-              householdId: ctx.householdId,
-            },
+            where: { id: ruleResult.categoryId, householdId: ctx.householdId },
           });
-
           if (category) {
             await ctx.prisma.transaction.update({
               where: { id: tx.id },
               data: {
-                categoryId: finalCategoryId,
-                categorizationSource: result.source,
-                confidence: result.confidence,
-                needsReview: result.source === 'ai_suggestion', // AI suggestions should be reviewed
+                categoryId: ruleResult.categoryId,
+                categorizationSource: ruleResult.source,
+                confidence: ruleResult.confidence,
+                needsReview: false,
                 isProcessing: false, // Unlock after successful categorization
               },
             });
             updatedCount++;
+            continue;
+          }
+        }
 
-            // Auto-create rule from AI suggestion with high confidence (≥0.75)
-            if (result.source === 'ai_suggestion' && result.confidence >= 0.75) {
-              const rulePattern = tx.merchant || extractKeyword(tx.description);
-              const ruleType = tx.merchant ? 'merchant' : 'keyword';
+        // No rule match - try AI if enabled (with rate limiting)
+        if (process.env.GEMINI_API_KEY) {
+          // Rate limit AI calls
+          if (aiCallCount > 0) {
+            await delay(AI_DELAY_MS);
+          }
+          aiCallCount++;
 
-              if (rulePattern && rulePattern.length >= 3) {
-                // Check if similar rule already exists
-                const existingRule = await ctx.prisma.categoryRule.findFirst({
-                  where: {
-                    householdId: ctx.householdId,
-                    pattern: { contains: rulePattern, mode: 'insensitive' },
-                  },
-                });
+          const result = await categorizeTransaction(
+            {
+              description: tx.description,
+              merchant: tx.merchant,
+              amount: tx.amount,
+              direction: tx.direction as 'income' | 'expense',
+            },
+            rules,
+            categories,
+            {
+              enableAI: true,
+              aiApiKey: process.env.GEMINI_API_KEY,
+            }
+          );
 
-                if (!existingRule) {
-                  await ctx.prisma.categoryRule.create({
-                    data: {
+          // Determine categoryId (handle fallback case)
+          let finalCategoryId = result.categoryId;
+
+          if (result.categoryId === null && result.source === 'fallback') {
+            // Find the first active category matching the direction
+            const fallbackCategory = await ctx.prisma.category.findFirst({
+              where: {
+                householdId: ctx.householdId,
+                isActive: true,
+                type: tx.direction === 'income' ? 'income' : 'expense',
+              },
+              orderBy: { sortOrder: 'asc' },
+            });
+            finalCategoryId = fallbackCategory?.id ?? null;
+          }
+
+          // Only update if we got a category (not null)
+          if (finalCategoryId) {
+            // Validate category exists in household
+            const category = await ctx.prisma.category.findFirst({
+              where: {
+                id: finalCategoryId,
+                householdId: ctx.householdId,
+              },
+            });
+
+            if (category) {
+              await ctx.prisma.transaction.update({
+                where: { id: tx.id },
+                data: {
+                  categoryId: finalCategoryId,
+                  categorizationSource: result.source,
+                  confidence: result.confidence,
+                  needsReview: result.source === 'ai_suggestion', // AI suggestions should be reviewed
+                  isProcessing: false, // Unlock after successful categorization
+                },
+              });
+              updatedCount++;
+
+              // Auto-create rule from AI suggestion with high confidence (≥0.75)
+              if (result.source === 'ai_suggestion' && result.confidence >= 0.75) {
+                const rulePattern = tx.merchant || extractKeyword(tx.description);
+                const ruleType = tx.merchant ? 'merchant' : 'keyword';
+
+                if (rulePattern && rulePattern.length >= 3) {
+                  // Check if similar rule already exists
+                  const existingRule = await ctx.prisma.categoryRule.findFirst({
+                    where: {
                       householdId: ctx.householdId,
-                      categoryId: finalCategoryId,
-                      type: ruleType,
-                      pattern: rulePattern,
-                      priority: 5,
-                      isActive: true,
-                      createdFrom: 'ai_suggestion',
+                      pattern: { contains: rulePattern, mode: 'insensitive' },
                     },
                   });
+
+                  if (!existingRule) {
+                    await ctx.prisma.categoryRule.create({
+                      data: {
+                        householdId: ctx.householdId,
+                        categoryId: finalCategoryId,
+                        type: ruleType,
+                        pattern: rulePattern,
+                        priority: 5,
+                        isActive: true,
+                        createdFrom: 'ai_suggestion',
+                      },
+                    });
+                  }
                 }
               }
             }
           }
         }
-      }
       }
     } finally {
       // Always unlock transactions when done (success or error)
@@ -745,9 +745,10 @@ export const transactionsRouter = router({
 
             // Apply the rule to all matching uncategorized transactions
             // Use case-insensitive matching
-            const matchCondition = ruleType === 'merchant'
-              ? { merchant: { contains: pattern, mode: 'insensitive' as const } }
-              : { description: { contains: pattern, mode: 'insensitive' as const } };
+            const matchCondition =
+              ruleType === 'merchant'
+                ? { merchant: { contains: pattern, mode: 'insensitive' as const } }
+                : { description: { contains: pattern, mode: 'insensitive' as const } };
 
             const additionalResult = await ctx.prisma.transaction.updateMany({
               where: {
@@ -760,7 +761,7 @@ export const transactionsRouter = router({
               data: {
                 categoryId: input.categoryId,
                 categorizationSource: 'rule',
-                confidence: ruleType === 'merchant' ? 0.95 : 0.80,
+                confidence: ruleType === 'merchant' ? 0.95 : 0.8,
                 needsReview: false,
               },
             });
@@ -929,9 +930,10 @@ export const transactionsRouter = router({
 
       // If a rule was created, apply it to all matching uncategorized transactions
       if (ruleCreated && pattern) {
-        const matchCondition = ruleType === 'merchant'
-          ? { merchant: { contains: pattern, mode: 'insensitive' as const } }
-          : { description: { contains: pattern, mode: 'insensitive' as const } };
+        const matchCondition =
+          ruleType === 'merchant'
+            ? { merchant: { contains: pattern, mode: 'insensitive' as const } }
+            : { description: { contains: pattern, mode: 'insensitive' as const } };
 
         const additionalResult = await ctx.prisma.transaction.updateMany({
           where: {
@@ -944,17 +946,17 @@ export const transactionsRouter = router({
           data: {
             categoryId: input.categoryId,
             categorizationSource: 'rule',
-            confidence: ruleType === 'merchant' ? 0.95 : 0.80,
+            confidence: ruleType === 'merchant' ? 0.95 : 0.8,
             needsReview: false,
           },
         });
         additionalUpdated = additionalResult.count;
       }
 
-      return { 
-        updated: result.count, 
-        ruleCreated, 
-        additionalUpdated 
+      return {
+        updated: result.count,
+        ruleCreated,
+        additionalUpdated,
       };
     }),
 
@@ -1036,7 +1038,7 @@ export const transactionsRouter = router({
     // Group by date (formatted in Israel timezone)
     const byDate: Record<string, number> = {};
     const byDateUTC: Record<string, number> = {};
-    
+
     for (const tx of transactions) {
       // Format in Israel timezone
       const israelDate = new Intl.DateTimeFormat('en-CA', {
@@ -1045,10 +1047,10 @@ export const transactionsRouter = router({
         month: '2-digit',
         day: '2-digit',
       }).format(tx.date);
-      
+
       // Also track UTC date for comparison
       const utcDate = tx.date.toISOString().split('T')[0];
-      
+
       byDate[israelDate] = (byDate[israelDate] || 0) + 1;
       byDateUTC[utcDate!] = (byDateUTC[utcDate!] || 0) + 1;
     }
@@ -1081,7 +1083,7 @@ export const transactionsRouter = router({
         .sort(([a], [b]) => b.localeCompare(a))
         .slice(0, 20)
         .map(([date, count]) => ({ date, count })),
-      recentTransactions: recentTransactions.map(tx => ({
+      recentTransactions: recentTransactions.map((tx) => ({
         id: tx.id,
         dateISO: tx.date.toISOString(),
         dateIsrael: new Intl.DateTimeFormat('en-CA', {
@@ -1096,4 +1098,3 @@ export const transactionsRouter = router({
     };
   }),
 });
-

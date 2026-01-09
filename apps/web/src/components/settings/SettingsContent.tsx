@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { PartnerInvites } from './PartnerInvites';
 
 export function SettingsContent() {
@@ -23,11 +23,12 @@ export function SettingsContent() {
   const migrateCategoriesMutation = trpc.categories.migrateToNewSchema.useMutation({
     onSuccess: (data) => {
       if (data.success) {
-        alert(`✅ ${data.message}\n\n` +
-          `📊 Stats:\n` +
-          `- Old categories: ${data.stats.oldCategories}\n` +
-          `- New categories: ${data.stats.newCategories}\n` +
-          `- Transactions updated: ${data.stats.transactionsUpdated}`
+        alert(
+          `✅ ${data.message}\n\n` +
+            `📊 Stats:\n` +
+            `- Old categories: ${data.stats.oldCategories}\n` +
+            `- New categories: ${data.stats.newCategories}\n` +
+            `- Transactions updated: ${data.stats.transactionsUpdated}`
         );
         setShowMigrateConfirm(false);
         window.location.reload();
@@ -60,7 +61,8 @@ export function SettingsContent() {
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-blue-900 mb-1">Migrate to New Categories</h2>
             <p className="text-sm text-gray-600 mb-2">
-              Upgrade to the new bilingual category structure with 95 categories (7 income + 88 expense categories with subcategories).
+              Upgrade to the new bilingual category structure with 95 categories (7 income + 88
+              expense categories with subcategories).
             </p>
             <p className="text-sm text-gray-600 mb-4">
               <strong>What happens:</strong>
@@ -92,10 +94,7 @@ export function SettingsContent() {
                   >
                     {migrateCategoriesMutation.isPending ? 'Migrating...' : 'Yes, Migrate Now'}
                   </button>
-                  <button
-                    onClick={() => setShowMigrateConfirm(false)}
-                    className="btn btn-outline"
-                  >
+                  <button onClick={() => setShowMigrateConfirm(false)} className="btn btn-outline">
                     Cancel
                   </button>
                 </div>
@@ -127,7 +126,8 @@ export function SettingsContent() {
             ) : (
               <div className="space-y-3">
                 <p className="text-sm font-medium text-danger-700">
-                  Are you sure? This will delete ALL transactions, accounts, categories, rules, and budgets.
+                  Are you sure? This will delete ALL transactions, accounts, categories, rules, and
+                  budgets.
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -137,10 +137,7 @@ export function SettingsContent() {
                   >
                     {clearDataMutation.isPending ? 'Deleting...' : 'Yes, Delete Everything'}
                   </button>
-                  <button
-                    onClick={() => setShowConfirm(false)}
-                    className="btn btn-outline"
-                  >
+                  <button onClick={() => setShowConfirm(false)} className="btn btn-outline">
                     Cancel
                   </button>
                 </div>

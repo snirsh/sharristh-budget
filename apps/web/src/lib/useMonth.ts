@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 import { getCurrentMonth } from './utils';
 
@@ -49,4 +49,3 @@ export const useMonth = () => {
     endDate,
   };
 };
-

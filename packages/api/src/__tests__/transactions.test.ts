@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { PrismaClient } from '@sfam/db';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { transactionsRouter } from '../routers/transactions';
 import {
-  createTestPrismaClient,
-  createTestContext,
   cleanupDatabase,
-  createTestFixtures,
   createSecondTestHousehold,
+  createTestContext,
+  createTestFixtures,
+  createTestPrismaClient,
 } from './test-helpers';
-import type { PrismaClient } from '@sfam/db';
 
 describe('Transactions Router Integration Tests', () => {
   let prisma: PrismaClient;
@@ -447,7 +447,7 @@ describe('Transactions Router Integration Tests', () => {
       expect(result.transactions).toHaveLength(2);
 
       // Find locked one and verify status
-      const lockedResult = result.transactions.find(t => t.id === locked.id);
+      const lockedResult = result.transactions.find((t) => t.id === locked.id);
       expect(lockedResult).toBeDefined();
     });
   });

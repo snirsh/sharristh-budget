@@ -1,6 +1,6 @@
-import { View, Text, type ViewProps } from 'react-native';
+import { type VariantProps, cva } from 'class-variance-authority';
+import { Text, View, type ViewProps } from 'react-native';
 import { cn } from '../utils';
-import { cva, type VariantProps } from 'class-variance-authority';
 
 const badgeVariants = cva('rounded-full px-2.5 py-0.5', {
   variants: {
@@ -54,20 +54,11 @@ export interface BadgeProps extends ViewProps, VariantProps<typeof badgeVariants
   children: React.ReactNode;
 }
 
-export function Badge({
-  className,
-  textClassName,
-  variant,
-  size,
-  children,
-  ...props
-}: BadgeProps) {
+export function Badge({ className, textClassName, variant, size, children, ...props }: BadgeProps) {
   return (
     <View className={cn(badgeVariants({ variant, size }), className)} {...props}>
       {typeof children === 'string' ? (
-        <Text className={cn(badgeTextVariants({ variant, size }), textClassName)}>
-          {children}
-        </Text>
+        <Text className={cn(badgeTextVariants({ variant, size }), textClassName)}>{children}</Text>
       ) : (
         children
       )}
@@ -100,13 +91,8 @@ export function StatusBadge({
   };
 
   return (
-    <Badge
-      variant={variantMap[status] || 'default'}
-      className={className}
-      {...props}
-    >
+    <Badge variant={variantMap[status] || 'default'} className={className} {...props}>
       {labelMap[status] || status}
     </Badge>
   );
 }
-

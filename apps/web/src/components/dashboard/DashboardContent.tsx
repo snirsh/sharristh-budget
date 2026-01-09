@@ -1,52 +1,61 @@
 'use client';
 
-import { formatCurrency, formatPercent, getStatusBadgeClass, getStatusLabel, cn, formatDate } from '@/lib/utils';
+import { MonthSelector } from '@/components/layout/MonthSelector';
+import { trpc } from '@/lib/trpc/client';
+import { useMonth } from '@/lib/useMonth';
 import {
-  TrendingUp,
-  TrendingDown,
-  PiggyBank,
+  cn,
+  formatCurrency,
+  formatDate,
+  formatPercent,
+  getStatusBadgeClass,
+  getStatusLabel,
+} from '@/lib/utils';
+import {
   AlertTriangle,
   ArrowRight,
-  Receipt,
-  CreditCard,
   Calendar,
-  Repeat,
+  CreditCard,
+  PiggyBank,
+  Receipt,
   RefreshCw,
+  Repeat,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
-import { MonthSelector } from '@/components/layout/MonthSelector';
-import { useMonth } from '@/lib/useMonth';
-import { trpc } from '@/lib/trpc/client';
 import { InsightCard } from './InsightCard';
-import { TopMerchantsList } from './TopMerchantsList';
 import { LargestTransactionsList } from './LargestTransactionsList';
+import { TopMerchantsList } from './TopMerchantsList';
 
 // Helper to format relative time
 function formatRelativeTime(date: Date | null): string {
   if (!date) return 'Never';
-  
+
   const now = new Date();
   const diff = now.getTime() - new Date(date).getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  
+
   if (minutes < 1) return 'Just now';
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days}d ago`;
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date));
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(
+    new Date(date)
+  );
 }
 
 // Helper to get sync status color
 function getSyncStatusColor(date: Date | null): string {
   if (!date) return 'text-gray-400 dark:text-gray-500';
-  
+
   const now = new Date();
   const diff = now.getTime() - new Date(date).getTime();
   const hours = diff / 3600000;
-  
+
   if (hours < 24) return 'text-success-500 dark:text-success-400';
   if (hours < 168) return 'text-warning-500 dark:text-warning-400'; // 7 days
   return 'text-danger-500 dark:text-danger-400';
@@ -70,8 +79,19 @@ export const DashboardContent = () => {
   const categoryBreakdown = dashboardData?.categoryBreakdown ?? [];
   const recentTransactions = dashboardData?.recentTransactions ?? [];
 
-  const kpis = overview?.kpis ?? { totalIncome: 0, totalExpenses: 0, netSavings: 0, savingsRate: 0 };
-  const budgetSummary = overview?.budgetSummary ?? { total: 0, onTrack: 0, nearingLimit: 0, exceededSoft: 0, exceededHard: 0 };
+  const kpis = overview?.kpis ?? {
+    totalIncome: 0,
+    totalExpenses: 0,
+    netSavings: 0,
+    savingsRate: 0,
+  };
+  const budgetSummary = overview?.budgetSummary ?? {
+    total: 0,
+    onTrack: 0,
+    nearingLimit: 0,
+    exceededSoft: 0,
+    exceededHard: 0,
+  };
   const alerts = overview?.alerts ?? [];
   const varyingExpenses = overview?.varyingExpenses ?? { count: 0, total: 0 };
   const needsReviewCount = overview?.needsReviewCount ?? 0;
@@ -88,10 +108,12 @@ export const DashboardContent = () => {
           <div className="flex items-center gap-3 mt-1">
             <p className="text-gray-500 dark:text-gray-400">Overview for the selected month</p>
             {insights?.lastSyncAt && (
-              <div className={cn(
-                'flex items-center gap-1.5 text-xs',
-                getSyncStatusColor(insights.lastSyncAt)
-              )}>
+              <div
+                className={cn(
+                  'flex items-center gap-1.5 text-xs',
+                  getSyncStatusColor(insights.lastSyncAt)
+                )}
+              >
                 <RefreshCw className="h-3 w-3" />
                 <span>Synced {formatRelativeTime(insights.lastSyncAt)}</span>
               </div>
@@ -173,14 +195,18 @@ export const DashboardContent = () => {
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-warning-600 dark:text-warning-400 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-semibold text-warning-800 dark:text-warning-300">Budget Alerts</h3>
+              <h3 className="font-semibold text-warning-800 dark:text-warning-300">
+                Budget Alerts
+              </h3>
               <p className="text-sm text-warning-700 dark:text-warning-400 mt-1">
                 {alerts.length} {alerts.length === 1 ? 'category' : 'categories'} need attention
               </p>
               <div className="mt-3 space-y-2">
                 {alerts.slice(0, 3).map((alert) => (
                   <div key={alert.categoryId} className="flex items-center justify-between text-sm">
-                    <span className="text-warning-800 dark:text-warning-200">{alert.categoryName}</span>
+                    <span className="text-warning-800 dark:text-warning-200">
+                      {alert.categoryName}
+                    </span>
                     <span className={cn('badge', getStatusBadgeClass(alert.status))}>
                       {getStatusLabel(alert.status)} • {formatPercent(alert.percentUsed)}
                     </span>
@@ -188,7 +214,10 @@ export const DashboardContent = () => {
                 ))}
               </div>
               {alerts.length > 3 && (
-                <Link href={`/budget?month=${currentMonth}`} className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-warning-700 dark:text-warning-400 hover:text-warning-800 dark:hover:text-warning-300">
+                <Link
+                  href={`/budget?month=${currentMonth}`}
+                  className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-warning-700 dark:text-warning-400 hover:text-warning-800 dark:hover:text-warning-300"
+                >
                   View all alerts <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
@@ -225,7 +254,10 @@ export const DashboardContent = () => {
         <div className="card lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Expense Categories</h2>
-            <Link href={`/budget?month=${currentMonth}`} className="text-sm text-primary-600 hover:text-primary-700">
+            <Link
+              href={`/budget?month=${currentMonth}`}
+              className="text-sm text-primary-600 hover:text-primary-700"
+            >
               Manage budgets
             </Link>
           </div>
@@ -238,7 +270,9 @@ export const DashboardContent = () => {
                 <CategoryRow key={item.category.id} item={item} />
               ))}
             {categoryBreakdown.filter((c) => c.actualAmount > 0).length === 0 && (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-8">No expenses this month yet</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                No expenses this month yet
+              </p>
             )}
           </div>
         </div>
@@ -247,13 +281,19 @@ export const DashboardContent = () => {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Recent Transactions</h2>
-            <Link href={`/transactions?month=${currentMonth}`} className="text-sm text-primary-600 hover:text-primary-700">
+            <Link
+              href={`/transactions?month=${currentMonth}`}
+              className="text-sm text-primary-600 hover:text-primary-700"
+            >
               View all
             </Link>
           </div>
           <div className="space-y-3">
             {recentTransactions.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <div
+                key={tx.id}
+                className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0"
+              >
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{tx.category?.icon || '📝'}</span>
                   <div>
@@ -277,19 +317,22 @@ export const DashboardContent = () => {
               </div>
             ))}
             {recentTransactions.length === 0 && (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-8">No transactions yet</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                No transactions yet
+              </p>
             )}
           </div>
         </div>
       </div>
 
       {/* Expense Insights Lists */}
-      {insights && (insights.topMerchants.length > 0 || insights.largestTransactions.length > 0) && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <TopMerchantsList merchants={insights.topMerchants} />
-          <LargestTransactionsList transactions={insights.largestTransactions} />
-        </div>
-      )}
+      {insights &&
+        (insights.topMerchants.length > 0 || insights.largestTransactions.length > 0) && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <TopMerchantsList merchants={insights.topMerchants} />
+            <LargestTransactionsList transactions={insights.largestTransactions} />
+          </div>
+        )}
 
       {/* Budget Summary */}
       <div className="card">
@@ -304,7 +347,7 @@ export const DashboardContent = () => {
       </div>
     </div>
   );
-}
+};
 
 function KPICard({
   title,
@@ -361,7 +404,10 @@ function CategoryRow({
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {formatCurrency(item.actualAmount)}
             {item.plannedAmount > 0 && (
-              <span className="text-gray-400 dark:text-gray-500"> / {formatCurrency(item.plannedAmount)}</span>
+              <span className="text-gray-400 dark:text-gray-500">
+                {' '}
+                / {formatCurrency(item.plannedAmount)}
+              </span>
             )}
           </span>
         </div>
@@ -370,9 +416,7 @@ function CategoryRow({
             className={cn(
               'h-full rounded-full transition-all',
               // Green for 0-100%, red only when exceeded (>100%)
-              item.percentUsed <= 1.0
-                ? 'bg-success-500'
-                : 'bg-danger-500'
+              item.percentUsed <= 1.0 ? 'bg-success-500' : 'bg-danger-500'
             )}
             style={{ width: `${progressWidth}%` }}
           />
@@ -411,4 +455,3 @@ function StatBox({
     </div>
   );
 }
-

@@ -1,8 +1,8 @@
-import type { 
-  BankProvider, 
-  ScrapeResult, 
-  TwoFactorInitResult, 
-  TwoFactorCompleteResult 
+import type {
+  BankProvider,
+  ScrapeResult,
+  TwoFactorCompleteResult,
+  TwoFactorInitResult,
 } from '../types';
 
 /**
@@ -11,10 +11,10 @@ import type {
 export interface ScraperAdapter {
   /** Provider identifier */
   readonly provider: BankProvider;
-  
+
   /** Human-readable provider name */
   readonly displayName: string;
-  
+
   /** Whether this provider requires 2FA setup */
   readonly requiresTwoFactor: boolean;
 
@@ -24,11 +24,7 @@ export interface ScraperAdapter {
    * @param credentials - Provider-specific credentials (already decrypted)
    * @param longTermToken - Optional long-term 2FA token
    */
-  scrape(
-    startDate: Date,
-    credentials: object,
-    longTermToken?: string
-  ): Promise<ScrapeResult>;
+  scrape(startDate: Date, credentials: object, longTermToken?: string): Promise<ScrapeResult>;
 
   /**
    * Initialize 2FA flow (send OTP to user's phone)
@@ -72,4 +68,3 @@ export function getAdapter(provider: BankProvider): ScraperAdapter {
   }
   return adapter;
 }
-

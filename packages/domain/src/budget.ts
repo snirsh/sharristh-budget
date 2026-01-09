@@ -1,4 +1,4 @@
-import type { Budget, BudgetStatus, BudgetEvaluation, Transaction, Category } from './types';
+import type { Budget, BudgetEvaluation, BudgetStatus, Category, Transaction } from './types';
 
 /**
  * Evaluates the status of a budget based on actual spending
@@ -9,10 +9,7 @@ import type { Budget, BudgetStatus, BudgetEvaluation, Transaction, Category } fr
  * - exceeded_soft: Over soft limit
  * - exceeded_hard: Over hard limit
  */
-export function evaluateBudgetStatus(
-  budget: Budget,
-  actualAmount: number
-): BudgetEvaluation {
+export function evaluateBudgetStatus(budget: Budget, actualAmount: number): BudgetEvaluation {
   const percentUsed = budget.plannedAmount > 0 ? actualAmount / budget.plannedAmount : 0;
   const remaining = budget.plannedAmount - actualAmount;
   const isOverPlanned = actualAmount > budget.plannedAmount;
@@ -63,7 +60,7 @@ export function calculateCategorySpending(
   if (year === undefined || monthNum === undefined) {
     return 0;
   }
-  
+
   return transactions
     .filter((tx) => {
       if (tx.categoryId !== categoryId) return false;
@@ -120,7 +117,8 @@ export function evaluateMonthlyBudgets(
  */
 export function getAlertBudgets(evaluations: BudgetEvaluation[]): BudgetEvaluation[] {
   return evaluations.filter(
-    (e) => e.status === 'nearing_limit' || e.status === 'exceeded_soft' || e.status === 'exceeded_hard'
+    (e) =>
+      e.status === 'nearing_limit' || e.status === 'exceeded_soft' || e.status === 'exceeded_hard'
   );
 }
 
@@ -181,16 +179,14 @@ export function getCategorySummaries(
 }> {
   return categories.map((category) => {
     const budget = budgets.find((b) => b.categoryId === category.id && b.month === month);
-    
+
     let evaluation: BudgetEvaluation | null = null;
     if (budget) {
       const actualAmount = calculateCategorySpending(transactions, category.id, month);
       evaluation = evaluateBudgetStatus(budget, actualAmount);
     }
 
-    const transactionCount = transactions.filter(
-      (tx) => tx.categoryId === category.id
-    ).length;
+    const transactionCount = transactions.filter((tx) => tx.categoryId === category.id).length;
 
     return {
       category,
@@ -236,4 +232,3 @@ export function getBudgetStatusLabel(status: BudgetStatus): string {
       return 'Unknown';
   }
 }
-

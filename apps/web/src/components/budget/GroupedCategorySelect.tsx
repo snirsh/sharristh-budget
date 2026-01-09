@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Check, ChevronDown, Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Category {
   id: string;
@@ -187,9 +187,7 @@ export function GroupedCategorySelect({
                       <span className="flex-1 text-gray-900 dark:text-white font-medium">
                         {parent.name}
                       </span>
-                      {value === parent.id && (
-                        <Check className="h-4 w-4 text-primary-600" />
-                      )}
+                      {value === parent.id && <Check className="h-4 w-4 text-primary-600" />}
                     </button>
                   ) : (
                     <>
@@ -218,9 +216,7 @@ export function GroupedCategorySelect({
                             <span className="flex-1 text-gray-700 dark:text-gray-200">
                               {child.name}
                             </span>
-                            {value === child.id && (
-                              <Check className="h-4 w-4 text-primary-600" />
-                            )}
+                            {value === child.id && <Check className="h-4 w-4 text-primary-600" />}
                           </button>
                         ))}
                       </div>

@@ -1,6 +1,6 @@
+import { type VariantProps, cva } from 'class-variance-authority';
 import { View, type ViewProps } from 'react-native';
 import { cn } from '../utils';
-import { cva, type VariantProps } from 'class-variance-authority';
 
 const cardVariants = cva('rounded-xl', {
   variants: {
@@ -28,12 +28,7 @@ export interface CardProps extends ViewProps, VariantProps<typeof cardVariants> 
 }
 
 export function Card({ className, variant, padding, ...props }: CardProps) {
-  return (
-    <View
-      className={cn(cardVariants({ variant, padding }), className)}
-      {...props}
-    />
-  );
+  return <View className={cn(cardVariants({ variant, padding }), className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: ViewProps & { className?: string }) {
@@ -51,4 +46,3 @@ export function CardContent({ className, ...props }: ViewProps & { className?: s
 export function CardFooter({ className, ...props }: ViewProps & { className?: string }) {
   return <View className={cn('mt-4 flex-row justify-end', className)} {...props} />;
 }
-

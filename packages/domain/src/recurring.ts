@@ -1,8 +1,4 @@
-import type {
-  RecurringTransactionTemplate,
-  RecurringOverride,
-  RecurringOccurrence,
-} from './types';
+import type { RecurringOccurrence, RecurringOverride, RecurringTransactionTemplate } from './types';
 
 /**
  * Generates all occurrences for a recurring template within a date range
@@ -46,7 +42,7 @@ export function expandRecurringToRange(
     }
 
     currentDate = getNextOccurrence(template, currentDate);
-    
+
     // Safety check to prevent infinite loops
     if (occurrences.length > 1000) break;
   }
@@ -71,10 +67,7 @@ export function expandRecurringToMonth(
 /**
  * Find the first occurrence on or after a given start date
  */
-function findFirstOccurrence(
-  template: RecurringTransactionTemplate,
-  afterDate: Date
-): Date {
+function findFirstOccurrence(template: RecurringTransactionTemplate, afterDate: Date): Date {
   let current = new Date(template.startDate);
 
   // Fast-forward to near the afterDate
@@ -92,10 +85,7 @@ function findFirstOccurrence(
 /**
  * Get the next occurrence after a given date
  */
-function getNextOccurrence(
-  template: RecurringTransactionTemplate,
-  fromDate: Date
-): Date {
+function getNextOccurrence(template: RecurringTransactionTemplate, fromDate: Date): Date {
   const next = new Date(fromDate);
 
   switch (template.frequency) {
@@ -153,12 +143,7 @@ export function generateMissingOccurrences(
   upToDate: Date,
   overrides: RecurringOverride[] = []
 ): RecurringOccurrence[] {
-  const allOccurrences = expandRecurringToRange(
-    template,
-    template.startDate,
-    upToDate,
-    overrides
-  );
+  const allOccurrences = expandRecurringToRange(template, template.startDate, upToDate, overrides);
 
   return allOccurrences.filter(
     (occ) => !existingInstanceKeys.has(`${template.id}_${occ.instanceKey}`)
@@ -176,7 +161,7 @@ export function calculateNextRunAt(
   if (template.endDate && fromDate > template.endDate) return null;
 
   const effectiveFrom = new Date(Math.max(fromDate.getTime(), template.startDate.getTime()));
-  
+
   // If startDate is in the future, that's the next run
   if (template.startDate > fromDate) {
     return template.startDate;
@@ -188,7 +173,9 @@ export function calculateNextRunAt(
 /**
  * Validate a recurring template schedule
  */
-export function validateRecurringSchedule(template: Partial<RecurringTransactionTemplate>): string[] {
+export function validateRecurringSchedule(
+  template: Partial<RecurringTransactionTemplate>
+): string[] {
   const errors: string[] = [];
 
   if (!template.frequency) {
@@ -234,7 +221,7 @@ export function getScheduleDescription(template: RecurringTransactionTemplate): 
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const dayNames = template.byWeekday
           .split(',')
-          .map((d) => days[parseInt(d)] ?? d)
+          .map((d) => days[Number.parseInt(d)] ?? d)
           .join(', ');
         return `${intervalText}Weekly on ${dayNames}`;
       }
@@ -261,4 +248,3 @@ function getOrdinalSuffix(n: number): string {
   const v = n % 100;
   return s[(v - 20) % 10] || s[v] || s[0] || 'th';
 }
-

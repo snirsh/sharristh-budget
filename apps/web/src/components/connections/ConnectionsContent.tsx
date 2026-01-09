@@ -1,23 +1,23 @@
 'use client';
 
-import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { formatDate, cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import {
+  Banknote,
+  Building2,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  KeyRound,
+  Loader2,
+  PiggyBank,
   Plus,
   RefreshCw,
   Trash2,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Building2,
-  CreditCard,
-  Loader2,
-  KeyRound,
   Wallet,
-  PiggyBank,
-  Banknote,
+  XCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 
 type Provider = 'onezero' | 'isracard';
 type AccountType = 'checking' | 'savings' | 'credit' | 'cash';
@@ -211,7 +211,6 @@ export function ConnectionsContent() {
     }
   };
 
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -245,10 +244,7 @@ export function ConnectionsContent() {
               <span className="hidden sm:inline">Sync All</span>
             </button>
           )}
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="btn btn-primary btn-sm sm:btn-md"
-          >
+          <button onClick={() => setShowAddForm(true)} className="btn btn-primary btn-sm sm:btn-md">
             <Plus className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Add Connection</span>
             <span className="sm:hidden">Add</span>
@@ -294,9 +290,13 @@ export function ConnectionsContent() {
               ) : (
                 <div className="bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 p-4 rounded-lg">
                   <p className="font-medium">OTP code sent to your phone</p>
-                  <p className="text-sm">Enter the code you received via SMS to complete the setup.</p>
+                  <p className="text-sm">
+                    Enter the code you received via SMS to complete the setup.
+                  </p>
                   {twoFactorSessionId && (
-                    <p className="text-xs mt-1 opacity-60">Session: {twoFactorSessionId.slice(0, 20)}...</p>
+                    <p className="text-xs mt-1 opacity-60">
+                      Session: {twoFactorSessionId.slice(0, 20)}...
+                    </p>
                   )}
                 </div>
               )}
@@ -319,7 +319,11 @@ export function ConnectionsContent() {
               <div className="flex gap-3">
                 <button
                   onClick={handleCompleteTwoFactor}
-                  disabled={!otpCode || completeTwoFactorMutation.isPending || initTwoFactorMutation.isPending}
+                  disabled={
+                    !otpCode ||
+                    completeTwoFactorMutation.isPending ||
+                    initTwoFactorMutation.isPending
+                  }
                   className="btn btn-primary"
                 >
                   {completeTwoFactorMutation.isPending && (
@@ -376,9 +380,7 @@ export function ConnectionsContent() {
                   <input
                     type="text"
                     value={formData.displayName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, displayName: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                     placeholder="e.g., My OneZero Account"
                     className="input"
                     required
@@ -396,9 +398,7 @@ export function ConnectionsContent() {
                     <input
                       type="email"
                       value={formData.email || ''}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="input"
                       required
                     />
@@ -410,9 +410,7 @@ export function ConnectionsContent() {
                     <input
                       type="password"
                       value={formData.password || ''}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="input"
                       required
                     />
@@ -424,9 +422,7 @@ export function ConnectionsContent() {
                     <input
                       type="tel"
                       value={formData.phoneNumber || ''}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phoneNumber: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                       placeholder="+972501234567"
                       className="input"
                       required
@@ -446,9 +442,7 @@ export function ConnectionsContent() {
                     <input
                       type="text"
                       value={formData.id || ''}
-                      onChange={(e) =>
-                        setFormData({ ...formData, id: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, id: e.target.value })}
                       placeholder="123456789"
                       className="input"
                       required
@@ -461,9 +455,7 @@ export function ConnectionsContent() {
                     <input
                       type="text"
                       value={formData.card6Digits || ''}
-                      onChange={(e) =>
-                        setFormData({ ...formData, card6Digits: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, card6Digits: e.target.value })}
                       placeholder="123456"
                       maxLength={6}
                       className="input"
@@ -477,9 +469,7 @@ export function ConnectionsContent() {
                     <input
                       type="password"
                       value={formData.password || ''}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="input"
                       required
                     />
@@ -489,7 +479,8 @@ export function ConnectionsContent() {
 
               {formData.provider === 'onezero' && (
                 <div className="bg-warning-50 dark:bg-warning-900/30 text-warning-700 dark:text-warning-300 p-3 rounded-lg text-sm">
-                  <strong>Note:</strong> OneZero requires 2FA setup. After adding, you'll receive an OTP code via SMS to complete the connection.
+                  <strong>Note:</strong> OneZero requires 2FA setup. After adding, you'll receive an
+                  OTP code via SMS to complete the connection.
                 </div>
               )}
 
@@ -499,9 +490,7 @@ export function ConnectionsContent() {
                   disabled={createMutation.isPending}
                   className="btn btn-primary"
                 >
-                  {createMutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  )}
+                  {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Add Connection
                 </button>
                 <button
@@ -542,7 +531,7 @@ export function ConnectionsContent() {
               >
                 {getProviderIcon(connection.provider)}
               </div>
-              
+
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
@@ -555,21 +544,22 @@ export function ConnectionsContent() {
                     </p>
                   </div>
                   {connection.requiresTwoFactor && !connection.isActive && (
-                    <span className="badge badge-warning text-xs flex-shrink-0">
-                      2FA Required
-                    </span>
+                    <span className="badge badge-warning text-xs flex-shrink-0">2FA Required</span>
                   )}
                 </div>
-                
+
                 {/* Status Row */}
                 <div className="flex items-center gap-4 mt-2 text-sm">
                   <div className="flex items-center gap-1.5">
                     {getStatusIcon(connection.lastSyncStatus)}
                     <span
                       className={cn(
-                        connection.lastSyncStatus === 'success' && 'text-success-600 dark:text-success-400',
-                        connection.lastSyncStatus === 'error' && 'text-error-600 dark:text-error-400',
-                        connection.lastSyncStatus === 'auth_required' && 'text-warning-600 dark:text-warning-400',
+                        connection.lastSyncStatus === 'success' &&
+                          'text-success-600 dark:text-success-400',
+                        connection.lastSyncStatus === 'error' &&
+                          'text-error-600 dark:text-error-400',
+                        connection.lastSyncStatus === 'auth_required' &&
+                          'text-warning-600 dark:text-warning-400',
                         !connection.lastSyncStatus && 'text-gray-400 dark:text-gray-500'
                       )}
                     >
@@ -578,25 +568,28 @@ export function ConnectionsContent() {
                   </div>
                   <span className="text-gray-400 dark:text-gray-500 hidden sm:inline">•</span>
                   <span className="text-gray-500 dark:text-gray-400 hidden sm:inline">
-                    {connection.lastSyncAt ? `Synced ${formatDate(connection.lastSyncAt)}` : 'Never synced'}
+                    {connection.lastSyncAt
+                      ? `Synced ${formatDate(connection.lastSyncAt)}`
+                      : 'Never synced'}
                   </span>
                 </div>
-                
+
                 {/* Actions */}
                 <div className="flex items-center gap-2 mt-3 flex-wrap">
-                  {connection.lastSyncStatus === 'auth_required' && connection.requiresTwoFactor && (
-                    <button
-                      onClick={() => {
-                        setTwoFactorConnectionId(connection.id);
-                        setShowAddForm(true);
-                        initTwoFactorMutation.mutate({ connectionId: connection.id });
-                      }}
-                      className="btn btn-sm btn-warning"
-                    >
-                      <KeyRound className="h-4 w-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Re-auth</span>
-                    </button>
-                  )}
+                  {connection.lastSyncStatus === 'auth_required' &&
+                    connection.requiresTwoFactor && (
+                      <button
+                        onClick={() => {
+                          setTwoFactorConnectionId(connection.id);
+                          setShowAddForm(true);
+                          initTwoFactorMutation.mutate({ connectionId: connection.id });
+                        }}
+                        className="btn btn-sm btn-warning"
+                      >
+                        <KeyRound className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Re-auth</span>
+                      </button>
+                    )}
                   {connection.isActive && connection.lastSyncStatus !== 'auth_required' && (
                     <button
                       onClick={() => syncMutation.mutate({ connectionId: connection.id })}
@@ -640,16 +633,13 @@ export function ConnectionsContent() {
             </div>
           </div>
         ))}
-        
+
         {(!connections || connections.length === 0) && (
           <div className="card py-12 text-center text-gray-500">
             <div className="flex flex-col items-center gap-2">
               <Building2 className="h-12 w-12 text-gray-300" />
               <p>No bank connections yet</p>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="btn btn-primary btn-sm mt-2"
-              >
+              <button onClick={() => setShowAddForm(true)} className="btn btn-primary btn-sm mt-2">
                 <Plus className="h-4 w-4 mr-2" />
                 Add your first connection
               </button>
@@ -667,7 +657,7 @@ export function ConnectionsContent() {
               Manage account types for correct dashboard calculations
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {accounts.map((account) => (
               <div key={account.id} className="card">
@@ -719,7 +709,8 @@ export function ConnectionsContent() {
           <div className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 flex-shrink-0" />
             <span className="text-sm">
-              Sync complete! {syncMutation.data.transactionsFound} found, {syncMutation.data.transactionsNew} new.
+              Sync complete! {syncMutation.data.transactionsFound} found,{' '}
+              {syncMutation.data.transactionsNew} new.
             </span>
           </div>
         </div>
@@ -742,7 +733,8 @@ export function ConnectionsContent() {
             <div className="min-w-0">
               <p className="font-medium text-sm">{syncAllMutation.data.message}</p>
               <p className="text-xs">
-                {syncAllMutation.data.totalTransactionsFound} found, {syncAllMutation.data.totalTransactionsNew} new.
+                {syncAllMutation.data.totalTransactionsFound} found,{' '}
+                {syncAllMutation.data.totalTransactionsNew} new.
               </p>
               {syncAllMutation.data.results.some((r) => !r.success) && (
                 <div className="mt-2 text-xs text-error-600 dark:text-error-300">
@@ -752,7 +744,9 @@ export function ConnectionsContent() {
                       .filter((r) => !r.success)
                       .slice(0, 2)
                       .map((r) => (
-                        <li key={r.connectionId} className="truncate">{r.displayName}</li>
+                        <li key={r.connectionId} className="truncate">
+                          {r.displayName}
+                        </li>
                       ))}
                   </ul>
                 </div>
@@ -766,11 +760,12 @@ export function ConnectionsContent() {
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm bg-error-50 dark:bg-error-900/90 text-error-700 dark:text-error-200 px-4 py-3 rounded-lg shadow-lg animate-in border border-error-200 dark:border-error-800 z-50">
           <div className="flex items-center gap-2">
             <XCircle className="h-5 w-5 flex-shrink-0" />
-            <span className="text-sm truncate">Sync all failed: {syncAllMutation.error.message}</span>
+            <span className="text-sm truncate">
+              Sync all failed: {syncAllMutation.error.message}
+            </span>
           </div>
         </div>
       )}
     </div>
   );
 }
-

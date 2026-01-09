@@ -1,7 +1,7 @@
 'use client';
 
+import { cn, formatCurrency, formatPercent } from '@/lib/utils';
 import { Edit2, Trash2 } from 'lucide-react';
-import { formatCurrency, formatPercent, cn } from '@/lib/utils';
 
 interface BudgetCardProps {
   evaluation: {
@@ -57,13 +57,23 @@ export function BudgetCard({ evaluation, onEdit, onDelete }: BudgetCardProps) {
             </h3>
             {evaluation.budget.limitAmount && (
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Limit: {formatCurrency(evaluation.budget.limitAmount)} ({evaluation.budget.limitType})
+                Limit: {formatCurrency(evaluation.budget.limitAmount)} (
+                {evaluation.budget.limitType})
               </p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-lg" title={evaluation.percentUsed > 1 ? 'Exceeded' : evaluation.percentUsed > 0.7 ? 'Nearing limit' : 'On track'}>
+          <span
+            className="text-lg"
+            title={
+              evaluation.percentUsed > 1
+                ? 'Exceeded'
+                : evaluation.percentUsed > 0.7
+                  ? 'Nearing limit'
+                  : 'On track'
+            }
+          >
             {status.icon}
           </span>
           <span className={cn('text-sm font-medium', status.color)}>
@@ -96,13 +106,10 @@ export function BudgetCard({ evaluation, onEdit, onDelete }: BudgetCardProps) {
             {formatCurrency(evaluation.budget.plannedAmount)}
           </span>
         </div>
-        <div
-          className={cn(
-            'font-medium',
-            remaining >= 0 ? 'text-success-600' : 'text-danger-600'
-          )}
-        >
-          {remaining >= 0 ? `${formatCurrency(remaining)} left` : `${formatCurrency(Math.abs(remaining))} over`}
+        <div className={cn('font-medium', remaining >= 0 ? 'text-success-600' : 'text-danger-600')}>
+          {remaining >= 0
+            ? `${formatCurrency(remaining)} left`
+            : `${formatCurrency(Math.abs(remaining))} over`}
         </div>
       </div>
 

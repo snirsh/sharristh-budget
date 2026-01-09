@@ -1,4 +1,4 @@
-import type { ScrapedTransaction, ScrapedAccount, MappedTransaction } from '../types';
+import type { MappedTransaction, ScrapedAccount, ScrapedTransaction } from '../types';
 
 /**
  * Map a single scraped transaction to our app's transaction format
@@ -55,10 +55,12 @@ export function mapAccountTransactions(accounts: ScrapedAccount[]): MappedTransa
     // Log a sample of raw dates from the bank for debugging
     if (account.txns.length > 0) {
       const sampleTxns = account.txns.slice(0, 3);
-      console.log(`[TransactionMapper] Sample raw dates from bank (account ${account.accountNumber}):`, 
-        sampleTxns.map(t => ({ raw: t.date, desc: t.description?.substring(0, 20) })));
+      console.log(
+        `[TransactionMapper] Sample raw dates from bank (account ${account.accountNumber}):`,
+        sampleTxns.map((t) => ({ raw: t.date, desc: t.description?.substring(0, 20) }))
+      );
     }
-    
+
     for (const txn of account.txns) {
       // Include all transactions (both pending and completed)
       // Users want to see pending transactions to get the most up-to-date view
@@ -73,10 +75,7 @@ export function mapAccountTransactions(accounts: ScrapedAccount[]): MappedTransa
  * Generate a unique external ID for a transaction
  * Used for deduplication
  */
-function generateExternalId(
-  txn: ScrapedTransaction,
-  accountNumber: string
-): string {
+function generateExternalId(txn: ScrapedTransaction, accountNumber: string): string {
   // If the scraper provides an identifier, use it
   if (txn.identifier) {
     return `${accountNumber}_${txn.identifier}`;
@@ -95,7 +94,7 @@ function generateExternalId(
   let hash = 0;
   for (let i = 0; i < data.length; i++) {
     const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return `${accountNumber}_${Math.abs(hash).toString(16)}`;
@@ -107,9 +106,7 @@ function generateExternalId(
  */
 function extractMerchant(description: string): string | null {
   // Remove common prefixes
-  let cleaned = description
-    .replace(/^(חיוב|תשלום|העברה|הוראת קבע|משיכה)\s*/i, '')
-    .trim();
+  let cleaned = description.replace(/^(חיוב|תשלום|העברה|הוראת קבע|משיכה)\s*/i, '').trim();
 
   // If description is very short, it's likely not a useful merchant
   if (cleaned.length < 3) {
@@ -126,6 +123,3 @@ function extractMerchant(description: string): string | null {
   // Limit length and return
   return cleaned.length > 100 ? cleaned.substring(0, 100) : cleaned;
 }
-
-
-

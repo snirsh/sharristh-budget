@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { formatCurrency, formatDate, cn } from '@/lib/utils';
-import { ToggleLeft, ToggleRight, Trash2, Calendar, Play, Plus, Search } from 'lucide-react';
+import { cn, formatCurrency, formatDate } from '@/lib/utils';
+import { Calendar, Play, Plus, Search, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { AddRecurringDialog } from './AddRecurringDialog';
 import { PatternDetectionDialog } from './PatternDetectionDialog';
 
@@ -68,7 +68,9 @@ export function RecurringContent() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recurring Transactions</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Recurring Transactions
+          </h1>
           <p className="text-gray-500 dark:text-gray-400">Manage recurring income and expenses</p>
         </div>
         <div className="flex items-center gap-3">
@@ -81,10 +83,7 @@ export function RecurringContent() {
             />
             Show inactive
           </label>
-          <button
-            onClick={() => setIsPatternDialogOpen(true)}
-            className="btn btn-outline"
-          >
+          <button onClick={() => setIsPatternDialogOpen(true)} className="btn btn-outline">
             <Search className="h-4 w-4" />
             Detect Patterns
           </button>
@@ -98,10 +97,7 @@ export function RecurringContent() {
             <Play className="h-4 w-4" />
             {generateMutation.isPending ? 'Generating...' : 'Generate Missing'}
           </button>
-          <button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="btn btn-primary"
-          >
+          <button onClick={() => setIsAddDialogOpen(true)} className="btn btn-primary">
             <Plus className="h-4 w-4" />
             Add Recurring
           </button>
@@ -112,7 +108,9 @@ export function RecurringContent() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recurring Income</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Recurring Income
+            </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Regular money coming in</p>
           </div>
           <span className="badge badge-success">{incomeTemplates.length} active</span>
@@ -143,7 +141,9 @@ export function RecurringContent() {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recurring Expenses</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Recurring Expenses
+            </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Regular bills and payments</p>
           </div>
           <span className="badge badge-warning">{expenseTemplates.length} active</span>
@@ -220,9 +220,7 @@ function TemplateRow({
         <p
           className={cn(
             'font-semibold',
-            template.direction === 'income'
-              ? 'text-success-600'
-              : 'text-gray-900 dark:text-white'
+            template.direction === 'income' ? 'text-success-600' : 'text-gray-900 dark:text-white'
           )}
         >
           {template.direction === 'income' ? '+' : '-'}
@@ -235,11 +233,7 @@ function TemplateRow({
       <div className="text-right min-w-[100px]">
         <div className="flex items-center justify-end gap-1 text-sm text-gray-500 dark:text-gray-400">
           <Calendar className="h-3 w-3" />
-          {template.nextRunAt ? (
-            <span>{formatDate(template.nextRunAt)}</span>
-          ) : (
-            <span>—</span>
-          )}
+          {template.nextRunAt ? <span>{formatDate(template.nextRunAt)}</span> : <span>—</span>}
         </div>
         <p className="text-xs text-gray-400 dark:text-gray-500">Next occurrence</p>
       </div>
@@ -266,4 +260,3 @@ function TemplateRow({
     </div>
   );
 }
-

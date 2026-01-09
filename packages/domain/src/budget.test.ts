@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  evaluateBudgetStatus,
   calculateCategorySpending,
   calculateMonthlyKPIs,
+  evaluateBudgetStatus,
   getAlertBudgets,
 } from './budget';
 import type { Budget, Transaction } from './types';
@@ -231,16 +231,51 @@ describe('calculateMonthlyKPIs', () => {
 describe('getAlertBudgets', () => {
   it('should filter budgets with alert status', () => {
     const evaluations = [
-      { budget: {} as Budget, actualAmount: 500, percentUsed: 0.5, status: 'ok' as const, remaining: 500, isOverPlanned: false, isOverLimit: false },
-      { budget: {} as Budget, actualAmount: 850, percentUsed: 0.85, status: 'nearing_limit' as const, remaining: 150, isOverPlanned: false, isOverLimit: false },
-      { budget: {} as Budget, actualAmount: 1100, percentUsed: 1.1, status: 'exceeded_soft' as const, remaining: -100, isOverPlanned: true, isOverLimit: true },
-      { budget: {} as Budget, actualAmount: 1300, percentUsed: 1.3, status: 'exceeded_hard' as const, remaining: -300, isOverPlanned: true, isOverLimit: true },
+      {
+        budget: {} as Budget,
+        actualAmount: 500,
+        percentUsed: 0.5,
+        status: 'ok' as const,
+        remaining: 500,
+        isOverPlanned: false,
+        isOverLimit: false,
+      },
+      {
+        budget: {} as Budget,
+        actualAmount: 850,
+        percentUsed: 0.85,
+        status: 'nearing_limit' as const,
+        remaining: 150,
+        isOverPlanned: false,
+        isOverLimit: false,
+      },
+      {
+        budget: {} as Budget,
+        actualAmount: 1100,
+        percentUsed: 1.1,
+        status: 'exceeded_soft' as const,
+        remaining: -100,
+        isOverPlanned: true,
+        isOverLimit: true,
+      },
+      {
+        budget: {} as Budget,
+        actualAmount: 1300,
+        percentUsed: 1.3,
+        status: 'exceeded_hard' as const,
+        remaining: -300,
+        isOverPlanned: true,
+        isOverLimit: true,
+      },
     ];
 
     const alerts = getAlertBudgets(evaluations);
 
     expect(alerts).toHaveLength(3);
-    expect(alerts.map(a => a.status)).toEqual(['nearing_limit', 'exceeded_soft', 'exceeded_hard']);
+    expect(alerts.map((a) => a.status)).toEqual([
+      'nearing_limit',
+      'exceeded_soft',
+      'exceeded_hard',
+    ]);
   });
 });
-

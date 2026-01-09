@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@/lib/trpc/client';
-import { X, Copy, Loader2, CheckCircle2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { CheckCircle2, Copy, Loader2, X } from 'lucide-react';
 
 interface CopyBudgetsDialogProps {
   isOpen: boolean;
@@ -11,18 +11,12 @@ interface CopyBudgetsDialogProps {
   toMonth: string;
 }
 
-export function CopyBudgetsDialog({
-  isOpen,
-  onClose,
-  fromMonth,
-  toMonth,
-}: CopyBudgetsDialogProps) {
+export function CopyBudgetsDialog({ isOpen, onClose, fromMonth, toMonth }: CopyBudgetsDialogProps) {
   const utils = trpc.useUtils();
 
-  const { data: summary, isLoading } = trpc.budgets.summaryForMonth.useQuery(
-    fromMonth,
-    { enabled: isOpen }
-  );
+  const { data: summary, isLoading } = trpc.budgets.summaryForMonth.useQuery(fromMonth, {
+    enabled: isOpen,
+  });
 
   const copyMutation = trpc.budgets.copyMonth.useMutation({
     onSuccess: () => {
@@ -50,9 +44,7 @@ export function CopyBudgetsDialog({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <Copy className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Copy Budgets
-            </h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Copy Budgets</h2>
           </div>
           <button
             onClick={onClose}

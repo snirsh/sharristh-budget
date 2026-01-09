@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { getAndRemoveChallenge, getRPConfig, hashInviteCode } from '@/lib/webauthn-utils';
+import { prisma } from '@sfam/db';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import type { RegistrationResponseJSON } from '@simplewebauthn/types';
-import { prisma } from '@sfam/db';
-import { getAndRemoveChallenge, hashInviteCode, getRPConfig } from '@/lib/webauthn-utils';
+import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * POST /api/auth/webauthn/register/verify
@@ -61,25 +61,16 @@ export async function POST(request: NextRequest) {
 
     if (!storedInvite) {
       console.log('[WebAuthn Verify] Invite code not found in database');
-      return NextResponse.json(
-        { error: 'Invalid invite code' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Invalid invite code' }, { status: 403 });
     }
 
     if (storedInvite.usedAt) {
-      return NextResponse.json(
-        { error: 'Invite code has already been used' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Invite code has already been used' }, { status: 403 });
     }
 
     // Check if invite has expired
     if (storedInvite.expiresAt && storedInvite.expiresAt < new Date()) {
-      return NextResponse.json(
-        { error: 'Invite code has expired' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Invite code has expired' }, { status: 403 });
     }
 
     const isHouseholdInvite = storedInvite.type === 'household' && storedInvite.householdId;
@@ -97,10 +88,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!verification.verified || !verification.registrationInfo) {
-      return NextResponse.json(
-        { error: 'Registration verification failed' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Registration verification failed' }, { status: 400 });
     }
 
     const { credentialPublicKey, credentialID, counter, credentialDeviceType, credentialBackedUp } =
@@ -190,10 +178,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Registration verification error:', error);
-    return NextResponse.json(
-      { error: 'Failed to verify registration' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to verify registration' }, { status: 500 });
   }
 }
-

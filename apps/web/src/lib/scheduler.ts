@@ -1,14 +1,14 @@
 /**
  * Bank Sync Scheduler
- * 
+ *
  * This module provides startup sync functionality for local development.
  * In production (Vercel), syncing is handled by:
  * 1. Vercel cron jobs (/api/cron/sync) - runs daily
  * 2. On-access stale sync (checkAndSync tRPC) - runs on user activity
- * 
+ *
  * NOTE: node-cron has been removed as it doesn't work on Vercel serverless.
  * The cron schedule "0 3 * * *" in vercel.json runs at 6 AM Israel time (UTC+3).
- * 
+ *
  * IMPORTANT: All imports are dynamic to avoid Prisma initialization during Next.js build.
  */
 
@@ -41,7 +41,7 @@ export async function initScheduler(): Promise<void> {
 
   // In local development, check for stale connections on startup
   console.log('[Scheduler] Local development mode - checking for stale connections on startup');
-  
+
   try {
     await checkAndSyncAllStaleConnections();
   } catch (error) {
@@ -54,7 +54,7 @@ export async function initScheduler(): Promise<void> {
 /**
  * Check and sync stale connections across all households
  * Used during local development startup
- * 
+ *
  * Uses dynamic imports to avoid Prisma initialization during build
  */
 async function checkAndSyncAllStaleConnections(): Promise<void> {
@@ -84,9 +84,11 @@ async function checkAndSyncAllStaleConnections(): Promise<void> {
   for (const household of households) {
     try {
       const hasStale = await hasStaleConnections(household.id, 12);
-      
+
       if (hasStale) {
-        console.log(`[Scheduler] Syncing stale connections for household: ${household.name || household.id}`);
+        console.log(
+          `[Scheduler] Syncing stale connections for household: ${household.name || household.id}`
+        );
         const result = await syncStaleConnectionsForHousehold(household.id, 12);
         console.log(`[Scheduler] Result: ${result.message}`);
       } else {

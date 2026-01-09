@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Loader2, X } from 'lucide-react';
+import { useState } from 'react';
 import { GroupedCategorySelect } from './GroupedCategorySelect';
 
 interface AddBudgetDialogProps {
@@ -12,11 +12,7 @@ interface AddBudgetDialogProps {
   currentMonth: string;
 }
 
-export function AddBudgetDialog({
-  isOpen,
-  onClose,
-  currentMonth,
-}: AddBudgetDialogProps) {
+export function AddBudgetDialog({ isOpen, onClose, currentMonth }: AddBudgetDialogProps) {
   const utils = trpc.useUtils();
 
   const [formData, setFormData] = useState({
@@ -126,9 +122,7 @@ export function AddBudgetDialog({
             <GroupedCategorySelect
               categories={categories}
               value={formData.categoryId}
-              onChange={(categoryId) =>
-                setFormData({ ...formData, categoryId })
-              }
+              onChange={(categoryId) => setFormData({ ...formData, categoryId })}
               placeholder="Select category..."
               error={!!errors.categoryId}
               filterType="expense"
@@ -148,9 +142,7 @@ export function AddBudgetDialog({
               step="0.01"
               min="0"
               value={formData.plannedAmount}
-              onChange={(e) =>
-                setFormData({ ...formData, plannedAmount: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, plannedAmount: e.target.value })}
               className={cn(
                 'input',
                 errors.plannedAmount && 'border-danger-500 focus:ring-danger-500'
@@ -158,9 +150,7 @@ export function AddBudgetDialog({
               placeholder="0.00"
             />
             {errors.plannedAmount && (
-              <p className="text-sm text-danger-600 mt-1">
-                {errors.plannedAmount}
-              </p>
+              <p className="text-sm text-danger-600 mt-1">{errors.plannedAmount}</p>
             )}
           </div>
 
@@ -172,9 +162,7 @@ export function AddBudgetDialog({
               step="0.01"
               min="0"
               value={formData.limitAmount}
-              onChange={(e) =>
-                setFormData({ ...formData, limitAmount: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, limitAmount: e.target.value })}
               className={cn(
                 'input',
                 errors.limitAmount && 'border-danger-500 focus:ring-danger-500'
@@ -244,18 +232,14 @@ export function AddBudgetDialog({
 
           {/* Alert Threshold */}
           <div>
-            <label className="label">
-              Alert Threshold ({formData.alertThresholdPct}%)
-            </label>
+            <label className="label">Alert Threshold ({formData.alertThresholdPct}%)</label>
             <input
               type="range"
               min="0"
               max="100"
               step="5"
               value={formData.alertThresholdPct}
-              onChange={(e) =>
-                setFormData({ ...formData, alertThresholdPct: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, alertThresholdPct: e.target.value })}
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-600"
             />
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

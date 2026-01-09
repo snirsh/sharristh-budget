@@ -1,15 +1,15 @@
 import { getAdapter } from './adapters';
-import { encryptCredentials, decryptCredentials, encryptToken, decryptToken } from './encryption';
-import { mapAccountTransactions } from './utils/transaction-mapper';
-import { filterNewTransactions } from './utils/deduplication';
-import type { 
-  BankProvider, 
-  ProviderCredentials, 
+import { decryptCredentials, decryptToken, encryptCredentials, encryptToken } from './encryption';
+import type {
+  BankProvider,
   MappedTransaction,
+  ProviderCredentials,
   SyncResult,
-  TwoFactorInitResult,
   TwoFactorCompleteResult,
+  TwoFactorInitResult,
 } from './types';
+import { filterNewTransactions } from './utils/deduplication';
+import { mapAccountTransactions } from './utils/transaction-mapper';
 
 export interface BankConnectionData {
   id: string;
@@ -74,29 +74,35 @@ export class ScraperService {
     existingExternalIds: Set<string>,
     startDate?: Date
   ): Promise<{ result: SyncResult; transactions: MappedTransaction[] }> {
-    console.log(`[ScraperService] Starting sync for connection ${connection.id} (${connection.provider})`);
-    
+    console.log(
+      `[ScraperService] Starting sync for connection ${connection.id} (${connection.provider})`
+    );
+
     const adapter = getAdapter(connection.provider);
     const credentials = this.decryptCredentials(connection.encryptedCreds);
-    
+
     const effectiveStartDate = startDate ?? this.getDefaultStartDate();
     console.log(`[ScraperService] Effective start date: ${effectiveStartDate.toISOString()}`);
-    
+
     // Decrypt long-term token if present
-    const longTermToken = connection.longTermToken 
-      ? this.decryptToken(connection.longTermToken) 
+    const longTermToken = connection.longTermToken
+      ? this.decryptToken(connection.longTermToken)
       : undefined;
-    
+
     console.log(`[ScraperService] Has long-term token: ${!!longTermToken}`);
 
     // Perform the scrape
     console.log('[ScraperService] Calling adapter.scrape()...');
     const scrapeResult = await adapter.scrape(effectiveStartDate, credentials, longTermToken);
 
-    console.log(`[ScraperService] Scrape result: success=${scrapeResult.success}, accounts=${scrapeResult.accounts?.length || 0}`);
-    
+    console.log(
+      `[ScraperService] Scrape result: success=${scrapeResult.success}, accounts=${scrapeResult.accounts?.length || 0}`
+    );
+
     if (!scrapeResult.success || !scrapeResult.accounts) {
-      console.error(`[ScraperService] Scrape failed: ${scrapeResult.errorMessage} (type: ${scrapeResult.errorType})`);
+      console.error(
+        `[ScraperService] Scrape failed: ${scrapeResult.errorMessage} (type: ${scrapeResult.errorType})`
+      );
       return {
         result: {
           success: false,
@@ -111,29 +117,37 @@ export class ScraperService {
 
     // Map transactions to our format
     const allTransactions = mapAccountTransactions(scrapeResult.accounts);
-    
+
     // Log transaction date range for debugging
     if (allTransactions.length > 0) {
-      const dates = allTransactions.map(t => t.date.toISOString().split('T')[0]);
+      const dates = allTransactions.map((t) => t.date.toISOString().split('T')[0]);
       const uniqueDates = [...new Set(dates)].sort();
-      console.log(`[ScraperService] Transaction dates from bank: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]} (${uniqueDates.length} unique days, ${allTransactions.length} transactions)`);
+      console.log(
+        `[ScraperService] Transaction dates from bank: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]} (${uniqueDates.length} unique days, ${allTransactions.length} transactions)`
+      );
     } else {
       console.log('[ScraperService] No transactions returned from bank');
     }
-    
+
     // Filter out existing transactions
     const newTransactions = filterNewTransactions(allTransactions, existingExternalIds);
-    
+
     // Log deduplication results
     const duplicateCount = allTransactions.length - newTransactions.length;
     if (duplicateCount > 0) {
-      console.log(`[ScraperService] Deduplication: ${duplicateCount} transactions already exist, ${newTransactions.length} are new`);
-      
+      console.log(
+        `[ScraperService] Deduplication: ${duplicateCount} transactions already exist, ${newTransactions.length} are new`
+      );
+
       // Log sample of duplicated external IDs for debugging
       const duplicatedIds = allTransactions
-        .filter(t => existingExternalIds.has(t.externalId))
+        .filter((t) => existingExternalIds.has(t.externalId))
         .slice(0, 5)
-        .map(t => ({ externalId: t.externalId, date: t.date.toISOString().split('T')[0], desc: t.description.substring(0, 30) }));
+        .map((t) => ({
+          externalId: t.externalId,
+          date: t.date.toISOString().split('T')[0],
+          desc: t.description.substring(0, 30),
+        }));
       console.log('[ScraperService] Sample duplicates:', JSON.stringify(duplicatedIds));
     }
 
@@ -155,7 +169,7 @@ export class ScraperService {
     credentials: ProviderCredentials
   ): Promise<TwoFactorInitResult> {
     const adapter = getAdapter(provider);
-    
+
     if (!adapter.requiresTwoFactor || !adapter.initTwoFactor) {
       return {
         success: false,
@@ -177,7 +191,7 @@ export class ScraperService {
     sessionId?: string
   ): Promise<TwoFactorCompleteResult> {
     const adapter = getAdapter(provider);
-    
+
     if (!adapter.requiresTwoFactor || !adapter.completeTwoFactor) {
       return {
         success: false,
@@ -216,4 +230,3 @@ export class ScraperService {
 
 // Export a default instance
 export const scraperService = new ScraperService();
-

@@ -110,4 +110,3 @@ export interface TwoFactorCompleteResult {
   longTermToken?: string;
   errorMessage?: string;
 }
-

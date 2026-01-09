@@ -5,7 +5,13 @@
 export type TransactionDirection = 'income' | 'expense' | 'transfer';
 export type CategoryType = 'income' | 'expense';
 export type LimitType = 'soft' | 'hard';
-export type CategorizationSource = 'manual' | 'rule_merchant' | 'rule_keyword' | 'rule_regex' | 'ai_suggestion' | 'fallback';
+export type CategorizationSource =
+  | 'manual'
+  | 'rule_merchant'
+  | 'rule_keyword'
+  | 'rule_regex'
+  | 'ai_suggestion'
+  | 'fallback';
 export type RuleType = 'merchant' | 'keyword' | 'regex';
 export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export type BudgetStatus = 'ok' | 'nearing_limit' | 'exceeded_soft' | 'exceeded_hard';
@@ -194,4 +200,3 @@ export interface CategorySummary {
   status: BudgetStatus;
   transactions: number;
 }
-

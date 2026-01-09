@@ -1,10 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  encryptCredentials,
-  decryptCredentials,
-  encryptToken,
-  decryptToken,
-} from '../encryption';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { decryptCredentials, decryptToken, encryptCredentials, encryptToken } from '../encryption';
 
 describe('encryption', () => {
   const originalAuthSecret = process.env.AUTH_SECRET;
@@ -40,7 +35,7 @@ describe('encryption', () => {
       const encrypted2 = encryptCredentials(credentials);
 
       expect(encrypted1).not.toBe(encrypted2);
-      
+
       // But both should decrypt to the same value
       expect(decryptCredentials(encrypted1)).toEqual(decryptCredentials(encrypted2));
     });
@@ -64,13 +59,15 @@ describe('encryption', () => {
     });
 
     it('should throw on invalid encrypted format', () => {
-      expect(() => decryptCredentials('invalid-data')).toThrow('Invalid encrypted credential format');
+      expect(() => decryptCredentials('invalid-data')).toThrow(
+        'Invalid encrypted credential format'
+      );
     });
 
     it('should throw on tampered ciphertext', () => {
       const credentials = { email: 'test@example.com', password: 'pass' };
       const encrypted = encryptCredentials(credentials);
-      
+
       // Tamper with the ciphertext
       const parts = encrypted.split('.');
       parts[1] = 'tampereddata' + parts[1]!.substring(12);
@@ -138,6 +135,3 @@ describe('encryption', () => {
     });
   });
 });
-
-
-

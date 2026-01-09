@@ -1,6 +1,6 @@
 import { serverTrpc } from '@/lib/trpc/server';
-import { TransactionsClient } from './TransactionsClient';
 import { redirect } from 'next/navigation';
+import { TransactionsClient } from './TransactionsClient';
 
 type TransactionsServerProps = {
   month?: string;

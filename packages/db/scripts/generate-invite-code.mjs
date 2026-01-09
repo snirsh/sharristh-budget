@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import crypto from 'crypto';
 import { execSync } from 'child_process';
+import crypto from 'crypto';
 
 /**
  * Generate a secure invite code and add it to the database
@@ -25,21 +25,17 @@ const sql = `INSERT INTO invite_codes (id, code, "createdAt") VALUES ('${cuid}',
 
 try {
   console.log('Adding to database...');
-  execSync(
-    `pnpm prisma db execute --schema ./prisma/schema.prisma --stdin`,
-    {
-      input: sql,
-      stdio: ['pipe', 'inherit', 'inherit'],
-      cwd: process.cwd()
-    }
-  );
+  execSync(`pnpm prisma db execute --schema ./prisma/schema.prisma --stdin`, {
+    input: sql,
+    stdio: ['pipe', 'inherit', 'inherit'],
+    cwd: process.cwd(),
+  });
 
   console.log('✅ Invite code successfully added to database!\n');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('  SHARE THIS CODE WITH THE USER:');
   console.log('  ' + code);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
 } catch (error) {
   console.error('❌ Failed to add invite code to database');
   console.error('Error:', error.message);

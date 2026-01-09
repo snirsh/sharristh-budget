@@ -1,4 +1,9 @@
-# Fast pre-commit: format + lint staged files only (~2-5 seconds)
-# Full typecheck is deferred to pre-push for speed
+# Fast pre-commit: format + lint staged files, then typecheck all
+# Total time: ~3-8 seconds (vs 30-60s before)
 
+# Step 1: Format and lint staged files with Biome (instant)
 pnpm exec lint-staged
+
+# Step 2: Typecheck all packages with tsgo (fast, ~2-5s)
+# tsgo is 5-10x faster than tsc, making full typecheck viable
+pnpm exec turbo typecheck --ui=stream

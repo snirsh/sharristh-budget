@@ -1,9 +1,9 @@
 /// <reference types="vitest" />
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Integration tests for the /api/cron/sync endpoint
- * 
+ *
  * These tests verify the cron endpoint behavior without actually
  * calling the bank scraping APIs.
  */
@@ -14,7 +14,7 @@ describe('Cron Sync Route', () => {
   beforeEach(() => {
     vi.resetModules();
     // Reset to original env
-    Object.keys(process.env).forEach(key => {
+    Object.keys(process.env).forEach((key) => {
       if (!(key in originalEnv)) {
         delete process.env[key];
       }
@@ -36,7 +36,7 @@ describe('Cron Sync Route', () => {
 
       expect(isProduction).toBe(true);
       expect(cronSecret).toBeUndefined();
-      
+
       // The endpoint would return 500 in this case
       const shouldFail = isProduction && !cronSecret;
       expect(shouldFail).toBe(true);
@@ -104,7 +104,7 @@ describe('Cron Sync Route', () => {
   describe('Response Format', () => {
     it('should include duration in response', () => {
       const startTime = Date.now();
-      
+
       // Simulate some work
       const result = {
         success: true,
@@ -170,7 +170,7 @@ describe('Cron Sync Route', () => {
       // Simulate unauthorized scenario
       const isAuthorized = false;
       const expectedStatus = isAuthorized ? 200 : 401;
-      
+
       expect(expectedStatus).toBe(401);
     });
 
@@ -178,7 +178,7 @@ describe('Cron Sync Route', () => {
       // Simulate error scenario
       const hasError = true;
       const expectedStatus = hasError ? 500 : 200;
-      
+
       expect(expectedStatus).toBe(500);
     });
 
@@ -186,8 +186,8 @@ describe('Cron Sync Route', () => {
       // Simulate success scenario
       const isSuccess = true;
       const isAuthorized = true;
-      const expectedStatus = !isAuthorized ? 401 : (isSuccess ? 200 : 500);
-      
+      const expectedStatus = !isAuthorized ? 401 : isSuccess ? 200 : 500;
+
       expect(expectedStatus).toBe(200);
     });
 
@@ -203,7 +203,7 @@ describe('Cron Sync Route', () => {
       // The endpoint should return 200 as long as it processed the request
       const isHandled = true;
       const expectedStatus = isHandled ? 200 : 500;
-      
+
       expect(expectedStatus).toBe(200);
       expect(partialResult.errors.length).toBeGreaterThan(0);
     });
@@ -213,22 +213,22 @@ describe('Cron Sync Route', () => {
     it('should match expected schedule in vercel.json', () => {
       // The schedule from vercel.json
       const expectedSchedule = '0 3 * * *';
-      
+
       // Verify format: minute hour day month weekday
       const parts = expectedSchedule.split(' ');
       expect(parts).toHaveLength(5);
-      
+
       // 0 3 * * * = At 03:00 UTC every day
-      expect(parts[0]).toBe('0');  // minute
-      expect(parts[1]).toBe('3');  // hour (3 AM UTC)
-      expect(parts[2]).toBe('*');  // day of month
-      expect(parts[3]).toBe('*');  // month
-      expect(parts[4]).toBe('*');  // day of week
+      expect(parts[0]).toBe('0'); // minute
+      expect(parts[1]).toBe('3'); // hour (3 AM UTC)
+      expect(parts[2]).toBe('*'); // day of month
+      expect(parts[3]).toBe('*'); // month
+      expect(parts[4]).toBe('*'); // day of week
     });
 
     it('should have correct path configuration', () => {
       const expectedPath = '/api/cron/sync';
-      
+
       // The route file is at apps/web/src/app/api/cron/sync/route.ts
       // This maps to /api/cron/sync in Next.js App Router
       expect(expectedPath).toMatch(/^\/api\/cron\/sync$/);
@@ -239,7 +239,7 @@ describe('Cron Sync Route', () => {
     it('should have appropriate timeout for sync operations', () => {
       // Bank scraping can take time, especially with multiple connections
       const maxDuration = 300; // 5 minutes
-      
+
       // Vercel Pro plan allows up to 300 seconds
       // Hobby plan allows up to 60 seconds for serverless functions
       expect(maxDuration).toBeLessThanOrEqual(300);

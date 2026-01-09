@@ -44,4 +44,3 @@ export {
   filterNewTransactions,
   groupByAccount,
 } from './utils';
-

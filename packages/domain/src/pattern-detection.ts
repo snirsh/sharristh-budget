@@ -81,7 +81,7 @@ export function detectRecurringPatterns(
     const { transactions: txs, direction } = group;
     // Extract the normalized merchant name from the key (remove __direction suffix)
     const normalizedMerchant = key.split('__')[0]!;
-    
+
     // Skip if not enough occurrences
     if (txs.length < cfg.minOccurrences) {
       continue;
@@ -152,11 +152,12 @@ export function detectRecurringPatterns(
 function groupByMerchantAndDirection(
   transactions: Transaction[]
 ): Record<string, { transactions: Transaction[]; direction: 'income' | 'expense' }> {
-  const groups: Record<string, { transactions: Transaction[]; direction: 'income' | 'expense' }> = {};
+  const groups: Record<string, { transactions: Transaction[]; direction: 'income' | 'expense' }> =
+    {};
 
   for (const tx of transactions) {
     if (tx.direction === 'transfer') continue; // Skip transfers
-    
+
     const normalized = normalizeMerchantName(tx.merchant || tx.description);
     const key = `${normalized}__${tx.direction}`;
 
@@ -221,10 +222,7 @@ function calculateStdDev(values: number[]): number {
 /**
  * Detect date pattern from sorted transactions
  */
-function detectDatePattern(
-  sortedTxs: Transaction[],
-  maxVarianceDays: number
-): DatePattern | null {
+function detectDatePattern(sortedTxs: Transaction[], maxVarianceDays: number): DatePattern | null {
   if (sortedTxs.length < 2) return null;
 
   // Calculate intervals between consecutive transactions (in days)

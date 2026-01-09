@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatMonth } from '@/lib/utils';
 import { useMonth } from '@/lib/useMonth';
+import { formatMonth } from '@/lib/utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const MonthSelector = () => {
   const { currentMonth, navigateMonth } = useMonth();
@@ -29,4 +29,3 @@ export const MonthSelector = () => {
     </div>
   );
 };
-

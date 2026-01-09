@@ -1,7 +1,7 @@
 'use client';
 
 import { formatCurrency } from '@/lib/utils';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 
 type TransactionSummaryProps = {
   totalIncome: number;
@@ -12,9 +12,8 @@ type TransactionSummaryProps = {
 export const TransactionSummary = ({
   totalIncome,
   totalExpenses,
-  netBalance
+  netBalance,
 }: TransactionSummaryProps) => {
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Total Income */}
@@ -61,15 +60,13 @@ export const TransactionSummary = ({
               {formatCurrency(Math.abs(netBalance))}
             </p>
           </div>
-          <div className={`p-3 rounded-lg ${
-            netBalance >= 0 ? 'bg-success-100' : 'bg-danger-100'
-          }`}>
-            <DollarSign className={`h-6 w-6 ${
-              netBalance >= 0 ? 'text-success-600' : 'text-danger-600'
-            }`} />
+          <div className={`p-3 rounded-lg ${netBalance >= 0 ? 'bg-success-100' : 'bg-danger-100'}`}>
+            <DollarSign
+              className={`h-6 w-6 ${netBalance >= 0 ? 'text-success-600' : 'text-danger-600'}`}
+            />
           </div>
         </div>
       </div>
     </div>
   );
-}
+};

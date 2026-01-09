@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ScraperService } from '../service';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAdapter } from '../adapters/base';
+import { ScraperService } from '../service';
 
 // Mock the adapters
 vi.mock('../adapters/base', () => ({
@@ -115,7 +115,8 @@ describe('ScraperService', () => {
     const connection = {
       id: 'conn123',
       provider: 'onezero' as const,
-      encryptedCreds: 'encrypted:{"email":"test@example.com","password":"pass","phoneNumber":"+972501234567"}',
+      encryptedCreds:
+        'encrypted:{"email":"test@example.com","password":"pass","phoneNumber":"+972501234567"}',
       longTermToken: 'encrypted_token:long-term-token',
     };
 
@@ -317,9 +318,18 @@ describe('ScraperService', () => {
         longTermToken: 'new-token',
       });
 
-      const result = await service.completeTwoFactor('onezero', credentials, '123456', 'session123');
+      const result = await service.completeTwoFactor(
+        'onezero',
+        credentials,
+        '123456',
+        'session123'
+      );
 
-      expect(mockAdapter.completeTwoFactor).toHaveBeenCalledWith(credentials, '123456', 'session123');
+      expect(mockAdapter.completeTwoFactor).toHaveBeenCalledWith(
+        credentials,
+        '123456',
+        'session123'
+      );
       expect(result.success).toBe(true);
       expect(result.longTermToken).toBe('new-token');
     });
@@ -328,11 +338,15 @@ describe('ScraperService', () => {
       mockAdapter.requiresTwoFactor = false;
       mockAdapter.completeTwoFactor = undefined;
 
-      const result = await service.completeTwoFactor('onezero', credentials, '123456', 'session123');
+      const result = await service.completeTwoFactor(
+        'onezero',
+        credentials,
+        '123456',
+        'session123'
+      );
 
       expect(result.success).toBe(false);
       expect(result.errorMessage).toContain('does not require 2FA');
     });
   });
 });
-

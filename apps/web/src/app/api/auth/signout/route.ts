@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { prisma } from '@sfam/db';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 /**
  * POST /api/auth/signout
@@ -13,11 +13,13 @@ export async function POST() {
 
     if (sessionToken) {
       // Delete session from database
-      await prisma.session.delete({
-        where: { sessionToken },
-      }).catch(() => {
-        // Session might already be deleted
-      });
+      await prisma.session
+        .delete({
+          where: { sessionToken },
+        })
+        .catch(() => {
+          // Session might already be deleted
+        });
 
       // Clear the session cookie
       cookieStore.delete('authjs.session-token');
@@ -29,7 +31,3 @@ export async function POST() {
     return NextResponse.json({ success: true }); // Still succeed to clear client state
   }
 }
-
-
-
-

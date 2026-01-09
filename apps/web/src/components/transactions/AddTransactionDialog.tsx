@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Plus, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Category {
   id: string;
@@ -83,7 +83,7 @@ export function AddTransactionDialog({
       date: new Date(date),
       description,
       merchant: merchant || undefined,
-      amount: parseFloat(amount),
+      amount: Number.parseFloat(amount),
       direction,
       categoryId: categoryId || undefined,
       notes: notes || undefined,

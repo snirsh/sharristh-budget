@@ -1,7 +1,7 @@
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter, type Context } from '@sfam/api';
-import { prisma } from '@sfam/db';
 import { auth } from '@/lib/auth';
+import { type Context, appRouter } from '@sfam/api';
+import { prisma } from '@sfam/db';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
 /**
  * Get user's primary household ID
@@ -102,4 +102,3 @@ const handler = (req: Request) =>
   });
 
 export { handler as GET, handler as POST };
-

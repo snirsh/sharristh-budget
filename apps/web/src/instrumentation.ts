@@ -21,10 +21,10 @@ export const register = async () => {
       try {
         const chromium = await import('@sparticuz/chromium');
         const executablePath = await chromium.default.executablePath();
-        
+
         // Set executable path (some libraries look for this env var)
         process.env.PUPPETEER_EXECUTABLE_PATH = executablePath;
-        
+
         console.log('[Instrumentation] Chromium configuration:', {
           executablePath,
           argsCount: chromium.default.args.length,
@@ -47,4 +47,3 @@ export const register = async () => {
     console.log('[Instrumentation] Server-side services initialized');
   }
 };
-

@@ -30,12 +30,9 @@ export function wouldCreateCycle(
 /**
  * Gets all descendant IDs of a category (children, grandchildren, etc.)
  */
-export function getDescendantIds(
-  categoryId: string,
-  categories: Category[]
-): Set<string> {
+export function getDescendantIds(categoryId: string, categories: Category[]): Set<string> {
   const descendants = new Set<string>();
-  
+
   const collectDescendants = (parentId: string) => {
     const children = categories.filter((c) => c.parentCategoryId === parentId);
     for (const child of children) {
@@ -43,7 +40,7 @@ export function getDescendantIds(
       collectDescendants(child.id);
     }
   };
-  
+
   collectDescendants(categoryId);
   return descendants;
 }
@@ -51,38 +48,32 @@ export function getDescendantIds(
 /**
  * Gets all ancestor IDs of a category (parent, grandparent, etc.)
  */
-export function getAncestorIds(
-  categoryId: string,
-  categories: Category[]
-): Set<string> {
+export function getAncestorIds(categoryId: string, categories: Category[]): Set<string> {
   const ancestors = new Set<string>();
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
-  
+
   let current = categoryMap.get(categoryId);
   while (current?.parentCategoryId) {
     ancestors.add(current.parentCategoryId);
     current = categoryMap.get(current.parentCategoryId);
   }
-  
+
   return ancestors;
 }
 
 /**
  * Gets the full path of a category (from root to this category)
  */
-export function getCategoryPath(
-  categoryId: string,
-  categories: Category[]
-): Category[] {
+export function getCategoryPath(categoryId: string, categories: Category[]): Category[] {
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
   const path: Category[] = [];
-  
+
   let current = categoryMap.get(categoryId);
   while (current) {
     path.unshift(current);
     current = current.parentCategoryId ? categoryMap.get(current.parentCategoryId) : undefined;
   }
-  
+
   return path;
 }
 
@@ -92,7 +83,7 @@ export function getCategoryPath(
 export function buildCategoryTree(categories: Category[]): Category[] {
   const categoryMap = new Map(categories.map((c) => [c.id, { ...c }]));
   const roots: Category[] = [];
-  
+
   for (const category of categoryMap.values()) {
     if (category.parentCategoryId) {
       const parent = categoryMap.get(category.parentCategoryId);
@@ -104,7 +95,7 @@ export function buildCategoryTree(categories: Category[]): Category[] {
       roots.push(category);
     }
   }
-  
+
   return roots.sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
@@ -119,19 +110,15 @@ export function getAvailableParents(
 ): Category[] {
   if (!categoryId) {
     // New category - all root categories are available
-    return categories.filter((c) => 
-      !c.parentCategoryId && 
-      c.isActive &&
-      (!targetType || c.type === targetType)
+    return categories.filter(
+      (c) => !c.parentCategoryId && c.isActive && (!targetType || c.type === targetType)
     );
   }
 
   const excludeIds = new Set([categoryId, ...getDescendantIds(categoryId, categories)]);
-  
-  return categories.filter((c) => 
-    !excludeIds.has(c.id) && 
-    c.isActive &&
-    (!targetType || c.type === targetType)
+
+  return categories.filter(
+    (c) => !excludeIds.has(c.id) && c.isActive && (!targetType || c.type === targetType)
   );
 }
 
@@ -154,7 +141,7 @@ export function validateCategoryUpdate(
   _isSystem?: boolean // Kept for backward compatibility but no longer used
 ): CategoryUpdateValidation {
   const errors: string[] = [];
-  
+
   // Validate name
   if (update.name !== undefined) {
     if (update.name.trim().length === 0) {
@@ -164,13 +151,13 @@ export function validateCategoryUpdate(
       errors.push('Category name cannot exceed 50 characters');
     }
   }
-  
+
   // Validate parent change
   if (update.parentCategoryId !== undefined) {
     if (wouldCreateCycle(categoryId, update.parentCategoryId, categories)) {
       errors.push('Cannot create circular category hierarchy');
     }
-    
+
     // Validate parent exists and is active
     if (update.parentCategoryId) {
       const parent = categories.find((c) => c.id === update.parentCategoryId);
@@ -181,7 +168,7 @@ export function validateCategoryUpdate(
       }
     }
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
@@ -227,9 +214,9 @@ export function validateCategoryDelete(
 ): CategoryDeleteValidation {
   const errors: string[] = [];
   const warnings: string[] = [];
-  
+
   const category = categories.find((c) => c.id === categoryId);
-  
+
   if (!category) {
     return {
       canDelete: false,
@@ -238,18 +225,18 @@ export function validateCategoryDelete(
       affectedSubcategories: [],
     };
   }
-  
+
   // Get all subcategories that will be deleted
   const descendantIds = getDescendantIds(categoryId, categories);
   const affectedSubcategories = categories.filter((c) => descendantIds.has(c.id));
-  
+
   // Add warning if there are subcategories
   if (affectedSubcategories.length > 0) {
     warnings.push(
       `This will also delete ${affectedSubcategories.length} subcategor${affectedSubcategories.length === 1 ? 'y' : 'ies'}`
     );
   }
-  
+
   return {
     canDelete: true,
     errors,
@@ -261,11 +248,7 @@ export function validateCategoryDelete(
 /**
  * Gets all category IDs that would be deleted (including descendants)
  */
-export function getCategoryIdsToDelete(
-  categoryId: string,
-  categories: Category[]
-): string[] {
+export function getCategoryIdsToDelete(categoryId: string, categories: Category[]): string[] {
   const descendantIds = getDescendantIds(categoryId, categories);
   return [categoryId, ...Array.from(descendantIds)];
 }
-

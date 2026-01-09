@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import { generateAuthenticationOptions } from '@simplewebauthn/server';
-import { prisma } from '@sfam/db';
-import { storeChallenge, getRPConfig } from '@/lib/webauthn-utils';
 import crypto from 'crypto';
+import { getRPConfig, storeChallenge } from '@/lib/webauthn-utils';
+import { prisma } from '@sfam/db';
+import { generateAuthenticationOptions } from '@simplewebauthn/server';
+import { NextResponse } from 'next/server';
 
 /**
  * POST /api/auth/webauthn/authenticate/options
@@ -59,4 +59,3 @@ export async function POST() {
     );
   }
 }
-

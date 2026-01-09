@@ -1,17 +1,17 @@
 /**
  * Bank Connection Sync Service
- * 
+ *
  * Core sync logic extracted from scheduler.ts for use by:
  * - Vercel cron jobs (/api/cron/sync)
  * - Manual sync triggers (tRPC syncAll)
  * - On-access stale sync (checkAndSync)
- * 
+ *
  * This module is stateless and can be imported in serverless environments.
  */
 
 import { prisma } from '@sfam/db';
-import { scraperService, type BankProvider, type MappedTransaction } from '@sfam/scraper';
 import { categorizeTransaction } from '@sfam/domain';
+import { type BankProvider, type MappedTransaction, scraperService } from '@sfam/scraper';
 
 export interface CronSyncResult {
   success: boolean;
@@ -71,7 +71,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
   for (const connection of connections) {
     try {
       console.log(`[SyncService] Syncing connection ${connection.id} (${connection.displayName})`);
-      
+
       const result = await syncSingleConnection({
         id: connection.id,
         householdId: connection.householdId,
@@ -101,7 +101,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`[SyncService] Error syncing connection ${connection.id}:`, error);
       errors.push(`${connection.displayName}: ${errorMessage}`);
-      
+
       results?.push({
         connectionId: connection.id,
         displayName: connection.displayName,
@@ -111,7 +111,9 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
     }
   }
 
-  console.log(`[SyncService] Completed: ${successCount}/${connections.length} successful, ${totalNew} new transactions`);
+  console.log(
+    `[SyncService] Completed: ${successCount}/${connections.length} successful, ${totalNew} new transactions`
+  );
 
   return {
     success: successCount > 0 || connections.length === 0,
@@ -130,7 +132,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
  */
 export async function syncStaleConnectionsForHousehold(
   householdId: string,
-  staleThresholdHours: number = 12
+  staleThresholdHours = 12
 ): Promise<CronSyncResult> {
   console.log(`[SyncService] Checking stale connections for household ${householdId}`);
 
@@ -141,10 +143,7 @@ export async function syncStaleConnectionsForHousehold(
     where: {
       householdId,
       isActive: true,
-      OR: [
-        { lastSyncAt: null },
-        { lastSyncAt: { lt: staleThreshold } },
-      ],
+      OR: [{ lastSyncAt: null }, { lastSyncAt: { lt: staleThreshold } }],
     },
   });
 
@@ -213,7 +212,7 @@ export async function syncStaleConnectionsForHousehold(
  */
 export async function hasStaleConnections(
   householdId: string,
-  staleThresholdHours: number = 12
+  staleThresholdHours = 12
 ): Promise<boolean> {
   const staleThreshold = new Date();
   staleThreshold.setHours(staleThreshold.getHours() - staleThresholdHours);
@@ -222,10 +221,7 @@ export async function hasStaleConnections(
     where: {
       householdId,
       isActive: true,
-      OR: [
-        { lastSyncAt: null },
-        { lastSyncAt: { lt: staleThreshold } },
-      ],
+      OR: [{ lastSyncAt: null }, { lastSyncAt: { lt: staleThreshold } }],
     },
   });
 
@@ -275,7 +271,9 @@ async function syncSingleConnection(connection: {
     if (connection.lastSyncAt) {
       startDate = new Date(connection.lastSyncAt);
       startDate.setDate(startDate.getDate() - 3); // 3-day buffer for delayed transactions
-      console.log(`[SyncService] Fetching transactions since ${startDate.toISOString()} (last sync: ${connection.lastSyncAt.toISOString()})`);
+      console.log(
+        `[SyncService] Fetching transactions since ${startDate.toISOString()} (last sync: ${connection.lastSyncAt.toISOString()})`
+      );
     } else {
       console.log('[SyncService] No previous sync, using default lookback period');
     }
@@ -294,7 +292,7 @@ async function syncSingleConnection(connection: {
 
     if (!result.success) {
       // Check if this is an authentication error
-      const isAuthError = 
+      const isAuthError =
         result.errorType === 'AUTH_REQUIRED' ||
         result.errorMessage?.includes('re-authenticate') ||
         result.errorMessage?.includes('expired') ||
@@ -361,7 +359,7 @@ async function syncSingleConnection(connection: {
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     await prisma.syncJob.update({
       where: { id: syncJob.id },
       data: {
@@ -448,7 +446,7 @@ async function importTransactions(
     try {
       // Try to use external category first
       let validCategoryId: string | null = null;
-      let categorizationSource: string = 'fallback';
+      let categorizationSource = 'fallback';
 
       if (txn.externalCategory) {
         // Look for existing category with this name

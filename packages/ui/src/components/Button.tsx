@@ -1,38 +1,29 @@
-import {
-  Pressable,
-  type PressableProps,
-  Text,
-  ActivityIndicator,
-  View,
-} from 'react-native';
+import { type VariantProps, cva } from 'class-variance-authority';
+import { ActivityIndicator, Pressable, type PressableProps, Text, View } from 'react-native';
 import { cn } from '../utils';
-import { cva, type VariantProps } from 'class-variance-authority';
 
-const buttonVariants = cva(
-  'flex-row items-center justify-center rounded-lg active:opacity-80',
-  {
-    variants: {
-      variant: {
-        primary: 'bg-primary-500',
-        secondary: 'bg-gray-100',
-        outline: 'border border-gray-300 bg-transparent',
-        ghost: 'bg-transparent',
-        danger: 'bg-danger-500',
-        success: 'bg-success-500',
-      },
-      size: {
-        sm: 'px-3 py-2',
-        md: 'px-4 py-3',
-        lg: 'px-6 py-4',
-        icon: 'p-2',
-      },
+const buttonVariants = cva('flex-row items-center justify-center rounded-lg active:opacity-80', {
+  variants: {
+    variant: {
+      primary: 'bg-primary-500',
+      secondary: 'bg-gray-100',
+      outline: 'border border-gray-300 bg-transparent',
+      ghost: 'bg-transparent',
+      danger: 'bg-danger-500',
+      success: 'bg-success-500',
     },
-    defaultVariants: {
-      variant: 'primary',
-      size: 'md',
+    size: {
+      sm: 'px-3 py-2',
+      md: 'px-4 py-3',
+      lg: 'px-6 py-4',
+      icon: 'p-2',
     },
-  }
-);
+  },
+  defaultVariants: {
+    variant: 'primary',
+    size: 'md',
+  },
+});
 
 const buttonTextVariants = cva('font-medium', {
   variants: {
@@ -84,11 +75,7 @@ export function Button({
 
   return (
     <Pressable
-      className={cn(
-        buttonVariants({ variant, size }),
-        isDisabled && 'opacity-50',
-        className
-      )}
+      className={cn(buttonVariants({ variant, size }), isDisabled && 'opacity-50', className)}
       disabled={isDisabled}
       {...props}
     >
@@ -113,4 +100,3 @@ export function Button({
     </Pressable>
   );
 }
-

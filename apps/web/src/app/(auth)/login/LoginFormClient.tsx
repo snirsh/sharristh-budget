@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Fingerprint, Loader2, AlertCircle } from 'lucide-react';
+import {
+  authenticatePasskey,
+  isPlatformAuthenticatorAvailable,
+  isWebAuthnSupported,
+} from '@/lib/auth-client';
+import { AlertCircle, Fingerprint, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { authenticatePasskey, isPlatformAuthenticatorAvailable, isWebAuthnSupported } from '@/lib/auth-client';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function LoginFormClient() {
   const searchParams = useSearchParams();
@@ -14,7 +18,10 @@ export default function LoginFormClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
-  const info = message === 'registration_closed' ? 'Registration is closed. This app only allows one user.' : null;
+  const info =
+    message === 'registration_closed'
+      ? 'Registration is closed. This app only allows one user.'
+      : null;
 
   useEffect(() => {
     // Check WebAuthn support
@@ -52,11 +59,10 @@ export default function LoginFormClient() {
           <div className="flex gap-3">
             <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-amber-200 text-sm font-medium">
-                Passkeys not supported
-              </p>
+              <p className="text-amber-200 text-sm font-medium">Passkeys not supported</p>
               <p className="text-amber-200/70 text-xs mt-1">
-                Your browser or device doesn&apos;t support passkeys. Please use a modern browser with biometric authentication.
+                Your browser or device doesn&apos;t support passkeys. Please use a modern browser
+                with biometric authentication.
               </p>
             </div>
           </div>
@@ -115,9 +121,7 @@ export default function LoginFormClient() {
           <div className="w-full border-t border-white/10" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-transparent text-slate-500">
-            New here?
-          </span>
+          <span className="px-4 bg-transparent text-slate-500">New here?</span>
         </div>
       </div>
 

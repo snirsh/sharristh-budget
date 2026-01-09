@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { router, protectedProcedure } from '../trpc';
-import { createCategorySchema, updateCategorySchema } from '@sfam/domain/schemas';
 import type { PrismaClient } from '@sfam/db';
+import { createCategorySchema, updateCategorySchema } from '@sfam/domain/schemas';
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
 
 export const categoriesRouter = router({
   /**
@@ -160,10 +160,7 @@ export const categoriesRouter = router({
             return isDescendant(category.parentCategoryId, potentialAncestorId);
           };
 
-          const wouldCreateCycle = await isDescendant(
-            input.data.parentCategoryId,
-            input.id
-          );
+          const wouldCreateCycle = await isDescendant(input.data.parentCategoryId, input.id);
           if (wouldCreateCycle) {
             throw new Error('Cannot create circular category hierarchy');
           }
@@ -383,54 +380,58 @@ export const categoriesRouter = router({
     const allCategoryIds = [input, ...descendantIds];
 
     // Use a transaction to ensure atomicity
-    await ctx.prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>) => {
-      // Unassign transactions (set categoryId to null)
-      await tx.transaction.updateMany({
-        where: {
-          householdId: ctx.householdId,
-          categoryId: { in: allCategoryIds },
-        },
-        data: { categoryId: null, needsReview: true },
-      });
+    await ctx.prisma.$transaction(
+      async (
+        tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>
+      ) => {
+        // Unassign transactions (set categoryId to null)
+        await tx.transaction.updateMany({
+          where: {
+            householdId: ctx.householdId,
+            categoryId: { in: allCategoryIds },
+          },
+          data: { categoryId: null, needsReview: true },
+        });
 
-      // Delete budgets
-      await tx.budget.deleteMany({
-        where: {
-          householdId: ctx.householdId,
-          categoryId: { in: allCategoryIds },
-        },
-      });
+        // Delete budgets
+        await tx.budget.deleteMany({
+          where: {
+            householdId: ctx.householdId,
+            categoryId: { in: allCategoryIds },
+          },
+        });
 
-      // Delete category rules
-      await tx.categoryRule.deleteMany({
-        where: {
-          householdId: ctx.householdId,
-          categoryId: { in: allCategoryIds },
-        },
-      });
+        // Delete category rules
+        await tx.categoryRule.deleteMany({
+          where: {
+            householdId: ctx.householdId,
+            categoryId: { in: allCategoryIds },
+          },
+        });
 
-      // Delete recurring templates' category references
-      await tx.recurringTransactionTemplate.updateMany({
-        where: {
-          householdId: ctx.householdId,
-          defaultCategoryId: { in: allCategoryIds },
-        },
-        data: { defaultCategoryId: null },
-      });
+        // Delete recurring templates' category references
+        await tx.recurringTransactionTemplate.updateMany({
+          where: {
+            householdId: ctx.householdId,
+            defaultCategoryId: { in: allCategoryIds },
+          },
+          data: { defaultCategoryId: null },
+        });
 
-      // Delete categories (children first, then parent)
-      // Delete in reverse order to avoid foreign key issues
-      for (const id of [...descendantIds].reverse()) {
+        // Delete categories (children first, then parent)
+        // Delete in reverse order to avoid foreign key issues
+        for (const id of [...descendantIds].reverse()) {
+          await tx.category.delete({
+            where: { id, householdId: ctx.householdId },
+          });
+        }
+
+        // Finally delete the main category
         await tx.category.delete({
-          where: { id, householdId: ctx.householdId },
+          where: { id: input, householdId: ctx.householdId },
         });
       }
-
-      // Finally delete the main category
-      await tx.category.delete({
-        where: { id: input, householdId: ctx.householdId },
-      });
-    });
+    );
 
     return { success: true, deletedCount: allCategoryIds.length };
   }),
@@ -704,40 +705,40 @@ export const categoriesRouter = router({
   migrateToNewSchema: protectedProcedure.mutation(async ({ ctx }) => {
     // Category mapping for smart migration
     const categoryMapping: Record<string, string> = {
-      'משכורת': 'Salary (משכורת)',
-      'Salary': 'Salary (משכורת)',
+      משכורת: 'Salary (משכורת)',
+      Salary: 'Salary (משכורת)',
       'Salary (משכורת)': 'Salary (משכורת)',
-      'פרילנס': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
-      'Freelance': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
+      פרילנס: 'Freelance / Side Jobs (עבודות צד/פרילנס)',
+      Freelance: 'Freelance / Side Jobs (עבודות צד/פרילנס)',
       'Freelance (פרילנס)': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
-      'מתנות': 'Gifts & Transfers (מתנות והעברות)',
-      'Gifts': 'Gifts & Transfers (מתנות והעברות)',
+      מתנות: 'Gifts & Transfers (מתנות והעברות)',
+      Gifts: 'Gifts & Transfers (מתנות והעברות)',
       'Gifts (מתנות)': 'Gifts & Transfers (מתנות והעברות)',
       'הכנסה אחרת': 'Other Income (הכנסה אחרת)',
       'Other Income': 'Other Income (הכנסה אחרת)',
       'Other Income (הכנסה אחרת)': 'Other Income (הכנסה אחרת)',
       'שכר דירה': 'Rent / Mortgage (שכר דירה / משכנתא)',
-      'Rent': 'Rent / Mortgage (שכר דירה / משכנתא)',
+      Rent: 'Rent / Mortgage (שכר דירה / משכנתא)',
       'Rent (שכר דירה)': 'Rent / Mortgage (שכר דירה / משכנתא)',
-      'חשמל': 'Electricity (חשמל)',
-      'Electricity': 'Electricity (חשמל)',
+      חשמל: 'Electricity (חשמל)',
+      Electricity: 'Electricity (חשמל)',
       'Electricity (חשמל)': 'Electricity (חשמל)',
-      'מכולת': 'Supermarket (סופרמרקט)',
-      'Groceries': 'Supermarket (סופרמרקט)',
+      מכולת: 'Supermarket (סופרמרקט)',
+      Groceries: 'Supermarket (סופרמרקט)',
       'Groceries (מכולת)': 'Supermarket (סופרמרקט)',
-      'מסעדות': 'Restaurants (מסעדות)',
-      'Restaurants': 'Restaurants (מסעדות)',
+      מסעדות: 'Restaurants (מסעדות)',
+      Restaurants: 'Restaurants (מסעדות)',
       'Restaurants (מסעדות)': 'Restaurants (מסעדות)',
-      'תחבורה': 'Transportation (תחבורה)',
-      'Transportation': 'Transportation (תחבורה)',
+      תחבורה: 'Transportation (תחבורה)',
+      Transportation: 'Transportation (תחבורה)',
       'Transportation (תחבורה)': 'Transportation (תחבורה)',
-      'בילויים': 'Entertainment (בידור)',
-      'Entertainment': 'Entertainment (בידור)',
+      בילויים: 'Entertainment (בידור)',
+      Entertainment: 'Entertainment (בידור)',
       'Entertainment (בילויים)': 'Entertainment (בידור)',
-      'ביטוחים': 'Insurance (ביטוחים)',
-      'Insurance': 'Insurance (ביטוחים)',
-      'אחר': 'Miscellaneous (שונות)',
-      'Other': 'Miscellaneous (שונות)',
+      ביטוחים: 'Insurance (ביטוחים)',
+      Insurance: 'Insurance (ביטוחים)',
+      אחר: 'Miscellaneous (שונות)',
+      Other: 'Miscellaneous (שונות)',
       'Other (אחר)': 'Miscellaneous (שונות)',
     };
 
@@ -1056,4 +1057,3 @@ export const categoriesRouter = router({
     };
   }),
 });
-

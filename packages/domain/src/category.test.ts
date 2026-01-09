@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  wouldCreateCycle,
-  getDescendantIds,
   getAncestorIds,
-  getCategoryPath,
   getAvailableParents,
-  validateCategoryUpdate,
-  validateCategoryDelete,
   getCategoryDepth,
-  hasChildren,
-  getDirectChildren,
   getCategoryIdsToDelete,
+  getCategoryPath,
+  getDescendantIds,
+  getDirectChildren,
+  hasChildren,
+  validateCategoryDelete,
+  validateCategoryUpdate,
+  wouldCreateCycle,
 } from './category';
 import type { Category } from './types';
 
@@ -158,7 +158,7 @@ describe('wouldCreateCycle', () => {
 describe('getDescendantIds', () => {
   it('should return all descendants of a category', () => {
     const descendants = getDescendantIds('cat-varying', mockCategories);
-    
+
     expect(descendants.has('cat-food')).toBe(true);
     expect(descendants.has('cat-groceries')).toBe(true);
     expect(descendants.has('cat-restaurants')).toBe(true);
@@ -167,13 +167,13 @@ describe('getDescendantIds', () => {
 
   it('should return empty set for leaf category', () => {
     const descendants = getDescendantIds('cat-groceries', mockCategories);
-    
+
     expect(descendants.size).toBe(0);
   });
 
   it('should return direct children and grandchildren', () => {
     const descendants = getDescendantIds('cat-expected', mockCategories);
-    
+
     expect(descendants.has('cat-housing')).toBe(true);
     expect(descendants.has('cat-rent')).toBe(true);
     expect(descendants.has('cat-utilities')).toBe(true);
@@ -184,7 +184,7 @@ describe('getDescendantIds', () => {
 describe('getAncestorIds', () => {
   it('should return all ancestors of a category', () => {
     const ancestors = getAncestorIds('cat-groceries', mockCategories);
-    
+
     expect(ancestors.has('cat-food')).toBe(true);
     expect(ancestors.has('cat-varying')).toBe(true);
     expect(ancestors.size).toBe(2);
@@ -192,13 +192,13 @@ describe('getAncestorIds', () => {
 
   it('should return empty set for root category', () => {
     const ancestors = getAncestorIds('cat-varying', mockCategories);
-    
+
     expect(ancestors.size).toBe(0);
   });
 
   it('should return single parent for direct child', () => {
     const ancestors = getAncestorIds('cat-food', mockCategories);
-    
+
     expect(ancestors.has('cat-varying')).toBe(true);
     expect(ancestors.size).toBe(1);
   });
@@ -207,7 +207,7 @@ describe('getAncestorIds', () => {
 describe('getCategoryPath', () => {
   it('should return full path from root to category', () => {
     const path = getCategoryPath('cat-groceries', mockCategories);
-    
+
     expect(path).toHaveLength(3);
     expect(path[0]?.id).toBe('cat-varying');
     expect(path[1]?.id).toBe('cat-food');
@@ -216,14 +216,14 @@ describe('getCategoryPath', () => {
 
   it('should return single element for root category', () => {
     const path = getCategoryPath('cat-varying', mockCategories);
-    
+
     expect(path).toHaveLength(1);
     expect(path[0]?.id).toBe('cat-varying');
   });
 
   it('should return empty array for non-existent category', () => {
     const path = getCategoryPath('non-existent', mockCategories);
-    
+
     expect(path).toHaveLength(0);
   });
 });
@@ -231,7 +231,7 @@ describe('getCategoryPath', () => {
 describe('getAvailableParents', () => {
   it('should exclude category and its descendants when moving', () => {
     const available = getAvailableParents('cat-food', mockCategories);
-    
+
     // Should not include cat-food, cat-groceries, cat-restaurants
     expect(available.find((c) => c.id === 'cat-food')).toBeUndefined();
     expect(available.find((c) => c.id === 'cat-groceries')).toBeUndefined();
@@ -240,7 +240,7 @@ describe('getAvailableParents', () => {
 
   it('should exclude inactive categories', () => {
     const available = getAvailableParents('cat-food', mockCategories);
-    
+
     expect(available.find((c) => c.id === 'cat-inactive')).toBeUndefined();
   });
 
@@ -266,13 +266,8 @@ describe('getAvailableParents', () => {
 
 describe('validateCategoryUpdate', () => {
   it('should reject empty name', () => {
-    const result = validateCategoryUpdate(
-      'cat-food',
-      { name: '' },
-      mockCategories,
-      false
-    );
-    
+    const result = validateCategoryUpdate('cat-food', { name: '' }, mockCategories, false);
+
     expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Category name cannot be empty');
   });
@@ -284,19 +279,14 @@ describe('validateCategoryUpdate', () => {
       mockCategories,
       false
     );
-    
+
     expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Category name cannot exceed 50 characters');
   });
 
   it('should allow type change for any category including system', () => {
-    const result = validateCategoryUpdate(
-      'cat-income',
-      { type: 'expense' },
-      mockCategories,
-      true
-    );
-    
+    const result = validateCategoryUpdate('cat-income', { type: 'expense' }, mockCategories, true);
+
     expect(result.isValid).toBe(true);
   });
 
@@ -307,7 +297,7 @@ describe('validateCategoryUpdate', () => {
       mockCategories,
       false
     );
-    
+
     expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Cannot create circular category hierarchy');
   });
@@ -319,7 +309,7 @@ describe('validateCategoryUpdate', () => {
       mockCategories,
       false
     );
-    
+
     expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Parent category not found');
   });
@@ -331,7 +321,7 @@ describe('validateCategoryUpdate', () => {
       mockCategories,
       false
     );
-    
+
     expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Cannot move to an inactive parent category');
   });
@@ -343,7 +333,7 @@ describe('validateCategoryUpdate', () => {
       mockCategories,
       false
     );
-    
+
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
@@ -355,7 +345,7 @@ describe('validateCategoryUpdate', () => {
       mockCategories,
       false
     );
-    
+
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
@@ -392,7 +382,7 @@ describe('hasChildren', () => {
 describe('getDirectChildren', () => {
   it('should return direct children sorted by sortOrder', () => {
     const children = getDirectChildren('cat-food', mockCategories);
-    
+
     expect(children).toHaveLength(2);
     expect(children[0]?.id).toBe('cat-groceries');
     expect(children[1]?.id).toBe('cat-restaurants');
@@ -400,13 +390,13 @@ describe('getDirectChildren', () => {
 
   it('should return empty array for leaf category', () => {
     const children = getDirectChildren('cat-groceries', mockCategories);
-    
+
     expect(children).toHaveLength(0);
   });
 
   it('should return all direct children of root', () => {
     const children = getDirectChildren('cat-housing', mockCategories);
-    
+
     expect(children).toHaveLength(2);
     expect(children[0]?.id).toBe('cat-rent');
     expect(children[1]?.id).toBe('cat-utilities');
@@ -416,28 +406,28 @@ describe('getDirectChildren', () => {
 describe('validateCategoryDelete', () => {
   it('should allow deletion of any category including system', () => {
     const result = validateCategoryDelete('cat-income', mockCategories);
-    
+
     expect(result.canDelete).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
 
   it('should allow deletion of regular categories', () => {
     const result = validateCategoryDelete('cat-groceries', mockCategories);
-    
+
     expect(result.canDelete).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
 
   it('should return error for non-existent category', () => {
     const result = validateCategoryDelete('non-existent', mockCategories);
-    
+
     expect(result.canDelete).toBe(false);
     expect(result.errors).toContain('Category not found');
   });
 
   it('should warn about affected subcategories', () => {
     const result = validateCategoryDelete('cat-food', mockCategories);
-    
+
     expect(result.canDelete).toBe(true);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings[0]).toContain('2 subcategories');
@@ -448,7 +438,7 @@ describe('validateCategoryDelete', () => {
 
   it('should not warn if no subcategories', () => {
     const result = validateCategoryDelete('cat-groceries', mockCategories);
-    
+
     expect(result.canDelete).toBe(true);
     expect(result.warnings).toHaveLength(0);
     expect(result.affectedSubcategories).toHaveLength(0);
@@ -456,7 +446,7 @@ describe('validateCategoryDelete', () => {
 
   it('should include deep hierarchy in affected subcategories', () => {
     const result = validateCategoryDelete('cat-housing', mockCategories);
-    
+
     expect(result.canDelete).toBe(true);
     expect(result.affectedSubcategories).toHaveLength(2);
     expect(result.affectedSubcategories.map((c) => c.id)).toContain('cat-rent');
@@ -467,7 +457,7 @@ describe('validateCategoryDelete', () => {
 describe('getCategoryIdsToDelete', () => {
   it('should return category id and all descendant ids', () => {
     const ids = getCategoryIdsToDelete('cat-food', mockCategories);
-    
+
     expect(ids).toHaveLength(3);
     expect(ids).toContain('cat-food');
     expect(ids).toContain('cat-groceries');
@@ -476,14 +466,14 @@ describe('getCategoryIdsToDelete', () => {
 
   it('should return only category id for leaf category', () => {
     const ids = getCategoryIdsToDelete('cat-groceries', mockCategories);
-    
+
     expect(ids).toHaveLength(1);
     expect(ids).toContain('cat-groceries');
   });
 
   it('should include all nested descendants', () => {
     const ids = getCategoryIdsToDelete('cat-expected', mockCategories);
-    
+
     expect(ids).toHaveLength(4);
     expect(ids).toContain('cat-expected');
     expect(ids).toContain('cat-housing');
@@ -491,4 +481,3 @@ describe('getCategoryIdsToDelete', () => {
     expect(ids).toContain('cat-utilities');
   });
 });
-

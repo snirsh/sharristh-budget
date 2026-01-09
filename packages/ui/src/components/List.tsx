@@ -1,4 +1,4 @@
-import { View, Text, Pressable, type ViewProps } from 'react-native';
+import { Pressable, Text, View, type ViewProps } from 'react-native';
 import { cn } from '../utils';
 
 export interface ListItemProps extends ViewProps {
@@ -33,9 +33,7 @@ export function ListItem({
       {leftContent && <View className="mr-3">{leftContent}</View>}
       <View className="flex-1">
         <Text className="text-base font-medium text-gray-900">{title}</Text>
-        {subtitle && (
-          <Text className="mt-0.5 text-sm text-gray-500">{subtitle}</Text>
-        )}
+        {subtitle && <Text className="mt-0.5 text-sm text-gray-500">{subtitle}</Text>}
       </View>
       {rightContent && <View className="ml-3">{rightContent}</View>}
     </View>
@@ -58,22 +56,13 @@ export interface ListSectionProps extends ViewProps {
   children: React.ReactNode;
 }
 
-export function ListSection({
-  className,
-  title,
-  children,
-  ...props
-}: ListSectionProps) {
+export function ListSection({ className, title, children, ...props }: ListSectionProps) {
   return (
     <View className={cn('mb-6', className)} {...props}>
       {title && (
-        <Text className="mb-2 px-4 text-sm font-medium uppercase text-gray-500">
-          {title}
-        </Text>
+        <Text className="mb-2 px-4 text-sm font-medium uppercase text-gray-500">{title}</Text>
       )}
-      <View className="overflow-hidden rounded-lg border border-gray-200">
-        {children}
-      </View>
+      <View className="overflow-hidden rounded-lg border border-gray-200">{children}</View>
     </View>
   );
 }
@@ -93,19 +82,11 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <View
-      className={cn('items-center justify-center p-8', className)}
-      {...props}
-    >
+    <View className={cn('items-center justify-center p-8', className)} {...props}>
       {icon && <View className="mb-4">{icon}</View>}
-      <Text className="text-center text-lg font-semibold text-gray-900">
-        {title}
-      </Text>
-      {description && (
-        <Text className="mt-2 text-center text-gray-500">{description}</Text>
-      )}
+      <Text className="text-center text-lg font-semibold text-gray-900">{title}</Text>
+      {description && <Text className="mt-2 text-center text-gray-500">{description}</Text>}
       {action && <View className="mt-4">{action}</View>}
     </View>
   );
 }
-

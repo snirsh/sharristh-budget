@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useReportWebVitals } from 'next/web-vitals';
+import { useEffect } from 'react';
 
 /**
  * Web Vitals Performance Monitoring
@@ -20,16 +20,12 @@ import { useReportWebVitals } from 'next/web-vitals';
 export function WebVitals() {
   useReportWebVitals((metric) => {
     // Format metric value based on type
-    const value = Math.round(
-      metric.name === 'CLS' ? metric.value * 1000 : metric.value
-    );
+    const value = Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value);
 
     // Development: Log all metrics to console
     if (process.env.NODE_ENV === 'development') {
       const rating = getMetricRating(metric.name, metric.value);
-      console.log(
-        `[Web Vitals] ${metric.name}: ${value}${getMetricUnit(metric.name)} (${rating})`
-      );
+      console.log(`[Web Vitals] ${metric.name}: ${value}${getMetricUnit(metric.name)} (${rating})`);
     }
 
     // Production: Send to analytics service
@@ -59,10 +55,7 @@ export function WebVitals() {
 /**
  * Get performance rating for a metric
  */
-function getMetricRating(
-  name: string,
-  value: number
-): 'good' | 'needs-improvement' | 'poor' {
+function getMetricRating(name: string, value: number): 'good' | 'needs-improvement' | 'poor' {
   const thresholds: Record<string, [number, number]> = {
     CLS: [0.1, 0.25],
     FCP: [1800, 3000],

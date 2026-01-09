@@ -65,7 +65,7 @@ export function formatCurrency(amount: number, currency = 'ILS'): string {
 
 export function formatMonth(month: string): string {
   const [year, monthNum] = month.split('-');
-  const date = new Date(parseInt(year ?? '2024'), parseInt(monthNum ?? '1') - 1);
+  const date = new Date(Number.parseInt(year ?? '2024'), Number.parseInt(monthNum ?? '1') - 1);
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
@@ -85,4 +85,3 @@ export function formatDate(date: Date): string {
 export function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
-

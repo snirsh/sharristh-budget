@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 interface InsightCardProps {
@@ -29,13 +29,12 @@ export function InsightCard({
   // Determine trend color based on whether higher is good or bad
   const getTrendColor = () => {
     if (!trend || trend === 'flat') return 'text-gray-500 dark:text-gray-400';
-    
-    const isPositiveTrend = 
-      (trend === 'up' && trendPositive === 'up') || 
-      (trend === 'down' && trendPositive === 'down');
-    
-    return isPositiveTrend 
-      ? 'text-success-600 dark:text-success-400' 
+
+    const isPositiveTrend =
+      (trend === 'up' && trendPositive === 'up') || (trend === 'down' && trendPositive === 'down');
+
+    return isPositiveTrend
+      ? 'text-success-600 dark:text-success-400'
       : 'text-danger-600 dark:text-danger-400';
   };
 
@@ -47,30 +46,20 @@ export function InsightCard({
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           {title}
         </span>
-        {Icon && (
-          <Icon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-        )}
+        {Icon && <Icon className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
       </div>
-      
-      <p className="text-xl font-bold text-gray-900 dark:text-white">
-        {value}
-      </p>
-      
+
+      <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
+
       {(subtitle || trend) && (
         <div className="flex items-center gap-1.5 mt-1">
           {trend && (
             <div className={cn('flex items-center gap-0.5', getTrendColor())}>
               <TrendIcon className="h-3.5 w-3.5" />
-              {trendValue && (
-                <span className="text-xs font-medium">{trendValue}</span>
-              )}
+              {trendValue && <span className="text-xs font-medium">{trendValue}</span>}
             </div>
           )}
-          {subtitle && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {subtitle}
-            </span>
-          )}
+          {subtitle && <span className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</span>}
         </div>
       )}
     </div>
@@ -93,7 +82,12 @@ export function CompactInsightCard({
   className,
 }: CompactInsightCardProps) {
   return (
-    <div className={cn('flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50', className)}>
+    <div
+      className={cn(
+        'flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50',
+        className
+      )}
+    >
       {Icon && (
         <div className={cn('p-2 rounded-lg bg-white dark:bg-gray-600', iconColor)}>
           <Icon className="h-4 w-4" />

@@ -13,14 +13,14 @@ const prisma = new PrismaClient();
 // Category mapping logic - maps old category names to new ones
 const categoryMapping: Record<string, string> = {
   // Income mappings (English and Hebrew)
-  'משכורת': 'Salary (משכורת)',
-  'Salary': 'Salary (משכורת)',
+  משכורת: 'Salary (משכורת)',
+  Salary: 'Salary (משכורת)',
   'Salary (משכורת)': 'Salary (משכורת)',
-  'פרילנס': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
-  'Freelance': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
+  פרילנס: 'Freelance / Side Jobs (עבודות צד/פרילנס)',
+  Freelance: 'Freelance / Side Jobs (עבודות צד/פרילנס)',
   'Freelance (פרילנס)': 'Freelance / Side Jobs (עבודות צד/פרילנס)',
-  'מתנות': 'Gifts & Transfers (מתנות והעברות)',
-  'Gifts': 'Gifts & Transfers (מתנות והעברות)',
+  מתנות: 'Gifts & Transfers (מתנות והעברות)',
+  Gifts: 'Gifts & Transfers (מתנות והעברות)',
   'Gifts (מתנות)': 'Gifts & Transfers (מתנות והעברות)',
   'הכנסה אחרת': 'Other Income (הכנסה אחרת)',
   'Other Income': 'Other Income (הכנסה אחרת)',
@@ -28,64 +28,64 @@ const categoryMapping: Record<string, string> = {
 
   // Expense mappings
   'שכר דירה': 'Rent / Mortgage (שכר דירה / משכנתא)',
-  'Rent': 'Rent / Mortgage (שכר דירה / משכנתא)',
+  Rent: 'Rent / Mortgage (שכר דירה / משכנתא)',
   'Rent (שכר דירה)': 'Rent / Mortgage (שכר דירה / משכנתא)',
-  'חשמל': 'Electricity (חשמל)',
-  'Electricity': 'Electricity (חשמל)',
+  חשמל: 'Electricity (חשמל)',
+  Electricity: 'Electricity (חשמל)',
   'Electricity (חשמל)': 'Electricity (חשמל)',
   'חשמל ומים': 'Utilities (חשמל ומים)',
   'Electricity & Water': 'Utilities (חשמל ומים)',
   'Electricity & Water (חשמל ומים)': 'Utilities (חשמל ומים)',
-  'מים': 'Water (מים)',
-  'Water': 'Water (מים)',
-  'גז': 'Gas (גז)',
-  'Gas': 'Gas (גז)',
-  'ביטוחים': 'Insurance (ביטוחים)',
-  'Insurance': 'Insurance (ביטוחים)',
+  מים: 'Water (מים)',
+  Water: 'Water (מים)',
+  גז: 'Gas (גז)',
+  Gas: 'Gas (גז)',
+  ביטוחים: 'Insurance (ביטוחים)',
+  Insurance: 'Insurance (ביטוחים)',
   'Insurance (ביטוחים)': 'Insurance (ביטוחים)',
   'טלפון ואינטרנט': 'Internet (אינטרנט)',
   'Phone & Internet': 'Internet (אינטרנט)',
   'Phone & Internet (טלפון ואינטרנט)': 'Internet (אינטרנט)',
-  'אינטרנט': 'Internet (אינטרנט)',
-  'Internet': 'Internet (אינטרנט)',
-  'סלולר': 'Cell Phones (סלולר)',
-  'מכולת': 'Supermarket (סופרמרקט)',
-  'Groceries': 'Supermarket (סופרמרקט)',
+  אינטרנט: 'Internet (אינטרנט)',
+  Internet: 'Internet (אינטרנט)',
+  סלולר: 'Cell Phones (סלולר)',
+  מכולת: 'Supermarket (סופרמרקט)',
+  Groceries: 'Supermarket (סופרמרקט)',
   'Groceries (מכולת)': 'Supermarket (סופרמרקט)',
-  'Supermarket': 'Supermarket (סופרמרקט)',
-  'מסעדות': 'Restaurants (מסעדות)',
-  'Restaurants': 'Restaurants (מסעדות)',
+  Supermarket: 'Supermarket (סופרמרקט)',
+  מסעדות: 'Restaurants (מסעדות)',
+  Restaurants: 'Restaurants (מסעדות)',
   'Restaurants (מסעדות)': 'Restaurants (מסעדות)',
-  'קפה': 'Coffee & Snacks (קפה ונשנושים)',
-  'Coffee': 'Coffee & Snacks (קפה ונשנושים)',
-  'תחבורה': 'Transportation (תחבורה)',
-  'Transportation': 'Transportation (תחבורה)',
+  קפה: 'Coffee & Snacks (קפה ונשנושים)',
+  Coffee: 'Coffee & Snacks (קפה ונשנושים)',
+  תחבורה: 'Transportation (תחבורה)',
+  Transportation: 'Transportation (תחבורה)',
   'Transportation (תחבורה)': 'Transportation (תחבורה)',
-  'דלק': 'Fuel (דלק)',
-  'Fuel': 'Fuel (דלק)',
-  'קניות': 'Miscellaneous (שונות)',
-  'Shopping': 'Miscellaneous (שונות)',
+  דלק: 'Fuel (דלק)',
+  Fuel: 'Fuel (דלק)',
+  קניות: 'Miscellaneous (שונות)',
+  Shopping: 'Miscellaneous (שונות)',
   'Shopping (קניות)': 'Miscellaneous (שונות)',
-  'בילויים': 'Entertainment (בידור)',
-  'Entertainment': 'Entertainment (בידור)',
+  בילויים: 'Entertainment (בידור)',
+  Entertainment: 'Entertainment (בידור)',
   'Entertainment (בילויים)': 'Entertainment (בידור)',
-  'בריאות': 'Health & Wellness (בריאות וכושר)',
-  'Healthcare': 'Health & Wellness (בריאות וכושר)',
+  בריאות: 'Health & Wellness (בריאות וכושר)',
+  Healthcare: 'Health & Wellness (בריאות וכושר)',
   'Healthcare (בריאות)': 'Health & Wellness (בריאות וכושר)',
-  'חינוך': 'Education & Personal Growth (לימודים והתפתחות)',
-  'Education': 'Education & Personal Growth (לימודים והתפתחות)',
+  חינוך: 'Education & Personal Growth (לימודים והתפתחות)',
+  Education: 'Education & Personal Growth (לימודים והתפתחות)',
   'Education (חינוך)': 'Education & Personal Growth (לימודים והתפתחות)',
-  'ספורט': 'Gym / Sports (חדר כושר/ספורט)',
-  'Sports': 'Gym / Sports (חדר כושר/ספורט)',
+  ספורט: 'Gym / Sports (חדר כושר/ספורט)',
+  Sports: 'Gym / Sports (חדר כושר/ספורט)',
   'Sports (ספורט)': 'Gym / Sports (חדר כושר/ספורט)',
   'חיות מחמד': 'Pets (חיות מחמד)',
-  'Pets': 'Pets (חיות מחמד)',
+  Pets: 'Pets (חיות מחמד)',
   'Pets (חיות מחמד)': 'Pets (חיות מחמד)',
-  'תיקונים': 'Repairs (תיקונים)',
-  'Repairs': 'Repairs (תיקונים)',
+  תיקונים: 'Repairs (תיקונים)',
+  Repairs: 'Repairs (תיקונים)',
   'Repairs (תיקונים)': 'Repairs (תיקונים)',
-  'אחר': 'Miscellaneous (שונות)',
-  'Other': 'Miscellaneous (שונות)',
+  אחר: 'Miscellaneous (שונות)',
+  Other: 'Miscellaneous (שונות)',
   'Other (אחר)': 'Miscellaneous (שונות)',
 };
 
@@ -354,14 +354,17 @@ async function migrateHousehold(householdId: string) {
       console.log(`   ✓ Mapped: "${oldCat.name}" → "${mappedName}"`);
     } else {
       // Try to find a fallback based on type
-      const fallbackId = oldCat.type === 'income'
-        ? newCategoryMap.get('Other Income (הכנסה אחרת)')
-        : newCategoryMap.get('Miscellaneous (שונות)');
+      const fallbackId =
+        oldCat.type === 'income'
+          ? newCategoryMap.get('Other Income (הכנסה אחרת)')
+          : newCategoryMap.get('Miscellaneous (שונות)');
 
       if (fallbackId) {
         idMapping.set(oldCat.id, fallbackId);
         unmappedCount++;
-        console.log(`   ⚠ Unmapped: "${oldCat.name}" → fallback to ${oldCat.type === 'income' ? 'Other Income' : 'Miscellaneous'}`);
+        console.log(
+          `   ⚠ Unmapped: "${oldCat.name}" → fallback to ${oldCat.type === 'income' ? 'Other Income' : 'Miscellaneous'}`
+        );
       }
     }
   }
@@ -392,7 +395,9 @@ async function migrateHousehold(householdId: string) {
       categoryId: { in: Array.from(idMapping.keys()) },
     },
   });
-  console.log(`   🗑️  Deleted ${budgetsDeleted.count} budgets (users can recreate with new categories)`);
+  console.log(
+    `   🗑️  Deleted ${budgetsDeleted.count} budgets (users can recreate with new categories)`
+  );
 
   // Update category rules
   let rulesUpdated = 0;

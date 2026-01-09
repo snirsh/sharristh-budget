@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
 import { getQueryStats, getSlowQueries } from '@sfam/db';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
 
 /**
  * Performance Monitoring Router
@@ -20,10 +20,7 @@ export const performanceRouter = router({
     return {
       total: stats.total,
       slow: stats.slow,
-      slowPercentage:
-        stats.total > 0
-          ? Math.round((stats.slow / stats.total) * 100)
-          : 0,
+      slowPercentage: stats.total > 0 ? Math.round((stats.slow / stats.total) * 100) : 0,
       average: stats.average,
       p95: stats.p95,
       p99: stats.p99,

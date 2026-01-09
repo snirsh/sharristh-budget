@@ -1,0 +1,84 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "off",
+        "noUnusedImports": "error",
+        "useExhaustiveDependencies": "off",
+        "noUnnecessaryContinue": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noConsoleLog": "off",
+        "noArrayIndexKey": "off",
+        "noGlobalIsNan": "off"
+      },
+      "style": {
+        "noUnusedTemplateLiteral": "off",
+        "useNodejsImportProtocol": "off",
+        "useTemplate": "off",
+        "noNonNullAssertion": "off",
+        "useExponentiationOperator": "off"
+      },
+      "a11y": {
+        "useButtonType": "off",
+        "noLabelWithoutControl": "off",
+        "useKeyWithClickEvents": "off",
+        "noSvgWithoutTitle": "off",
+        "noAutofocus": "off",
+        "useFocusableInteractive": "off",
+        "noNoninteractiveElementToInteractiveRole": "off",
+        "useSemanticElements": "off"
+      },
+      "complexity": {
+        "noForEach": "off",
+        "useLiteralKeys": "off",
+        "useOptionalChain": "off"
+      },
+      "performance": {
+        "noDelete": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "always",
+      "quoteStyle": "single",
+      "trailingCommas": "es5"
+    }
+  },
+  "files": {
+    "ignore": [
+      "**/.turbo/**",
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.next/**",
+      "**/.expo/**",
+      "**/*.config.js",
+      "**/*.config.mjs",
+      "**/pnpm-lock.yaml",
+      "**/package-lock.json",
+      "**/generated/**",
+      "**/.prisma/**",
+      "**/prisma/migrations/**",
+      "**/android/**",
+      "**/ios/**",
+      "**/*.d.ts"
+    ]
+  }
+}

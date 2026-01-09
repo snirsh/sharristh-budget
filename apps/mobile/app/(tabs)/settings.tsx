@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, Pressable, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { useTheme } from '../../lib/theme';
 
 const settingsSections = [
@@ -49,9 +49,7 @@ export default function SettingsScreen() {
               <Text className="text-xl font-bold text-primary-500">S</Text>
             </View>
             <View>
-              <Text className="text-white text-lg font-semibold">
-                The Sharristh Family
-              </Text>
+              <Text className="text-white text-lg font-semibold">The Sharristh Family</Text>
               <Text className="text-primary-100">Alex & Jordan</Text>
             </View>
           </View>
@@ -107,7 +105,9 @@ export default function SettingsScreen() {
                   <View className="flex-1">
                     <Text className="font-medium text-gray-900 dark:text-white">{item.label}</Text>
                     {item.subtitle && (
-                      <Text className="text-sm text-gray-500 dark:text-gray-400">{item.subtitle}</Text>
+                      <Text className="text-sm text-gray-500 dark:text-gray-400">
+                        {item.subtitle}
+                      </Text>
                     )}
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
@@ -125,4 +125,3 @@ export default function SettingsScreen() {
     </ScrollView>
   );
 }
-

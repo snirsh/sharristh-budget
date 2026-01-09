@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { router, protectedProcedure } from '../trpc';
 import { createCategoryRuleSchema } from '@sfam/domain/schemas';
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
 
 export const rulesRouter = router({
   /**
@@ -219,4 +219,3 @@ export const rulesRouter = router({
     return rules.filter((rule) => !rule.category);
   }),
 });
-

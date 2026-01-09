@@ -1,6 +1,6 @@
-import { Suspense } from 'react';
 import { BudgetContent } from '@/components/budget/BudgetContent';
 import { Loader2 } from 'lucide-react';
+import { Suspense } from 'react';
 
 // Force dynamic rendering - database queries can't run at build time
 export const dynamic = 'force-dynamic';
@@ -19,4 +19,3 @@ export default function BudgetPage() {
     </Suspense>
   );
 }
-

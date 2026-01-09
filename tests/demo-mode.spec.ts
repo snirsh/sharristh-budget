@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Demo Mode E2E Tests', () => {
   test.describe.configure({ mode: 'serial' });
@@ -38,10 +38,12 @@ test.describe('Demo Mode E2E Tests', () => {
     await page.waitForLoadState('networkidle');
 
     // Should show Hebrew transaction descriptions
-    await expect(page.locator('text=שופרסל')).toBeVisible({ timeout: 10000 }).catch(() => {
-      // Transaction might be in the table
-      return expect(page.locator('table')).toContainText('שופרסל');
-    });
+    await expect(page.locator('text=שופרסל'))
+      .toBeVisible({ timeout: 10000 })
+      .catch(() => {
+        // Transaction might be in the table
+        return expect(page.locator('table')).toContainText('שופרסל');
+      });
   });
 
   test('should show demo categories', async ({ page }) => {
@@ -53,9 +55,11 @@ test.describe('Demo Mode E2E Tests', () => {
     // Should show bilingual category names (English (עברית))
     const categoryTexts = ['Salary (משכורת)', 'Rent (שכר דירה)', 'Groceries (מכולת)'];
     for (const text of categoryTexts) {
-      await expect(page.locator(`text=${text}`)).toBeVisible({ timeout: 10000 }).catch(() => {
-        return expect(page.getByText(text)).toBeVisible();
-      });
+      await expect(page.locator(`text=${text}`))
+        .toBeVisible({ timeout: 10000 })
+        .catch(() => {
+          return expect(page.getByText(text)).toBeVisible();
+        });
     }
   });
 
@@ -67,7 +71,7 @@ test.describe('Demo Mode E2E Tests', () => {
 
     // Should show recurring templates (check for template names or categories)
     // Look for the recurring template section with Hebrew names
-    const hasRecurringData = await page.locator('table, .card').count() > 0;
+    const hasRecurringData = (await page.locator('table, .card').count()) > 0;
     expect(hasRecurringData).toBe(true);
 
     // Verify at least one Hebrew recurring transaction name is visible

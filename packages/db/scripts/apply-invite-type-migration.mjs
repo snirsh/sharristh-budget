@@ -9,10 +9,10 @@
  *   DATABASE_URL="your-connection-string" node packages/db/scripts/apply-invite-type-migration.mjs
  */
 
-import pg from 'pg';
 import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+import pg from 'pg';
 
 const { Client } = pg;
 
@@ -25,7 +25,9 @@ async function applyMigration() {
   if (!databaseUrl) {
     console.error('❌ Error: DATABASE_URL environment variable is not set');
     console.error('\nUsage:');
-    console.error('  DATABASE_URL="your-connection-string" node packages/db/scripts/apply-invite-type-migration.mjs');
+    console.error(
+      '  DATABASE_URL="your-connection-string" node packages/db/scripts/apply-invite-type-migration.mjs'
+    );
     process.exit(1);
   }
 
@@ -39,7 +41,10 @@ async function applyMigration() {
     console.log('✅ Connected to database');
 
     // Read the migration file
-    const migrationPath = join(__dirname, '../prisma/migrations/20260102_fix_invite_codes_schema/migration.sql');
+    const migrationPath = join(
+      __dirname,
+      '../prisma/migrations/20260102_fix_invite_codes_schema/migration.sql'
+    );
     const migrationSQL = readFileSync(migrationPath, 'utf-8');
 
     console.log('\n📝 Applying migration...');
@@ -71,7 +76,6 @@ async function applyMigration() {
     console.log('  1. Restart your application (if running)');
     console.log('  2. Clear your browser cache (Ctrl+Shift+R)');
     console.log('  3. Try creating a partner invite again');
-
   } catch (error) {
     console.error('\n❌ Error applying migration:', error.message);
     console.error('\nFull error:', error);

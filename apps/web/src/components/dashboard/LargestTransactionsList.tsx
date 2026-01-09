@@ -58,18 +58,14 @@ export function LargestTransactionsList({
             <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400">
               {index + 1}
             </div>
-            <span className="text-lg flex-shrink-0">
-              {tx.categoryIcon || '💸'}
-            </span>
+            <span className="text-lg flex-shrink-0">{tx.categoryIcon || '💸'}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400">
                 {tx.merchant || tx.description}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {tx.formattedDate}
-                {tx.categoryName && (
-                  <> · {tx.categoryName}</>
-                )}
+                {tx.categoryName && <> · {tx.categoryName}</>}
               </p>
             </div>
             <span className="text-sm font-semibold text-gray-900 dark:text-white flex-shrink-0">

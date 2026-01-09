@@ -1,11 +1,11 @@
+import { suggestCategoryWithAI } from './ai-categorization';
 import type {
-  TransactionInput,
-  CategoryRule,
   CategorizationResult,
   CategorizationSource,
   CategoryForCategorization,
+  CategoryRule,
+  TransactionInput,
 } from './types';
-import { suggestCategoryWithAI } from './ai-categorization';
 
 /**
  * Fallback categorization returns null categoryId
@@ -44,9 +44,7 @@ export async function categorizeTransaction(
   }
 
   // Filter to active rules only and sort by priority (higher first)
-  const activeRules = rules
-    .filter((r) => r.isActive)
-    .sort((a, b) => b.priority - a.priority);
+  const activeRules = rules.filter((r) => r.isActive).sort((a, b) => b.priority - a.priority);
 
   // 2. Try merchant rules first (highest confidence)
   const merchantRules = activeRules.filter((r) => r.type === 'merchant');
@@ -72,11 +70,7 @@ export async function categorizeTransaction(
   // 5. Try AI suggestion (if enabled and categories provided)
   if (options?.enableAI && options?.aiApiKey && categories && categories.length > 0) {
     try {
-      const aiResult = await suggestCategoryWithAI(
-        tx,
-        categories,
-        options.aiApiKey
-      );
+      const aiResult = await suggestCategoryWithAI(tx, categories, options.aiApiKey);
       if (aiResult) {
         return aiResult;
       }
@@ -145,10 +139,7 @@ function matchKeywordRule(
 /**
  * Match against regex rules
  */
-function matchRegexRule(
-  tx: TransactionInput,
-  rules: CategoryRule[]
-): CategorizationResult | null {
+function matchRegexRule(tx: TransactionInput, rules: CategoryRule[]): CategorizationResult | null {
   const searchText = [tx.description, tx.merchant].filter(Boolean).join(' ');
 
   for (const rule of rules) {
@@ -250,4 +241,3 @@ export async function categorizeTransactions(
 }
 
 export type { CategorizationSource };
-

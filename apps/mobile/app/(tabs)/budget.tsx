@@ -1,17 +1,80 @@
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
-import { useState, useCallback } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useState } from 'react';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
 // Mock data
 const mockBudgets = [
-  { id: '1', category: { name: 'Rent', icon: '🏠' }, planned: 5500, actual: 5500, limit: 5500, limitType: 'hard', status: 'ok' },
-  { id: '2', category: { name: 'Supermarket', icon: '🛒' }, planned: 3000, actual: 2100, limit: 3500, limitType: 'soft', status: 'ok' },
-  { id: '3', category: { name: 'Eating Outside', icon: '🍽️' }, planned: 1500, actual: 1275, limit: 2000, limitType: 'soft', status: 'nearing_limit' },
-  { id: '4', category: { name: 'Car Expenses', icon: '🚗' }, planned: 1200, actual: 800, limit: 1500, limitType: 'soft', status: 'ok' },
-  { id: '5', category: { name: 'Bills', icon: '📄' }, planned: 800, actual: 450, limit: 1000, limitType: 'soft', status: 'ok' },
-  { id: '6', category: { name: 'Transportation', icon: '🚌' }, planned: 400, actual: 320, limit: 500, limitType: 'soft', status: 'ok' },
-  { id: '7', category: { name: 'Pharmacy', icon: '💊' }, planned: 300, actual: 180, limit: 500, limitType: 'soft', status: 'ok' },
-  { id: '8', category: { name: 'Varying Expenses', icon: '❓' }, planned: 2000, actual: 2400, limit: 3000, limitType: 'soft', status: 'exceeded_soft' },
+  {
+    id: '1',
+    category: { name: 'Rent', icon: '🏠' },
+    planned: 5500,
+    actual: 5500,
+    limit: 5500,
+    limitType: 'hard',
+    status: 'ok',
+  },
+  {
+    id: '2',
+    category: { name: 'Supermarket', icon: '🛒' },
+    planned: 3000,
+    actual: 2100,
+    limit: 3500,
+    limitType: 'soft',
+    status: 'ok',
+  },
+  {
+    id: '3',
+    category: { name: 'Eating Outside', icon: '🍽️' },
+    planned: 1500,
+    actual: 1275,
+    limit: 2000,
+    limitType: 'soft',
+    status: 'nearing_limit',
+  },
+  {
+    id: '4',
+    category: { name: 'Car Expenses', icon: '🚗' },
+    planned: 1200,
+    actual: 800,
+    limit: 1500,
+    limitType: 'soft',
+    status: 'ok',
+  },
+  {
+    id: '5',
+    category: { name: 'Bills', icon: '📄' },
+    planned: 800,
+    actual: 450,
+    limit: 1000,
+    limitType: 'soft',
+    status: 'ok',
+  },
+  {
+    id: '6',
+    category: { name: 'Transportation', icon: '🚌' },
+    planned: 400,
+    actual: 320,
+    limit: 500,
+    limitType: 'soft',
+    status: 'ok',
+  },
+  {
+    id: '7',
+    category: { name: 'Pharmacy', icon: '💊' },
+    planned: 300,
+    actual: 180,
+    limit: 500,
+    limitType: 'soft',
+    status: 'ok',
+  },
+  {
+    id: '8',
+    category: { name: 'Varying Expenses', icon: '❓' },
+    planned: 2000,
+    actual: 2400,
+    limit: 3000,
+    limitType: 'soft',
+    status: 'exceeded_soft',
+  },
 ];
 
 function formatCurrency(amount: number): string {
@@ -63,24 +126,18 @@ export default function BudgetScreen() {
   return (
     <ScrollView
       className="flex-1 bg-gray-50"
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View className="p-4">
         {/* Summary Cards */}
         <View className="flex-row gap-3 mb-6">
           <View className="flex-1 bg-white rounded-xl p-4 shadow-sm">
             <Text className="text-sm text-gray-500">Planned</Text>
-            <Text className="text-xl font-bold text-gray-900">
-              {formatCurrency(totalPlanned)}
-            </Text>
+            <Text className="text-xl font-bold text-gray-900">{formatCurrency(totalPlanned)}</Text>
           </View>
           <View className="flex-1 bg-white rounded-xl p-4 shadow-sm">
             <Text className="text-sm text-gray-500">Spent</Text>
-            <Text className="text-xl font-bold text-gray-900">
-              {formatCurrency(totalActual)}
-            </Text>
+            <Text className="text-xl font-bold text-gray-900">{formatCurrency(totalActual)}</Text>
           </View>
           <View className="flex-1 bg-white rounded-xl p-4 shadow-sm">
             <Text className="text-sm text-gray-500">Remaining</Text>
@@ -110,9 +167,7 @@ export default function BudgetScreen() {
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-row items-center">
                     <Text className="text-xl mr-2">{budget.category.icon}</Text>
-                    <Text className="font-medium text-gray-900">
-                      {budget.category.name}
-                    </Text>
+                    <Text className="font-medium text-gray-900">{budget.category.name}</Text>
                   </View>
                   <View
                     className="px-2 py-0.5 rounded-full"
@@ -131,9 +186,7 @@ export default function BudgetScreen() {
                   <Text className="text-sm text-gray-500">
                     {formatCurrency(budget.actual)} / {formatCurrency(budget.planned)}
                   </Text>
-                  <Text className="text-sm text-gray-500">
-                    {Math.round(percent)}%
-                  </Text>
+                  <Text className="text-sm text-gray-500">{Math.round(percent)}%</Text>
                 </View>
 
                 <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -159,4 +212,3 @@ export default function BudgetScreen() {
     </ScrollView>
   );
 }
-

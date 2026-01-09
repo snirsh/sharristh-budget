@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
-import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useState } from 'react';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
 // Mock data for demonstration (would come from API in real app)
 const mockData = {
@@ -47,9 +47,7 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       className="flex-1 bg-gray-50 dark:bg-gray-900"
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View className="p-4">
         {/* Month Header */}
@@ -121,8 +119,8 @@ export default function DashboardScreen() {
                     cat.percent >= 100
                       ? 'bg-danger-500'
                       : cat.percent >= 80
-                      ? 'bg-warning-500'
-                      : 'bg-success-500'
+                        ? 'bg-warning-500'
+                        : 'bg-success-500'
                   }`}
                   style={{ width: `${Math.min(cat.percent, 100)}%` }}
                 />
@@ -187,4 +185,3 @@ function KPICard({
     </View>
   );
 }
-

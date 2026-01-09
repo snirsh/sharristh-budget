@@ -1,25 +1,25 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTheme } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard,
-  Receipt,
-  PieChart,
   FolderTree,
+  LayoutDashboard,
+  Link2,
+  LogOut,
+  Menu,
+  Moon,
+  PieChart,
+  Receipt,
   Repeat,
   Settings,
   Sparkles,
-  LogOut,
-  Link2,
-  Moon,
   Sun,
-  Menu,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { useTheme } from '@/lib/theme';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard, preserveMonth: true },
@@ -39,7 +39,7 @@ export function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme, mounted } = useTheme();
 
-  const getHref = (item: typeof navigation[number]) => {
+  const getHref = (item: (typeof navigation)[number]) => {
     if (item.preserveMonth) {
       const month = searchParams.get('month');
       if (month) {
@@ -82,20 +82,13 @@ export function Sidebar() {
           className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           aria-label="Toggle menu"
         >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
+          {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-30 bg-black/50"
-          onClick={closeMobileMenu}
-        />
+        <div className="lg:hidden fixed inset-0 z-30 bg-black/50" onClick={closeMobileMenu} />
       )}
 
       {/* Mobile Menu Drawer */}
@@ -110,8 +103,7 @@ export function Sidebar() {
           <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
             {navigation.map((item) => {
               const isActive =
-                pathname === item.href ||
-                (item.href !== '/' && pathname.startsWith(item.href));
+                pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
 
               return (
                 <Link
@@ -188,8 +180,7 @@ export function Sidebar() {
           <nav className="flex-1 space-y-1 p-4">
             {navigation.map((item) => {
               const isActive =
-                pathname === item.href ||
-                (item.href !== '/' && pathname.startsWith(item.href));
+                pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
 
               return (
                 <Link
@@ -248,4 +239,3 @@ export function Sidebar() {
     </>
   );
 }
-

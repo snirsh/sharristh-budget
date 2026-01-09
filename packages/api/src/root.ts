@@ -1,17 +1,17 @@
-import { router } from './trpc';
 import {
-  transactionsRouter,
-  categoriesRouter,
+  accountsRouter,
+  bankConnectionsRouter,
   budgetsRouter,
+  categoriesRouter,
+  dashboardRouter,
+  demoRouter,
+  invitesRouter,
+  performanceRouter,
   recurringRouter,
   rulesRouter,
-  dashboardRouter,
-  bankConnectionsRouter,
-  accountsRouter,
-  demoRouter,
-  performanceRouter,
-  invitesRouter,
+  transactionsRouter,
 } from './routers';
+import { router } from './trpc';
 
 /**
  * Main application router
@@ -34,4 +34,3 @@ export const appRouter = router({
  * Type definition for the app router
  */
 export type AppRouter = typeof appRouter;
-

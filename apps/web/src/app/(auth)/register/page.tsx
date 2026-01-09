@@ -1,10 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { KeyRound, Mail, Shield, Loader2, AlertCircle, CheckCircle, Fingerprint } from 'lucide-react';
+import {
+  isPlatformAuthenticatorAvailable,
+  isWebAuthnSupported,
+  registerPasskey,
+} from '@/lib/auth-client';
+import {
+  AlertCircle,
+  CheckCircle,
+  Fingerprint,
+  KeyRound,
+  Loader2,
+  Mail,
+  Shield,
+} from 'lucide-react';
 import Link from 'next/link';
-import { registerPasskey, isPlatformAuthenticatorAvailable, isWebAuthnSupported } from '@/lib/auth-client';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 type Step = 'form' | 'registering' | 'success';
 
@@ -67,12 +79,10 @@ export default function RegisterPage() {
         <div className="mx-auto w-16 h-16 bg-violet-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-violet-500/30">
           <Shield className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">
-          Create Account
-        </h1>
+        <h1 className="text-3xl font-bold text-white tracking-tight">Create Account</h1>
         <p className="mt-2 text-slate-400">
-          {step === 'success' 
-            ? 'Your passkey has been registered!' 
+          {step === 'success'
+            ? 'Your passkey has been registered!'
             : 'Set up your passkey with an invite code'}
         </p>
       </div>
@@ -86,9 +96,7 @@ export default function RegisterPage() {
               <CheckCircle className="w-10 h-10 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white mb-2">
-                Registration Complete!
-              </h2>
+              <h2 className="text-xl font-semibold text-white mb-2">Registration Complete!</h2>
               <p className="text-slate-400 text-sm">
                 Your passkey has been saved. You can now sign in using your biometrics.
               </p>
@@ -110,11 +118,10 @@ export default function RegisterPage() {
               <Fingerprint className="w-10 h-10 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white mb-2">
-                Complete Registration
-              </h2>
+              <h2 className="text-xl font-semibold text-white mb-2">Complete Registration</h2>
               <p className="text-slate-400 text-sm">
-                Follow your device&apos;s prompts to set up your passkey with Face ID, Touch ID, or Windows Hello.
+                Follow your device&apos;s prompts to set up your passkey with Face ID, Touch ID, or
+                Windows Hello.
               </p>
             </div>
             <div className="flex items-center justify-center gap-2 text-slate-500">
@@ -133,11 +140,10 @@ export default function RegisterPage() {
                 <div className="flex gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-amber-200 text-sm font-medium">
-                      Passkeys not supported
-                    </p>
+                    <p className="text-amber-200 text-sm font-medium">Passkeys not supported</p>
                     <p className="text-amber-200/70 text-xs mt-1">
-                      Your browser or device doesn&apos;t support passkeys. Please use a modern browser with biometric authentication.
+                      Your browser or device doesn&apos;t support passkeys. Please use a modern
+                      browser with biometric authentication.
                     </p>
                   </div>
                 </div>
@@ -176,7 +182,10 @@ export default function RegisterPage() {
 
               {/* Invite Code Field */}
               <div>
-                <label htmlFor="inviteCode" className="block text-sm font-medium text-slate-300 mb-2">
+                <label
+                  htmlFor="inviteCode"
+                  className="block text-sm font-medium text-slate-300 mb-2"
+                >
                   Invite code
                 </label>
                 <div className="relative">
@@ -218,9 +227,7 @@ export default function RegisterPage() {
 
             {/* Info Box */}
             <div className="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
-              <h3 className="text-sm font-medium text-slate-300 mb-2">
-                What is a passkey?
-              </h3>
+              <h3 className="text-sm font-medium text-slate-300 mb-2">What is a passkey?</h3>
               <ul className="text-xs text-slate-400 space-y-1">
                 <li>• Replaces passwords with biometric authentication</li>
                 <li>• Uses Face ID, Touch ID, or Windows Hello</li>
@@ -235,9 +242,7 @@ export default function RegisterPage() {
                 <div className="w-full border-t border-white/10" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-transparent text-slate-500">
-                  Already have an account?
-                </span>
+                <span className="px-4 bg-transparent text-slate-500">Already have an account?</span>
               </div>
             </div>
 
@@ -259,6 +264,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-
-

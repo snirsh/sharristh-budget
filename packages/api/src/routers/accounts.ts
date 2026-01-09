@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, protectedProcedure } from '../trpc';
+import { protectedProcedure, router } from '../trpc';
 
 export const accountsRouter = router({
   /**
@@ -31,10 +31,7 @@ export const accountsRouter = router({
         householdId: ctx.householdId,
         isActive: true,
       },
-      orderBy: [
-        { type: 'asc' },
-        { name: 'asc' },
-      ],
+      orderBy: [{ type: 'asc' }, { name: 'asc' }],
     });
   }),
 
@@ -47,10 +44,7 @@ export const accountsRouter = router({
         householdId: ctx.householdId,
         isActive: true,
       },
-      orderBy: [
-        { type: 'asc' },
-        { name: 'asc' },
-      ],
+      orderBy: [{ type: 'asc' }, { name: 'asc' }],
     });
   }),
 
@@ -142,20 +136,20 @@ export const accountsRouter = router({
       if (conn.accountMappings) {
         const mappings = JSON.parse(conn.accountMappings) as Record<string, string>;
         const accountIds = Object.values(mappings);
-        
+
         if (conn.provider === 'isracard') {
           // Isracard = credit card provider
-          accountIds.forEach(id => creditAccountIds.add(id));
+          accountIds.forEach((id) => creditAccountIds.add(id));
         } else {
           // OneZero and others = checking/bank accounts
-          accountIds.forEach(id => checkingAccountIds.add(id));
+          accountIds.forEach((id) => checkingAccountIds.add(id));
         }
       }
     }
 
     // Remove any overlap (if somehow an account is in both, prefer the specific provider's type)
     // Credit card takes precedence
-    checkingAccountIds.forEach(id => {
+    checkingAccountIds.forEach((id) => {
       if (creditAccountIds.has(id)) {
         checkingAccountIds.delete(id);
       }

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createScraper, CompanyTypes } from 'israeli-bank-scrapers';
+import { CompanyTypes, createScraper } from 'israeli-bank-scrapers';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IsracardAdapter } from '../../adapters/isracard';
 
 // Mock the israeli-bank-scrapers library
@@ -196,6 +196,3 @@ describe('IsracardAdapter', () => {
     });
   });
 });
-
-
-

@@ -36,7 +36,7 @@ export function TopMerchantsList({
   }
 
   // Calculate the max total for progress bar scaling
-  const maxTotal = Math.max(...merchants.map(m => m.total));
+  const maxTotal = Math.max(...merchants.map((m) => m.total));
 
   return (
     <div className={cn('card', className)}>

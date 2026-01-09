@@ -23,11 +23,11 @@ function decryptChallenge(encrypted: string, key: string): string | null {
   try {
     const [ivB64, dataB64, tagB64] = encrypted.split('.');
     if (!ivB64 || !dataB64 || !tagB64) return null;
-    
+
     const iv = Buffer.from(ivB64, 'base64');
     const data = Buffer.from(dataB64, 'base64');
     const tag = Buffer.from(tagB64, 'base64');
-    
+
     const decipher = crypto.createDecipheriv(
       'aes-256-gcm',
       crypto.createHash('sha256').update(key).digest(),
@@ -43,13 +43,13 @@ function decryptChallenge(encrypted: string, key: string): string | null {
 /**
  * Store a challenge in an encrypted cookie
  */
-export async function storeChallenge(key: string, challenge: string, ttlMs: number = 60000) {
+export async function storeChallenge(key: string, challenge: string, ttlMs = 60000) {
   const secret = process.env.AUTH_SECRET;
   if (!secret) throw new Error('AUTH_SECRET is not set');
-  
+
   const encrypted = encryptChallenge(challenge, secret);
   const cookieStore = await cookies();
-  
+
   cookieStore.set(`webauthn_challenge_${key}`, encrypted, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -65,16 +65,16 @@ export async function storeChallenge(key: string, challenge: string, ttlMs: numb
 export async function getAndRemoveChallenge(key: string): Promise<string | null> {
   const secret = process.env.AUTH_SECRET;
   if (!secret) return null;
-  
+
   const cookieStore = await cookies();
   const cookieName = `webauthn_challenge_${key}`;
   const encrypted = cookieStore.get(cookieName)?.value;
-  
+
   if (!encrypted) return null;
-  
+
   // Delete the cookie
   cookieStore.delete(cookieName);
-  
+
   return decryptChallenge(encrypted, secret);
 }
 

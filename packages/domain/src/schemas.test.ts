@@ -1,9 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import {
-  createCategorySchema,
-  updateCategorySchema,
-  categoryTypeSchema,
-} from './schemas';
+import { describe, expect, it } from 'vitest';
+import { categoryTypeSchema, createCategorySchema, updateCategorySchema } from './schemas';
 
 describe('categoryTypeSchema', () => {
   it('should accept valid category types', () => {
@@ -25,7 +21,7 @@ describe('createCategorySchema', () => {
       name: 'Test Category',
       type: 'expense',
     });
-    
+
     expect(result.success).toBe(true);
   });
 
@@ -38,7 +34,7 @@ describe('createCategorySchema', () => {
       color: '#ff0000',
       sortOrder: 5,
     });
-    
+
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.parentCategoryId).toBe('parent-123');
@@ -53,7 +49,7 @@ describe('createCategorySchema', () => {
       name: '',
       type: 'expense',
     });
-    
+
     expect(result.success).toBe(false);
   });
 
@@ -62,7 +58,7 @@ describe('createCategorySchema', () => {
       name: 'A'.repeat(51),
       type: 'expense',
     });
-    
+
     expect(result.success).toBe(false);
   });
 
@@ -70,7 +66,7 @@ describe('createCategorySchema', () => {
     const result = createCategorySchema.safeParse({
       name: 'Test Category',
     });
-    
+
     expect(result.success).toBe(false);
   });
 
@@ -79,7 +75,7 @@ describe('createCategorySchema', () => {
       name: 'Test Category',
       type: 'invalid',
     });
-    
+
     expect(result.success).toBe(false);
   });
 });
@@ -88,23 +84,23 @@ describe('updateCategorySchema', () => {
   it('should accept partial updates', () => {
     // Only name
     expect(updateCategorySchema.safeParse({ name: 'New Name' }).success).toBe(true);
-    
+
     // Only icon
     expect(updateCategorySchema.safeParse({ icon: '🎉' }).success).toBe(true);
-    
+
     // Only color
     expect(updateCategorySchema.safeParse({ color: '#00ff00' }).success).toBe(true);
-    
+
     // Only type
     expect(updateCategorySchema.safeParse({ type: 'income' }).success).toBe(true);
-    
+
     // Only parentCategoryId
     expect(updateCategorySchema.safeParse({ parentCategoryId: 'parent-123' }).success).toBe(true);
   });
 
   it('should accept empty object (no updates)', () => {
     const result = updateCategorySchema.safeParse({});
-    
+
     expect(result.success).toBe(true);
   });
 
@@ -112,7 +108,7 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       type: 'expense',
     });
-    
+
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.type).toBe('expense');
@@ -123,7 +119,7 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       parentCategoryId: 'new-parent-id',
     });
-    
+
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.parentCategoryId).toBe('new-parent-id');
@@ -134,7 +130,7 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       parentCategoryId: null,
     });
-    
+
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.parentCategoryId).toBeNull();
@@ -145,7 +141,7 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       icon: null,
     });
-    
+
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.icon).toBeNull();
@@ -156,7 +152,7 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       color: null,
     });
-    
+
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.color).toBeNull();
@@ -167,7 +163,7 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       type: 'invalid-type',
     });
-    
+
     expect(result.success).toBe(false);
   });
 
@@ -175,7 +171,7 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       name: '',
     });
-    
+
     expect(result.success).toBe(false);
   });
 
@@ -183,7 +179,7 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       name: 'A'.repeat(51),
     });
-    
+
     expect(result.success).toBe(false);
   });
 
@@ -197,7 +193,7 @@ describe('updateCategorySchema', () => {
       isActive: true,
       sortOrder: 10,
     });
-    
+
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.name).toBe('Updated Category');
@@ -219,14 +215,10 @@ describe('updateCategorySchema', () => {
     const result = updateCategorySchema.safeParse({
       sortOrder: 5,
     });
-    
+
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.sortOrder).toBe(5);
     }
   });
 });
-
-
-
-

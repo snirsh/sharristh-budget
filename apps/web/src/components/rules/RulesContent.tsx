@@ -1,11 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, Check, Minus, X } from 'lucide-react';
-import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@sfam/api';
+import type { inferRouterOutputs } from '@trpc/server';
+import {
+  AlertTriangle,
+  Check,
+  Minus,
+  Plus,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type Rule = RouterOutputs['rules']['list'][number];
@@ -168,8 +177,12 @@ export function RulesContent({ categories }: { categories: Category[] }) {
           {brokenRules.length > 0 && (
             <button
               onClick={() => {
-                if (confirm(`Delete ${brokenRules.length} broken rule(s)? These rules point to deleted categories.`)) {
-                  batchDeleteMutation.mutate({ ruleIds: brokenRules.map(r => r.id) });
+                if (
+                  confirm(
+                    `Delete ${brokenRules.length} broken rule(s)? These rules point to deleted categories.`
+                  )
+                ) {
+                  batchDeleteMutation.mutate({ ruleIds: brokenRules.map((r) => r.id) });
                 }
               }}
               className="btn btn-warning"
@@ -193,9 +206,7 @@ export function RulesContent({ categories }: { categories: Category[] }) {
             Clear All
           </button>
           <button
-            onClick={() =>
-              setNewRule({ type: 'merchant', pattern: '', categoryId: '' })
-            }
+            onClick={() => setNewRule({ type: 'merchant', pattern: '', categoryId: '' })}
             className="btn-primary"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -267,12 +278,8 @@ export function RulesContent({ categories }: { categories: Category[] }) {
               <input
                 type="text"
                 value={newRule.pattern}
-                onChange={(e) =>
-                  setNewRule({ ...newRule, pattern: e.target.value })
-                }
-                placeholder={
-                  newRule.type === 'regex' ? '^salary.*$' : 'Enter pattern...'
-                }
+                onChange={(e) => setNewRule({ ...newRule, pattern: e.target.value })}
+                placeholder={newRule.type === 'regex' ? '^salary.*$' : 'Enter pattern...'}
                 className="input"
               />
             </div>
@@ -280,9 +287,7 @@ export function RulesContent({ categories }: { categories: Category[] }) {
               <label className="label">Category</label>
               <select
                 value={newRule.categoryId}
-                onChange={(e) =>
-                  setNewRule({ ...newRule, categoryId: e.target.value })
-                }
+                onChange={(e) => setNewRule({ ...newRule, categoryId: e.target.value })}
                 className="input"
               >
                 <option value="">Select category...</option>
@@ -296,9 +301,7 @@ export function RulesContent({ categories }: { categories: Category[] }) {
             <div className="flex items-end gap-2">
               <button
                 onClick={handleCreateRule}
-                disabled={
-                  !newRule.pattern || !newRule.categoryId || createMutation.isPending
-                }
+                disabled={!newRule.pattern || !newRule.categoryId || createMutation.isPending}
                 className="btn-primary flex-1"
               >
                 {createMutation.isPending ? 'Creating...' : 'Create'}
@@ -318,12 +321,14 @@ export function RulesContent({ categories }: { categories: Category[] }) {
             onClick={toggleSelectAll}
             className="flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400"
           >
-            <div className={cn(
-              'flex items-center justify-center w-5 h-5 rounded border-2 transition-colors',
-              isAllSelected
-                ? 'bg-primary-500 border-primary-500 text-white'
-                : 'border-gray-300 dark:border-gray-600'
-            )}>
+            <div
+              className={cn(
+                'flex items-center justify-center w-5 h-5 rounded border-2 transition-colors',
+                isAllSelected
+                  ? 'bg-primary-500 border-primary-500 text-white'
+                  : 'border-gray-300 dark:border-gray-600'
+              )}
+            >
               {isAllSelected ? (
                 <Check className="h-3 w-3" />
               ) : isSomeSelected ? (
@@ -341,16 +346,10 @@ export function RulesContent({ categories }: { categories: Category[] }) {
           <div key={type} className="card">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {typeLabels[type].title}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {typeLabels[type].description}
-                </p>
+                <h2 className="text-lg font-semibold text-gray-900">{typeLabels[type].title}</h2>
+                <p className="text-sm text-gray-500">{typeLabels[type].description}</p>
               </div>
-              <span className={cn('badge', typeLabels[type].badge)}>
-                {typeRules.length} rules
-              </span>
+              <span className={cn('badge', typeLabels[type].badge)}>{typeRules.length} rules</span>
             </div>
 
             <div className="space-y-2">
@@ -384,12 +383,14 @@ export function RulesContent({ categories }: { categories: Category[] }) {
                       {rule.pattern}
                     </code>
                     <span className="text-gray-500 dark:text-gray-400">→</span>
-                    <span className={cn(
-                      "flex items-center gap-1 text-sm font-medium",
-                      isBroken
-                        ? "text-warning-700 dark:text-warning-400"
-                        : "text-gray-900 dark:text-white"
-                    )}>
+                    <span
+                      className={cn(
+                        'flex items-center gap-1 text-sm font-medium',
+                        isBroken
+                          ? 'text-warning-700 dark:text-warning-400'
+                          : 'text-gray-900 dark:text-white'
+                      )}
+                    >
                       {isBroken ? (
                         <>
                           <AlertTriangle className="h-4 w-4" />
@@ -428,9 +429,7 @@ export function RulesContent({ categories }: { categories: Category[] }) {
                 );
               })}
               {typeRules.length === 0 && (
-                <p className="py-4 text-center text-gray-400">
-                  No {type} rules defined
-                </p>
+                <p className="py-4 text-center text-gray-400">No {type} rules defined</p>
               )}
             </div>
           </div>
@@ -439,4 +438,3 @@ export function RulesContent({ categories }: { categories: Category[] }) {
     </div>
   );
 }
-

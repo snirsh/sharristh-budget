@@ -64,7 +64,9 @@ export async function authenticatePasskey() {
   }
 
   const optionsData = await optionsRes.json();
-  const { sessionId, ...options } = optionsData as PublicKeyCredentialRequestOptionsJSON & { sessionId: string };
+  const { sessionId, ...options } = optionsData as PublicKeyCredentialRequestOptionsJSON & {
+    sessionId: string;
+  };
 
   // Step 2: Start WebAuthn authentication ceremony
   const credential = await startAuthentication(options);
@@ -106,4 +108,3 @@ export async function isPlatformAuthenticatorAvailable(): Promise<boolean> {
     return false;
   }
 }
-

@@ -1,5 +1,5 @@
-import { router, protectedProcedure } from '../trpc';
 import type { PrismaClient } from '@sfam/db';
+import { protectedProcedure, router } from '../trpc';
 
 /**
  * Helper function to seed demo data for a specific household
@@ -277,7 +277,8 @@ export const demoRouter = router({
     if (existingTxCount > 0) {
       return {
         success: false,
-        message: 'Household already has transactions. Demo data already seeded or real data exists.',
+        message:
+          'Household already has transactions. Demo data already seeded or real data exists.',
       };
     }
 

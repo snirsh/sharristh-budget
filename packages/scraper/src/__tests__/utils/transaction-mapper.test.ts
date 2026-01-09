@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { mapTransaction, mapAccountTransactions } from '../../utils/transaction-mapper';
-import type { ScrapedTransaction, ScrapedAccount } from '../../types';
+import { describe, expect, it } from 'vitest';
+import type { ScrapedAccount, ScrapedTransaction } from '../../types';
+import { mapAccountTransactions, mapTransaction } from '../../utils/transaction-mapper';
 
 describe('transaction-mapper', () => {
   describe('mapTransaction', () => {
@@ -211,6 +211,3 @@ describe('transaction-mapper', () => {
     });
   });
 });
-
-
-

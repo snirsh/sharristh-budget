@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from 'clsx';
+import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 /**
@@ -56,4 +56,3 @@ export function getStatusColor(status: string): string {
       return 'gray';
   }
 }
-

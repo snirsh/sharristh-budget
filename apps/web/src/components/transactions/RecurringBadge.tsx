@@ -1,5 +1,5 @@
-import { RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RefreshCcw } from 'lucide-react';
 
 interface RecurringTemplate {
   id: string;
@@ -34,10 +34,7 @@ const getFrequencyLabel = (frequency: string): string => {
  * Visual indicator for recurring transactions
  * Shows when a transaction matches a recurring template
  */
-export function RecurringBadge({
-  recurringTemplate,
-  className,
-}: RecurringBadgeProps) {
+export function RecurringBadge({ recurringTemplate, className }: RecurringBadgeProps) {
   if (!recurringTemplate) {
     return null;
   }

@@ -1,27 +1,27 @@
 'use client';
 
-import { useState, useCallback, Fragment } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { cn } from '@/lib/utils';
+import type { AppRouter } from '@sfam/api';
+import type { inferRouterOutputs } from '@trpc/server';
 import {
-  Edit2,
-  ToggleLeft,
-  ToggleRight,
+  AlertTriangle,
+  Calculator,
   ChevronDown,
   ChevronRight,
-  Plus,
-  X,
-  Palette,
-  FolderTree,
-  Trash2,
-  AlertTriangle,
+  Edit2,
   FileText,
-  Calculator,
-  Wand2,
+  FolderTree,
+  Palette,
+  Plus,
   Sparkles,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  Wand2,
+  X,
 } from 'lucide-react';
-import type { inferRouterOutputs } from '@trpc/server';
-import type { AppRouter } from '@sfam/api';
+import { Fragment, useCallback, useState } from 'react';
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type Category = RouterOutputs['categories']['list'][number];
@@ -44,10 +44,26 @@ interface DeleteState {
 }
 
 const DEFAULT_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
-  '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
-  '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
-  '#ec4899', '#f43f5e', '#78716c', '#64748b', '#6b7280',
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#eab308',
+  '#84cc16',
+  '#22c55e',
+  '#10b981',
+  '#14b8a6',
+  '#06b6d4',
+  '#0ea5e9',
+  '#3b82f6',
+  '#6366f1',
+  '#8b5cf6',
+  '#a855f7',
+  '#d946ef',
+  '#ec4899',
+  '#f43f5e',
+  '#78716c',
+  '#64748b',
+  '#6b7280',
 ];
 
 const TYPE_OPTIONS: { value: CategoryType; label: string; description: string }[] = [
@@ -69,10 +85,10 @@ export function CategoriesContent() {
   });
 
   // Query for delete info when deleteState is set
-  const { data: deleteInfo, isLoading: isLoadingDeleteInfo } = trpc.categories.getDeleteInfo.useQuery(
-    deleteState?.categoryId ?? '',
-    { enabled: !!deleteState?.categoryId }
-  );
+  const { data: deleteInfo, isLoading: isLoadingDeleteInfo } =
+    trpc.categories.getDeleteInfo.useQuery(deleteState?.categoryId ?? '', {
+      enabled: !!deleteState?.categoryId,
+    });
 
   const updateMutation = trpc.categories.update.useMutation({
     onSuccess: () => {
@@ -201,26 +217,27 @@ export function CategoriesContent() {
   };
 
   // Get available parent categories (exclude self and descendants)
-  const getAvailableParents = useCallback((excludeId?: string | null): Category[] => {
-    if (!excludeId) {
-      return categories.filter((c) => !c.parentCategoryId);
-    }
+  const getAvailableParents = useCallback(
+    (excludeId?: string | null): Category[] => {
+      if (!excludeId) {
+        return categories.filter((c) => !c.parentCategoryId);
+      }
 
-    const getDescendantIds = (catId: string): Set<string> => {
-      const descendants = new Set<string>([catId]);
-      const children = categories.filter((c) => c.parentCategoryId === catId);
-      children.forEach((child) => {
-        const childDescendants = getDescendantIds(child.id);
-        childDescendants.forEach((id) => descendants.add(id));
-      });
-      return descendants;
-    };
+      const getDescendantIds = (catId: string): Set<string> => {
+        const descendants = new Set<string>([catId]);
+        const children = categories.filter((c) => c.parentCategoryId === catId);
+        children.forEach((child) => {
+          const childDescendants = getDescendantIds(child.id);
+          childDescendants.forEach((id) => descendants.add(id));
+        });
+        return descendants;
+      };
 
-    const excludeIds = getDescendantIds(excludeId);
-    return categories.filter(
-      (c) => !excludeIds.has(c.id) && !c.parentCategoryId
-    );
-  }, [categories]);
+      const excludeIds = getDescendantIds(excludeId);
+      return categories.filter((c) => !excludeIds.has(c.id) && !c.parentCategoryId);
+    },
+    [categories]
+  );
 
   // Group categories by type
   const groupedCategories = {
@@ -229,8 +246,16 @@ export function CategoriesContent() {
   };
 
   const typeLabels = {
-    income: { title: 'Income', description: 'Sources of money coming in', color: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800' },
-    expense: { title: 'Expenses', description: 'Money going out', color: 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800' },
+    income: {
+      title: 'Income',
+      description: 'Sources of money coming in',
+      color: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800',
+    },
+    expense: {
+      title: 'Expenses',
+      description: 'Money going out',
+      color: 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800',
+    },
   };
 
   return (
@@ -283,7 +308,9 @@ export function CategoriesContent() {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {typeLabels[type].title}
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{typeLabels[type].description}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {typeLabels[type].description}
+                </p>
               </div>
               <button
                 onClick={() => openCreateModal(type)}
@@ -461,14 +488,16 @@ export function CategoriesContent() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={!editing.name.trim() || updateMutation.isPending || createMutation.isPending}
+                disabled={
+                  !editing.name.trim() || updateMutation.isPending || createMutation.isPending
+                }
                 className="btn-primary"
               >
                 {updateMutation.isPending || createMutation.isPending
                   ? 'Saving...'
                   : editing.isNew
-                  ? 'Create'
-                  : 'Save Changes'}
+                    ? 'Create'
+                    : 'Save Changes'}
               </button>
             </div>
 
@@ -501,9 +530,7 @@ export function CategoriesContent() {
             </div>
 
             {isLoadingDeleteInfo ? (
-              <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-                Loading...
-              </div>
+              <div className="py-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
             ) : deleteInfo ? (
               <div className="space-y-4">
                 <p className="text-gray-700 dark:text-gray-200">
@@ -513,7 +540,9 @@ export function CategoriesContent() {
                 {/* Category Preview */}
                 <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
                   <span className="text-2xl">{deleteInfo.category.icon || '📁'}</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{deleteInfo.category.name}</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {deleteInfo.category.name}
+                  </span>
                 </div>
 
                 {/* Subcategories Warning */}
@@ -523,11 +552,15 @@ export function CategoriesContent() {
                       <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="font-medium text-amber-800 dark:text-amber-300">
-                          This will also delete {deleteInfo.subcategories.length} subcategor{deleteInfo.subcategories.length === 1 ? 'y' : 'ies'}:
+                          This will also delete {deleteInfo.subcategories.length} subcategor
+                          {deleteInfo.subcategories.length === 1 ? 'y' : 'ies'}:
                         </p>
                         <ul className="mt-2 space-y-1">
                           {deleteInfo.subcategories.slice(0, 5).map((sub) => (
-                            <li key={sub.id} className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                            <li
+                              key={sub.id}
+                              className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2"
+                            >
                               <span>{sub.icon || '📁'}</span>
                               <span>{sub.name}</span>
                             </li>
@@ -548,12 +581,16 @@ export function CategoriesContent() {
                   deleteInfo.affectedCounts.budgets > 0 ||
                   deleteInfo.affectedCounts.rules > 0) && (
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl space-y-2">
-                    <p className="font-medium text-blue-800 dark:text-blue-300 text-sm">This will affect:</p>
+                    <p className="font-medium text-blue-800 dark:text-blue-300 text-sm">
+                      This will affect:
+                    </p>
                     {deleteInfo.affectedCounts.transactions > 0 && (
                       <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                         <FileText className="h-4 w-4" />
                         <span>
-                          {deleteInfo.affectedCounts.transactions} transaction{deleteInfo.affectedCounts.transactions === 1 ? '' : 's'} will become uncategorized
+                          {deleteInfo.affectedCounts.transactions} transaction
+                          {deleteInfo.affectedCounts.transactions === 1 ? '' : 's'} will become
+                          uncategorized
                         </span>
                       </div>
                     )}
@@ -561,7 +598,8 @@ export function CategoriesContent() {
                       <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                         <Calculator className="h-4 w-4" />
                         <span>
-                          {deleteInfo.affectedCounts.budgets} budget{deleteInfo.affectedCounts.budgets === 1 ? '' : 's'} will be deleted
+                          {deleteInfo.affectedCounts.budgets} budget
+                          {deleteInfo.affectedCounts.budgets === 1 ? '' : 's'} will be deleted
                         </span>
                       </div>
                     )}
@@ -569,7 +607,8 @@ export function CategoriesContent() {
                       <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
                         <Wand2 className="h-4 w-4" />
                         <span>
-                          {deleteInfo.affectedCounts.rules} categorization rule{deleteInfo.affectedCounts.rules === 1 ? '' : 's'} will be deleted
+                          {deleteInfo.affectedCounts.rules} categorization rule
+                          {deleteInfo.affectedCounts.rules === 1 ? '' : 's'} will be deleted
                         </span>
                       </div>
                     )}
@@ -675,10 +714,7 @@ function CategoryRow({
         {/* Color indicator & Icon */}
         <div className="flex items-center gap-2">
           {category.color && (
-            <div
-              className="h-3 w-3 rounded-full"
-              style={{ backgroundColor: category.color }}
-            />
+            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: category.color }} />
           )}
           <span className="text-xl">{category.icon || '📁'}</span>
         </div>

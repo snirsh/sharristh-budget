@@ -1,9 +1,9 @@
 import '../global.css';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useColorScheme } from 'nativewind';
 import { ThemeProvider } from '../lib/theme';
 import { TRPCProvider } from '../lib/trpc-provider';
-import { useColorScheme } from 'nativewind';
 
 function StackNavigator() {
   const { colorScheme } = useColorScheme();
@@ -24,10 +24,7 @@ function StackNavigator() {
           headerShadowVisible: false,
         }}
       >
-        <Stack.Screen
-          name="(tabs)"
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </>
   );
@@ -42,4 +39,3 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
-

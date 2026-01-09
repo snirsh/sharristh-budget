@@ -38,10 +38,10 @@ export const getScraperBrowserOptions = async (): Promise<ScraperBrowserOptions>
     try {
       // Dynamically import @sparticuz/chromium (only in production)
       const chromium = await import('@sparticuz/chromium');
-      
+
       // Get executable path
       const executablePath = await chromium.default.executablePath();
-      
+
       // Get the optimized args from @sparticuz/chromium
       // These are specifically designed for Lambda/serverless environments
       const args = chromium.default.args;

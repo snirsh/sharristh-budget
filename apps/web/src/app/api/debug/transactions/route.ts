@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@sfam/db';
 import { auth } from '@/lib/auth';
+import { prisma } from '@sfam/db';
+import { NextResponse } from 'next/server';
 
 /**
  * Debug endpoint to diagnose transaction date issues
  * Access at: /api/debug/transactions
- * 
+ *
  * Shows:
  * - Transaction counts by date (Israel timezone vs UTC)
  * - Recent sync job results
@@ -91,7 +91,7 @@ export async function GET() {
     });
 
     // Get last 20 transactions with full date info
-    const recentTransactions = transactions.slice(0, 20).map(tx => ({
+    const recentTransactions = transactions.slice(0, 20).map((tx) => ({
       id: tx.id.substring(0, 8),
       dateISO: tx.date.toISOString(),
       dateIsrael: new Intl.DateTimeFormat('en-CA', {
@@ -128,14 +128,14 @@ export async function GET() {
         .sort(([a], [b]) => b.localeCompare(a))
         .slice(0, 30)
         .map(([date, count]) => ({ date, count })),
-      connections: connections.map(c => ({
+      connections: connections.map((c) => ({
         displayName: c.displayName,
         provider: c.provider,
         lastSyncAt: c.lastSyncAt?.toISOString() || null,
         lastSyncStatus: c.lastSyncStatus,
         isActive: c.isActive,
       })),
-      recentSyncJobs: syncJobs.map(job => ({
+      recentSyncJobs: syncJobs.map((job) => ({
         connectionName: job.connection.displayName,
         status: job.status,
         startedAt: job.startedAt?.toISOString() || null,

@@ -1,14 +1,31 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { trpc } from '@/lib/trpc/client';
-import { formatCurrency, formatDate, formatMonth, cn } from '@/lib/utils';
-import { Search, Filter, Check, X, ChevronDown, ChevronLeft, ChevronRight, Plus, Wand2, EyeOff, Eye, Trash2, CheckCheck, Minus, Loader2, BookmarkPlus } from 'lucide-react';
-import { TransactionSummary } from './TransactionSummary';
-import { AddTransactionDialog } from './AddTransactionDialog';
-import { AICategoryBadgeCompact } from './AICategoryBadge';
-import { RecurringBadgeCompact } from './RecurringBadge';
 import { CategoryCombobox } from '@/components/ui/CategoryCombobox';
+import { trpc } from '@/lib/trpc/client';
+import { cn, formatCurrency, formatDate, formatMonth } from '@/lib/utils';
+import {
+  BookmarkPlus,
+  Check,
+  CheckCheck,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Filter,
+  Loader2,
+  Minus,
+  Plus,
+  Search,
+  Trash2,
+  Wand2,
+  X,
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AICategoryBadgeCompact } from './AICategoryBadge';
+import { AddTransactionDialog } from './AddTransactionDialog';
+import { RecurringBadgeCompact } from './RecurringBadge';
+import { TransactionSummary } from './TransactionSummary';
 
 type Category = {
   id: string;
@@ -16,7 +33,6 @@ type Category = {
   type: string;
   icon?: string | null;
 };
-
 
 type TransactionsContentProps = {
   categories: Category[];
@@ -70,9 +86,7 @@ export const TransactionsContent = ({
     const [year, monthNum] = baseMonth.split('-').map(Number);
     const date = new Date(year!, monthNum! - 1);
     date.setMonth(date.getMonth() + (direction === 'next' ? 1 : -1));
-    setCurrentMonth(
-      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-    );
+    setCurrentMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
   };
 
   const showAllTime = () => {
@@ -106,19 +120,18 @@ export const TransactionsContent = ({
   );
 
   // Flatten all pages into a single transactions array
-  const transactions = transactionsPages?.pages.flatMap(page => page.transactions) ?? [];
+  const transactions = transactionsPages?.pages.flatMap((page) => page.transactions) ?? [];
   const total = transactionsPages?.pages[0]?.total ?? 0;
   const hasMore = hasNextPage ?? false;
 
   // Fetch monthly summary from server (calculates from ALL transactions in DB)
   // Works for both specific month and all-time views
-  const { data: monthlySummary, refetch: refetchSummary } = trpc.transactions.monthlySummary.useQuery(
-    {
+  const { data: monthlySummary, refetch: refetchSummary } =
+    trpc.transactions.monthlySummary.useQuery({
       startDate,
       endDate,
       includeIgnored: showIgnored || undefined,
-    }
-  );
+    });
 
   const utils = trpc.useUtils();
 
@@ -126,14 +139,16 @@ export const TransactionsContent = ({
     onSuccess: (data, variables) => {
       // Cast to access new fields (TypeScript doesn't know about them yet)
       const result = data as typeof data & { additionalUpdated?: number; ruleCreated?: boolean };
-      
+
       // If additional transactions were updated by the rule, invalidate the cache
       // to show all the updates
       if (result.additionalUpdated && result.additionalUpdated > 0) {
         utils.transactions.list.invalidate();
         // Show user feedback about the rule being applied
         setTimeout(() => {
-          alert(`Category saved! Also applied the rule to ${result.additionalUpdated} other matching transaction(s).`);
+          alert(
+            `Category saved! Also applied the rule to ${result.additionalUpdated} other matching transaction(s).`
+          );
         }, 100);
       } else {
         // Optimistically update the cache for immediate feedback
@@ -234,7 +249,7 @@ export const TransactionsContent = ({
     onSuccess: (data) => {
       // Cast to access new fields
       const result = data as typeof data & { ruleCreated?: boolean; additionalUpdated?: number };
-      
+
       utils.transactions.list.invalidate();
       refetch();
       refetchSummary();
@@ -242,7 +257,9 @@ export const TransactionsContent = ({
       setBatchCategoryId('');
       // Notify user if a rule was created and applied
       if (result.ruleCreated && result.additionalUpdated && result.additionalUpdated > 0) {
-        alert(`Updated ${result.updated} selected transaction(s) and ${result.additionalUpdated} additional matching transaction(s) with the new rule.`);
+        alert(
+          `Updated ${result.updated} selected transaction(s) and ${result.additionalUpdated} additional matching transaction(s) with the new rule.`
+        );
       }
     },
   });
@@ -423,24 +440,19 @@ export const TransactionsContent = ({
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
           <p className="text-gray-500 dark:text-gray-400">
-            {transactions.length} {total > 0 && total !== transactions.length ? `of ${total}` : ''} transactions
+            {transactions.length} {total > 0 && total !== transactions.length ? `of ${total}` : ''}{' '}
+            transactions
             {needsReviewFilter && ' needing review'}
             {showIgnored && ' (including ignored)'}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="btn btn-primary"
-          >
+          <button onClick={() => setIsAddDialogOpen(true)} className="btn btn-primary">
             <Plus className="h-4 w-4" />
             Add Transaction
           </button>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigateMonth('prev')}
-              className="btn-outline btn-sm"
-            >
+            <button onClick={() => navigateMonth('prev')} className="btn-outline btn-sm">
               <ChevronLeft className="h-4 w-4" />
             </button>
             {currentMonth ? (
@@ -456,10 +468,7 @@ export const TransactionsContent = ({
                 All Time
               </span>
             )}
-            <button
-              onClick={() => navigateMonth('next')}
-              className="btn-outline btn-sm"
-            >
+            <button onClick={() => navigateMonth('next')} className="btn-outline btn-sm">
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -501,10 +510,7 @@ export const TransactionsContent = ({
 
         <button
           onClick={() => setNeedsReviewFilter(!needsReviewFilter)}
-          className={cn(
-            'btn',
-            needsReviewFilter ? 'btn-primary' : 'btn-outline'
-          )}
+          className={cn('btn', needsReviewFilter ? 'btn-primary' : 'btn-outline')}
         >
           <Filter className="h-4 w-4 mr-2" />
           Needs Review
@@ -512,10 +518,7 @@ export const TransactionsContent = ({
 
         <button
           onClick={() => setShowIgnored(!showIgnored)}
-          className={cn(
-            'btn',
-            showIgnored ? 'btn-primary' : 'btn-outline'
-          )}
+          className={cn('btn', showIgnored ? 'btn-primary' : 'btn-outline')}
           title={showIgnored ? 'Hide ignored transactions' : 'Show ignored transactions'}
         >
           {showIgnored ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
@@ -657,19 +660,23 @@ export const TransactionsContent = ({
                 </td>
                 <td className="px-4 py-3">
                   <div>
-                    <p className={cn(
-                      'text-sm font-medium',
-                      tx.isIgnored 
-                        ? 'text-gray-500 dark:text-gray-400 line-through' 
-                        : 'text-gray-900 dark:text-white'
-                    )}>
+                    <p
+                      className={cn(
+                        'text-sm font-medium',
+                        tx.isIgnored
+                          ? 'text-gray-500 dark:text-gray-400 line-through'
+                          : 'text-gray-900 dark:text-white'
+                      )}
+                    >
                       {tx.description}
                     </p>
                     {tx.merchant && (
                       <p className="text-xs text-gray-500 dark:text-gray-400">{tx.merchant}</p>
                     )}
                     {tx.isIgnored && (
-                      <span className="text-xs text-gray-400 dark:text-gray-500 italic">Ignored</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        Ignored
+                      </span>
                     )}
                   </div>
                 </td>
@@ -704,9 +711,7 @@ export const TransactionsContent = ({
                         source={tx.categorizationSource}
                         confidence={tx.confidence}
                       />
-                      <RecurringBadgeCompact
-                        recurringTemplate={tx.recurringTemplate}
-                      />
+                      <RecurringBadgeCompact recurringTemplate={tx.recurringTemplate} />
                     </div>
                   )}
                 </td>
@@ -731,9 +736,7 @@ export const TransactionsContent = ({
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
                     {tx.needsReview && (
-                      <span className="badge badge-warning text-xs mr-2">
-                        Review
-                      </span>
+                      <span className="badge badge-warning text-xs mr-2">Review</span>
                     )}
                     <button
                       onClick={() => handleToggleIgnore(tx.id, !tx.isIgnored)}
@@ -763,12 +766,11 @@ export const TransactionsContent = ({
                 <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                   <div className="space-y-2">
                     <p>
-                      {currentMonth 
+                      {currentMonth
                         ? `No transactions found for ${formatMonth(currentMonth)}`
-                        : needsReviewFilter 
+                        : needsReviewFilter
                           ? 'No transactions need review'
-                          : 'No transactions found'
-                      }
+                          : 'No transactions found'}
                     </p>
                     {currentMonth && (
                       <p className="text-sm">
@@ -777,12 +779,15 @@ export const TransactionsContent = ({
                           onClick={() => navigateMonth('prev')}
                           className="text-primary-500 hover:underline"
                         >
-                          go to {formatMonth((() => {
-                            const [year, monthNum] = currentMonth.split('-').map(Number);
-                            const date = new Date(year!, monthNum! - 1);
-                            date.setMonth(date.getMonth() - 1);
-                            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                          })())}
+                          go to{' '}
+                          {formatMonth(
+                            (() => {
+                              const [year, monthNum] = currentMonth.split('-').map(Number);
+                              const date = new Date(year!, monthNum! - 1);
+                              date.setMonth(date.getMonth() - 1);
+                              return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                            })()
+                          )}
                         </button>
                       </p>
                     )}
@@ -822,12 +827,14 @@ export const TransactionsContent = ({
               onClick={toggleSelectAll}
               className="flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400"
             >
-              <div className={cn(
-                'flex items-center justify-center w-6 h-6 rounded border-2 transition-colors',
-                isAllSelected
-                  ? 'bg-primary-500 border-primary-500 text-white'
-                  : 'border-gray-300 dark:border-gray-600'
-              )}>
+              <div
+                className={cn(
+                  'flex items-center justify-center w-6 h-6 rounded border-2 transition-colors',
+                  isAllSelected
+                    ? 'bg-primary-500 border-primary-500 text-white'
+                    : 'border-gray-300 dark:border-gray-600'
+                )}
+              >
                 {isAllSelected ? (
                   <Check className="h-4 w-4" />
                 ) : isSomeSelected ? (
@@ -845,7 +852,8 @@ export const TransactionsContent = ({
               'card p-4 relative',
               tx.needsReview && 'border-l-4 border-warning-500',
               tx.isIgnored && 'opacity-50 bg-gray-100 dark:bg-gray-900',
-              selectedIds.has(tx.id) && 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
+              selectedIds.has(tx.id) &&
+                'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
             )}
           >
             {/* Checkbox and Date Row */}
@@ -865,20 +873,20 @@ export const TransactionsContent = ({
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   {formatDate(tx.date)}
                 </span>
-                {tx.needsReview && (
-                  <span className="badge badge-warning text-xs">Review</span>
-                )}
+                {tx.needsReview && <span className="badge badge-warning text-xs">Review</span>}
               </div>
             </div>
 
             {/* Description and Merchant */}
             <div className="mb-3">
-              <p className={cn(
-                'font-medium',
-                tx.isIgnored
-                  ? 'text-gray-500 dark:text-gray-400 line-through'
-                  : 'text-gray-900 dark:text-white'
-              )}>
+              <p
+                className={cn(
+                  'font-medium',
+                  tx.isIgnored
+                    ? 'text-gray-500 dark:text-gray-400 line-through'
+                    : 'text-gray-900 dark:text-white'
+                )}
+              >
                 {tx.description}
               </p>
               {tx.merchant && (
@@ -921,18 +929,14 @@ export const TransactionsContent = ({
                     source={tx.categorizationSource}
                     confidence={tx.confidence}
                   />
-                  <RecurringBadgeCompact
-                    recurringTemplate={tx.recurringTemplate}
-                  />
+                  <RecurringBadgeCompact recurringTemplate={tx.recurringTemplate} />
                 </div>
               )}
             </div>
 
             {/* Amount and Account Row */}
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {tx.account?.name}
-              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{tx.account?.name}</span>
               <span
                 className={cn(
                   'text-lg font-semibold',
@@ -985,12 +989,11 @@ export const TransactionsContent = ({
           <div className="card p-12 text-center text-gray-500 dark:text-gray-400">
             <div className="space-y-2">
               <p>
-                {currentMonth 
+                {currentMonth
                   ? `No transactions found for ${formatMonth(currentMonth)}`
-                  : needsReviewFilter 
+                  : needsReviewFilter
                     ? 'No transactions need review'
-                    : 'No transactions found'
-                }
+                    : 'No transactions found'}
               </p>
               {currentMonth && (
                 <p className="text-sm">
@@ -999,12 +1002,15 @@ export const TransactionsContent = ({
                     onClick={() => navigateMonth('prev')}
                     className="text-primary-500 hover:underline"
                   >
-                    go to {formatMonth((() => {
-                      const [year, monthNum] = currentMonth.split('-').map(Number);
-                      const date = new Date(year!, monthNum! - 1);
-                      date.setMonth(date.getMonth() - 1);
-                      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                    })())}
+                    go to{' '}
+                    {formatMonth(
+                      (() => {
+                        const [year, monthNum] = currentMonth.split('-').map(Number);
+                        const date = new Date(year!, monthNum! - 1);
+                        date.setMonth(date.getMonth() - 1);
+                        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                      })()
+                    )}
                   </button>
                 </p>
               )}
@@ -1013,10 +1019,7 @@ export const TransactionsContent = ({
         )}
         {/* Infinite scroll loading indicator - Mobile */}
         {(hasMore || isFetchingNextPage) && (
-          <div
-            ref={loadMoreRefMobile}
-            className="card p-6 flex items-center justify-center"
-          >
+          <div ref={loadMoreRefMobile} className="card p-6 flex items-center justify-center">
             {isFetchingNextPage ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin text-gray-400 dark:text-gray-500" />
@@ -1106,15 +1109,19 @@ const CategorySelector = ({
         onSelect={handleCategorySelect}
         onCancel={onCancel}
       />
-      
-      <label 
+
+      <label
         className={cn(
-          "flex items-center gap-1.5 text-xs px-2 py-1 rounded cursor-pointer transition-colors",
-          createRule 
-            ? "bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300" 
-            : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+          'flex items-center gap-1.5 text-xs px-2 py-1 rounded cursor-pointer transition-colors',
+          createRule
+            ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300'
+            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
         )}
-        title={transactionMerchant ? `Create rule for "${transactionMerchant}"` : 'Create rule for this pattern'}
+        title={
+          transactionMerchant
+            ? `Create rule for "${transactionMerchant}"`
+            : 'Create rule for this pattern'
+        }
       >
         <input
           type="checkbox"
@@ -1180,9 +1187,7 @@ const MobileCategorySelector = ({
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(
-        (cat) =>
-          cat.name.toLowerCase().includes(query) ||
-          (cat.icon && cat.icon.includes(query))
+        (cat) => cat.name.toLowerCase().includes(query) || (cat.icon && cat.icon.includes(query))
       );
     }
 
@@ -1237,31 +1242,31 @@ const MobileCategorySelector = ({
               )}
             >
               <span className="text-xl">{cat.icon || '📁'}</span>
-              <span className={cn(
-                'text-sm truncate',
-                cat.id === selectedId 
-                  ? 'font-medium text-primary-700 dark:text-primary-300' 
-                  : 'text-gray-700 dark:text-gray-200'
-              )}>
+              <span
+                className={cn(
+                  'text-sm truncate',
+                  cat.id === selectedId
+                    ? 'font-medium text-primary-700 dark:text-primary-300'
+                    : 'text-gray-700 dark:text-gray-200'
+                )}
+              >
                 {cat.name}
               </span>
             </button>
           ))}
         </div>
         {filteredCategories.length === 0 && (
-          <p className="text-center py-8 text-gray-500 dark:text-gray-400">
-            No categories found
-          </p>
+          <p className="text-center py-8 text-gray-500 dark:text-gray-400">No categories found</p>
         )}
       </div>
 
       {/* Rule Toggle */}
-      <label 
+      <label
         className={cn(
-          "flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors",
-          createRule 
-            ? "bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800" 
-            : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+          'flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors',
+          createRule
+            ? 'bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800'
+            : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
         )}
       >
         <input
@@ -1271,10 +1276,14 @@ const MobileCategorySelector = ({
           className="rounded w-5 h-5 text-primary-600"
         />
         <div className="flex-1">
-          <span className={cn(
-            "text-sm font-medium",
-            createRule ? "text-primary-700 dark:text-primary-300" : "text-gray-700 dark:text-gray-300"
-          )}>
+          <span
+            className={cn(
+              'text-sm font-medium',
+              createRule
+                ? 'text-primary-700 dark:text-primary-300'
+                : 'text-gray-700 dark:text-gray-300'
+            )}
+          >
             Create rule for this pattern
           </span>
           {transactionMerchant && (
@@ -1283,10 +1292,12 @@ const MobileCategorySelector = ({
             </p>
           )}
         </div>
-        <BookmarkPlus className={cn(
-          "h-5 w-5",
-          createRule ? "text-primary-600 dark:text-primary-400" : "text-gray-400"
-        )} />
+        <BookmarkPlus
+          className={cn(
+            'h-5 w-5',
+            createRule ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400'
+          )}
+        />
       </label>
 
       {/* Action Buttons - Only show if createRule is on */}
@@ -1300,10 +1311,7 @@ const MobileCategorySelector = ({
             <Check className="h-5 w-5 mr-2" />
             Save with Rule
           </button>
-          <button
-            onClick={onCancel}
-            className="btn btn-outline py-3"
-          >
+          <button onClick={onCancel} className="btn btn-outline py-3">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -1311,10 +1319,7 @@ const MobileCategorySelector = ({
 
       {/* Cancel only button when not in rule mode */}
       {!createRule && (
-        <button
-          onClick={onCancel}
-          className="w-full btn btn-ghost py-2 text-gray-500"
-        >
+        <button onClick={onCancel} className="w-full btn btn-ghost py-2 text-gray-500">
           Cancel
         </button>
       )}

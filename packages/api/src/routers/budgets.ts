@@ -1,17 +1,13 @@
-import { z } from 'zod';
-import { router, protectedProcedure } from '../trpc';
 import {
-  createBudgetSchema,
-  updateBudgetSchema,
-  monthSchema,
-} from '@sfam/domain/schemas';
-import {
-  evaluateBudgetStatus,
-  calculateCategorySpending,
-  getAlertBudgets,
   type Budget,
   type Transaction,
+  calculateCategorySpending,
+  evaluateBudgetStatus,
+  getAlertBudgets,
 } from '@sfam/domain';
+import { createBudgetSchema, monthSchema, updateBudgetSchema } from '@sfam/domain/schemas';
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
 
 // Helper to map Prisma budget to domain type
 function toBudget(b: {
@@ -31,24 +27,26 @@ function toBudget(b: {
 }
 
 // Helper to map Prisma transactions to domain type
-function toTransactions(txs: Array<{
-  id: string;
-  householdId: string;
-  accountId: string;
-  userId?: string | null;
-  categoryId?: string | null;
-  date: Date;
-  description: string;
-  merchant?: string | null;
-  amount: number;
-  direction: string;
-  needsReview: boolean;
-  isIgnored: boolean;
-  isRecurringInstance: boolean;
-  recurringTemplateId?: string | null;
-  recurringInstanceKey?: string | null;
-}>): Transaction[] {
-  return txs.map(t => ({
+function toTransactions(
+  txs: Array<{
+    id: string;
+    householdId: string;
+    accountId: string;
+    userId?: string | null;
+    categoryId?: string | null;
+    date: Date;
+    description: string;
+    merchant?: string | null;
+    amount: number;
+    direction: string;
+    needsReview: boolean;
+    isIgnored: boolean;
+    isRecurringInstance: boolean;
+    recurringTemplateId?: string | null;
+    recurringInstanceKey?: string | null;
+  }>
+): Transaction[] {
+  return txs.map((t) => ({
     ...t,
     direction: t.direction as 'income' | 'expense' | 'transfer',
     date: new Date(t.date),
@@ -91,12 +89,8 @@ export const budgetsRouter = router({
 
     // Evaluate each budget
     const domainTransactions = toTransactions(transactions);
-    const evaluations = budgets.map((budget: typeof budgets[number]) => {
-      const actualAmount = calculateCategorySpending(
-        domainTransactions,
-        budget.categoryId,
-        input
-      );
+    const evaluations = budgets.map((budget: (typeof budgets)[number]) => {
+      const actualAmount = calculateCategorySpending(domainTransactions, budget.categoryId, input);
 
       return {
         ...evaluateBudgetStatus(toBudget(budget), actualAmount),
@@ -141,12 +135,8 @@ export const budgetsRouter = router({
     ]);
 
     const domainTransactions = toTransactions(transactions);
-    const evaluations = budgets.map((budget: typeof budgets[number]) => {
-      const actualAmount = calculateCategorySpending(
-        domainTransactions,
-        budget.categoryId,
-        input
-      );
+    const evaluations = budgets.map((budget: (typeof budgets)[number]) => {
+      const actualAmount = calculateCategorySpending(domainTransactions, budget.categoryId, input);
 
       return {
         ...evaluateBudgetStatus(toBudget(budget), actualAmount),
@@ -156,7 +146,8 @@ export const budgetsRouter = router({
 
     return getAlertBudgets(evaluations).map((e) => ({
       ...e,
-      category: budgets.find((b: typeof budgets[number]) => b.categoryId === e.budget.categoryId)?.category,
+      category: budgets.find((b: (typeof budgets)[number]) => b.categoryId === e.budget.categoryId)
+        ?.category,
     }));
   }),
 
@@ -241,35 +232,33 @@ export const budgetsRouter = router({
   /**
    * Get budget summary for a month (used for copy preview)
    */
-  summaryForMonth: protectedProcedure
-    .input(monthSchema)
-    .query(async ({ ctx, input }) => {
-      const budgets = await ctx.prisma.budget.findMany({
-        where: {
-          householdId: ctx.householdId,
-          month: input,
-        },
-        include: {
-          category: {
-            select: { id: true, name: true, icon: true },
-          },
-        },
-      });
-
-      const totalPlanned = budgets.reduce((sum, b) => sum + b.plannedAmount, 0);
-
-      return {
+  summaryForMonth: protectedProcedure.input(monthSchema).query(async ({ ctx, input }) => {
+    const budgets = await ctx.prisma.budget.findMany({
+      where: {
+        householdId: ctx.householdId,
         month: input,
-        count: budgets.length,
-        totalPlanned,
-        budgets: budgets.map((b) => ({
-          categoryId: b.categoryId,
-          categoryName: b.category.name,
-          categoryIcon: b.category.icon,
-          plannedAmount: b.plannedAmount,
-        })),
-      };
-    }),
+      },
+      include: {
+        category: {
+          select: { id: true, name: true, icon: true },
+        },
+      },
+    });
+
+    const totalPlanned = budgets.reduce((sum, b) => sum + b.plannedAmount, 0);
+
+    return {
+      month: input,
+      count: budgets.length,
+      totalPlanned,
+      budgets: budgets.map((b) => ({
+        categoryId: b.categoryId,
+        categoryName: b.category.name,
+        categoryIcon: b.category.icon,
+        plannedAmount: b.plannedAmount,
+      })),
+    };
+  }),
 
   /**
    * Copy budgets from one month to another
@@ -291,7 +280,7 @@ export const budgetsRouter = router({
 
       // Create budgets for target month (skip if already exists)
       const created = await Promise.all(
-        sourceBudgets.map((budget: typeof sourceBudgets[number]) =>
+        sourceBudgets.map((budget: (typeof sourceBudgets)[number]) =>
           ctx.prisma.budget.upsert({
             where: {
               householdId_categoryId_month: {
@@ -326,4 +315,3 @@ export const budgetsRouter = router({
     });
   }),
 });
-

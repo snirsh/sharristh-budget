@@ -1,6 +1,14 @@
-import { View, Text, ScrollView, TextInput, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
-import { useState, useCallback, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { trpc } from '../../lib/trpc';
 
 function formatCurrency(amount: number): string {
@@ -72,11 +80,7 @@ export default function TransactionsScreen() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View className="flex-row gap-2">
-            <FilterChip
-              label="All"
-              active={filter === 'all'}
-              onPress={() => setFilter('all')}
-            />
+            <FilterChip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
             <FilterChip
               label="Income"
               active={filter === 'income'}
@@ -108,9 +112,7 @@ export default function TransactionsScreen() {
       ) : (
         <ScrollView
           className="flex-1"
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />}
         >
           <View className="p-4">
             {filteredTransactions.length === 0 ? (
@@ -119,9 +121,7 @@ export default function TransactionsScreen() {
                 <Text className="text-gray-500 mt-4">No transactions found</Text>
               </View>
             ) : (
-              filteredTransactions.map((tx) => (
-                <TransactionItem key={tx.id} transaction={tx} />
-              ))
+              filteredTransactions.map((tx) => <TransactionItem key={tx.id} transaction={tx} />)
             )}
           </View>
         </ScrollView>
@@ -156,9 +156,7 @@ function FilterChip({
           style={{ marginRight: 4 }}
         />
       )}
-      <Text className={active ? 'text-white font-medium' : 'text-gray-600'}>
-        {label}
-      </Text>
+      <Text className={active ? 'text-white font-medium' : 'text-gray-600'}>{label}</Text>
     </Pressable>
   );
 }
@@ -175,9 +173,7 @@ function TransactionItem({ transaction }: { transaction: any }) {
     >
       <Text className="text-2xl mr-3">{transaction.category?.icon || '❓'}</Text>
       <View className="flex-1">
-        <Text className="font-medium text-gray-900">
-          {transaction.description}
-        </Text>
+        <Text className="font-medium text-gray-900">{transaction.description}</Text>
         <View className="flex-row items-center mt-0.5">
           <Text className="text-xs text-gray-500">{formatDate(transaction.date)}</Text>
           {transaction.merchant && (
@@ -189,11 +185,7 @@ function TransactionItem({ transaction }: { transaction: any }) {
         </View>
       </View>
       <View className="items-end">
-        <Text
-          className={`font-semibold ${
-            isIncome ? 'text-success-600' : 'text-gray-900'
-          }`}
-        >
+        <Text className={`font-semibold ${isIncome ? 'text-success-600' : 'text-gray-900'}`}>
           {isIncome ? '+' : '-'}
           {formatCurrency(transaction.amount)}
         </Text>
@@ -206,4 +198,3 @@ function TransactionItem({ transaction }: { transaction: any }) {
     </Pressable>
   );
 }
-

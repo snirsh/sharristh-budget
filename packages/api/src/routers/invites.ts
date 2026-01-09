@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { router, protectedProcedure, middleware } from '../trpc';
-import { TRPCError } from '@trpc/server';
 import crypto from 'crypto';
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { middleware, protectedProcedure, router } from '../trpc';
 
 /**
  * Hash invite code for secure storage/comparison (SHA-256)
@@ -117,10 +117,7 @@ export const invitesRouter = router({
         householdId: ctx.householdId,
         type: 'household',
         usedAt: null,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gte: now } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
       },
       select: {
         id: true,

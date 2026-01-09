@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
+import { getAndRemoveChallenge, getRPConfig } from '@/lib/webauthn-utils';
+import { prisma } from '@sfam/db';
 import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
-import { prisma } from '@sfam/db';
-import { getAndRemoveChallenge, getRPConfig } from '@/lib/webauthn-utils';
-import crypto from 'crypto';
 import { cookies } from 'next/headers';
+import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * POST /api/auth/webauthn/authenticate/verify
@@ -67,10 +67,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!verification.verified) {
-      return NextResponse.json(
-        { error: 'Authentication verification failed' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Authentication verification failed' }, { status: 400 });
     }
 
     // Update authenticator counter
@@ -121,10 +118,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Authentication verification error:', error);
-    return NextResponse.json(
-      { error: 'Failed to verify authentication' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to verify authentication' }, { status: 500 });
   }
 }
-

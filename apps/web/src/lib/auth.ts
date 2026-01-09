@@ -1,8 +1,8 @@
-import NextAuth, { type NextAuthResult } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import Passkey from 'next-auth/providers/passkey';
 import { prisma } from '@sfam/db';
-import type { Adapter, AdapterUser, AdapterAuthenticator } from 'next-auth/adapters';
+import NextAuth, { type NextAuthResult } from 'next-auth';
+import type { Adapter, AdapterAuthenticator, AdapterUser } from 'next-auth/adapters';
+import Passkey from 'next-auth/providers/passkey';
 
 /**
  * Custom Prisma Adapter that maps our schema to Auth.js expectations
@@ -10,10 +10,10 @@ import type { Adapter, AdapterUser, AdapterAuthenticator } from 'next-auth/adapt
  */
 function createCustomAdapter(): Adapter {
   const baseAdapter = PrismaAdapter(prisma);
-  
+
   return {
     ...baseAdapter,
-    
+
     // Override user methods to handle our schema
     async createUser(data: Omit<AdapterUser, 'id'>) {
       const user = await prisma.user.create({
@@ -31,7 +31,7 @@ function createCustomAdapter(): Adapter {
         image: user.avatarUrl,
       };
     },
-    
+
     async getUser(id: string) {
       const user = await prisma.user.findUnique({ where: { id } });
       if (!user) return null;
@@ -43,7 +43,7 @@ function createCustomAdapter(): Adapter {
         image: user.avatarUrl,
       };
     },
-    
+
     async getUserByEmail(email: string) {
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) return null;
@@ -55,7 +55,7 @@ function createCustomAdapter(): Adapter {
         image: user.avatarUrl,
       };
     },
-    
+
     async updateUser(data: Partial<AdapterUser> & Pick<AdapterUser, 'id'>) {
       const user = await prisma.user.update({
         where: { id: data.id },
@@ -74,7 +74,7 @@ function createCustomAdapter(): Adapter {
         image: user.avatarUrl,
       };
     },
-    
+
     // Session methods
     async createSession(data: { sessionToken: string; userId: string; expires: Date }) {
       const session = await prisma.session.create({
@@ -90,7 +90,7 @@ function createCustomAdapter(): Adapter {
         expires: session.expires,
       };
     },
-    
+
     async getSessionAndUser(sessionToken: string) {
       const session = await prisma.session.findUnique({
         where: { sessionToken },
@@ -112,7 +112,7 @@ function createCustomAdapter(): Adapter {
         },
       };
     },
-    
+
     async updateSession(data: { sessionToken: string; expires?: Date }) {
       const session = await prisma.session.update({
         where: { sessionToken: data.sessionToken },
@@ -124,13 +124,13 @@ function createCustomAdapter(): Adapter {
         expires: session.expires,
       };
     },
-    
+
     async deleteSession(sessionToken: string) {
       await prisma.session.delete({ where: { sessionToken } }).catch(() => {
         // Session might already be deleted
       });
     },
-    
+
     // WebAuthn Authenticator methods
     async createAuthenticator(data: AdapterAuthenticator): Promise<AdapterAuthenticator> {
       const authenticator = await prisma.authenticator.create({
@@ -155,7 +155,7 @@ function createCustomAdapter(): Adapter {
         providerAccountId: authenticator.credentialID,
       };
     },
-    
+
     async getAuthenticator(credentialID: string): Promise<AdapterAuthenticator | null> {
       const authenticator = await prisma.authenticator.findUnique({
         where: { credentialID },
@@ -172,7 +172,7 @@ function createCustomAdapter(): Adapter {
         providerAccountId: authenticator.credentialID,
       };
     },
-    
+
     async listAuthenticatorsByUserId(userId: string): Promise<AdapterAuthenticator[]> {
       const authenticators = await prisma.authenticator.findMany({
         where: { userId },
@@ -188,8 +188,11 @@ function createCustomAdapter(): Adapter {
         providerAccountId: auth.credentialID,
       }));
     },
-    
-    async updateAuthenticatorCounter(credentialID: string, counter: number): Promise<AdapterAuthenticator> {
+
+    async updateAuthenticatorCounter(
+      credentialID: string,
+      counter: number
+    ): Promise<AdapterAuthenticator> {
       const authenticator = await prisma.authenticator.update({
         where: { credentialID },
         data: { counter: BigInt(counter) },
@@ -213,30 +216,30 @@ function createCustomAdapter(): Adapter {
  */
 const authConfig = NextAuth({
   adapter: createCustomAdapter(),
-  
+
   providers: [
     Passkey({
       // Relying Party configuration
       // These are set via environment variables
     }),
   ],
-  
+
   session: {
     // Use database sessions for better security
     strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours
   },
-  
+
   experimental: {
     enableWebAuthn: true,
   },
-  
+
   pages: {
     signIn: '/login',
     error: '/login',
   },
-  
+
   callbacks: {
     async session({ session, user }) {
       // Add user ID to session
@@ -244,7 +247,7 @@ const authConfig = NextAuth({
       return session;
     },
   },
-  
+
   // Trust the host header in development
   trustHost: true,
 });

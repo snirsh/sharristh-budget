@@ -1,14 +1,14 @@
-import { createScraper, CompanyTypes } from 'israeli-bank-scrapers';
-import type { ScraperAdapter } from './base';
-import { registerAdapter } from './base';
+import { CompanyTypes, createScraper } from 'israeli-bank-scrapers';
+import { getScraperBrowserOptions } from '../chromium-config';
 import type {
   OneZeroCredentials,
   ScrapeResult,
-  TwoFactorInitResult,
-  TwoFactorCompleteResult,
   ScrapedAccount,
+  TwoFactorCompleteResult,
+  TwoFactorInitResult,
 } from '../types';
-import { getScraperBrowserOptions } from '../chromium-config';
+import type { ScraperAdapter } from './base';
+import { registerAdapter } from './base';
 
 // Extended scrape options to include long-term 2FA token
 // The library expects 'otpLongTermToken' for the long-term token
@@ -54,16 +54,16 @@ const validateToken = (token: string): { valid: boolean; reason?: string } => {
   if (token.startsWith('{')) {
     try {
       const tokenObj = JSON.parse(token);
-      
+
       // The library expects specific fields in the token
       // Check for common OAuth token fields
       if (!tokenObj.idToken && !tokenObj.accessToken && !tokenObj.refreshToken) {
-        return { 
-          valid: false, 
-          reason: `Token JSON missing expected fields. Has: ${Object.keys(tokenObj).join(', ')}` 
+        return {
+          valid: false,
+          reason: `Token JSON missing expected fields. Has: ${Object.keys(tokenObj).join(', ')}`,
         };
       }
-      
+
       return { valid: true };
     } catch {
       return { valid: false, reason: 'Token looks like JSON but failed to parse' };
@@ -96,7 +96,9 @@ class OneZeroAdapter implements ScraperAdapter {
 
     // Validate token before attempting scrape
     if (!longTermToken) {
-      console.warn('[OneZero] No long-term token available - this will require interactive OTP which is not supported in this flow');
+      console.warn(
+        '[OneZero] No long-term token available - this will require interactive OTP which is not supported in this flow'
+      );
       return {
         success: false,
         errorType: 'AUTH_REQUIRED',
@@ -167,9 +169,9 @@ class OneZeroAdapter implements ScraperAdapter {
 
           // Detect token-related errors and provide helpful message
           const errorMsg = result.errorMessage || 'Authentication failed';
-          const isTokenError = 
-            errorMsg.includes('idToken') || 
-            errorMsg.includes('token') || 
+          const isTokenError =
+            errorMsg.includes('idToken') ||
+            errorMsg.includes('token') ||
             errorMsg.includes('auth') ||
             errorMsg.includes('undefined') ||
             result.errorType === 'INVALID_PASSWORD' ||
@@ -187,13 +189,15 @@ class OneZeroAdapter implements ScraperAdapter {
         }
 
         console.log('[OneZero] Scrape successful, accounts:', result.accounts?.length || 0);
-        
+
         // Log transaction date range for debugging
         for (const acc of result.accounts || []) {
           if (acc.txns.length > 0) {
-            const dates = acc.txns.map(t => t.date.split('T')[0]);
+            const dates = acc.txns.map((t) => t.date.split('T')[0]);
             const uniqueDates = [...new Set(dates)].sort();
-            console.log(`[OneZero] Account ${acc.accountNumber}: ${acc.txns.length} transactions, dates: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]}`);
+            console.log(
+              `[OneZero] Account ${acc.accountNumber}: ${acc.txns.length} transactions, dates: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]}`
+            );
           } else {
             console.log(`[OneZero] Account ${acc.accountNumber}: 0 transactions`);
           }
@@ -220,7 +224,12 @@ class OneZeroAdapter implements ScraperAdapter {
         }));
 
         const totalTxns = accounts.reduce((sum, acc) => sum + acc.txns.length, 0);
-        console.log('[OneZero] Mapped accounts:', accounts.length, 'with total transactions:', totalTxns);
+        console.log(
+          '[OneZero] Mapped accounts:',
+          accounts.length,
+          'with total transactions:',
+          totalTxns
+        );
 
         return {
           success: true,
@@ -236,8 +245,8 @@ class OneZeroAdapter implements ScraperAdapter {
         }
 
         // Check if this is a token-related error (like "Cannot read properties of undefined (reading 'idToken')")
-        const isTokenError = 
-          errorMessage.includes('idToken') || 
+        const isTokenError =
+          errorMessage.includes('idToken') ||
           errorMessage.includes('Cannot read properties of undefined');
 
         if (isTokenError) {
@@ -308,7 +317,8 @@ class OneZeroAdapter implements ScraperAdapter {
       const triggerResult = await scraper.triggerTwoFactorAuth(phoneNumber);
 
       if (!triggerResult.success) {
-        const errorMsg = 'errorMessage' in triggerResult ? triggerResult.errorMessage : 'Failed to send OTP';
+        const errorMsg =
+          'errorMessage' in triggerResult ? triggerResult.errorMessage : 'Failed to send OTP';
         console.error('[OneZero] Failed to trigger 2FA:', errorMsg);
         return {
           success: false,
@@ -374,14 +384,19 @@ class OneZeroAdapter implements ScraperAdapter {
       console.log('[OneZero] getLongTermTwoFactorToken result:', {
         success: tokenResult.success,
         hasToken: tokenResult.success && 'longTermTwoFactorAuthToken' in tokenResult,
-        tokenLength: tokenResult.success && 'longTermTwoFactorAuthToken' in tokenResult
-          ? tokenResult.longTermTwoFactorAuthToken?.length
-          : 0,
+        tokenLength:
+          tokenResult.success && 'longTermTwoFactorAuthToken' in tokenResult
+            ? tokenResult.longTermTwoFactorAuthToken?.length
+            : 0,
         resultKeys: Object.keys(tokenResult),
       });
 
       // Log the token structure for debugging (without sensitive data)
-      if (tokenResult.success && 'longTermTwoFactorAuthToken' in tokenResult && tokenResult.longTermTwoFactorAuthToken) {
+      if (
+        tokenResult.success &&
+        'longTermTwoFactorAuthToken' in tokenResult &&
+        tokenResult.longTermTwoFactorAuthToken
+      ) {
         const token = tokenResult.longTermTwoFactorAuthToken;
         console.log('[OneZero] Token received:', {
           length: token.length,
@@ -400,7 +415,8 @@ class OneZeroAdapter implements ScraperAdapter {
       }
 
       if (!tokenResult.success) {
-        const errorMsg = 'errorMessage' in tokenResult ? tokenResult.errorMessage : 'Failed to verify OTP code';
+        const errorMsg =
+          'errorMessage' in tokenResult ? tokenResult.errorMessage : 'Failed to verify OTP code';
         console.error('[OneZero] Failed to get long-term token:', errorMsg);
         return {
           success: false,
@@ -416,7 +432,10 @@ class OneZeroAdapter implements ScraperAdapter {
         };
       }
 
-      console.log('[OneZero] Successfully obtained long-term token, length:', tokenResult.longTermTwoFactorAuthToken.length);
+      console.log(
+        '[OneZero] Successfully obtained long-term token, length:',
+        tokenResult.longTermTwoFactorAuthToken.length
+      );
 
       // Note: We can't validate email/password during 2FA completion because
       // the library's login() method would close the browser and we'd lose state.
@@ -430,15 +449,16 @@ class OneZeroAdapter implements ScraperAdapter {
     } catch (error) {
       console.error('[OneZero] Error completing 2FA:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to complete 2FA';
-      
+
       // Check if this is a session-related error (common on serverless)
       if (errorMessage.includes('otpContext') || errorMessage.includes('undefined')) {
         return {
           success: false,
-          errorMessage: 'Session state lost. This can happen on serverless platforms. Please try the 2FA process again.',
+          errorMessage:
+            'Session state lost. This can happen on serverless platforms. Please try the 2FA process again.',
         };
       }
-      
+
       return {
         success: false,
         errorMessage,
@@ -451,4 +471,3 @@ class OneZeroAdapter implements ScraperAdapter {
 registerAdapter(new OneZeroAdapter());
 
 export { OneZeroAdapter };
-

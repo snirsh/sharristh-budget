@@ -45,4 +45,3 @@ export const prisma =
 globalForPrisma.prisma = prisma;
 
 export type { PrismaClient } from '@prisma/client';
-

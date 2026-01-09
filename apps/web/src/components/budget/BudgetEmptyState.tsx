@@ -1,7 +1,7 @@
 'use client';
 
-import { Copy, Plus, Sparkles, PiggyBank } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Copy, PiggyBank, Plus, Sparkles } from 'lucide-react';
 
 interface BudgetEmptyStateProps {
   currentMonth: string;
@@ -86,9 +86,7 @@ export function BudgetEmptyState({
               <Plus className="h-5 w-5 text-success-600 dark:text-success-400" />
             </div>
             <div className="text-center">
-              <p className="font-medium text-gray-900 dark:text-white">
-                Start from Scratch
-              </p>
+              <p className="font-medium text-gray-900 dark:text-white">Start from Scratch</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Create a new budget manually
               </p>

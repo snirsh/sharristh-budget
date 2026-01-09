@@ -1,7 +1,7 @@
-import { Suspense } from 'react';
 import { TransactionsServer } from '@/components/transactions/TransactionsServer';
-import { Loader2 } from 'lucide-react';
 import { getCurrentMonth } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
+import { Suspense } from 'react';
 
 // Force dynamic rendering - database queries can't run at build time
 export const dynamic = 'force-dynamic';
@@ -23,12 +23,7 @@ const TransactionsPageContent = async ({
   // When needsReview is true and no month is explicitly set, don't filter by month (show all time)
   const month = params.month ?? (needsReview ? undefined : getCurrentMonth());
 
-  return (
-    <TransactionsServer
-      month={month}
-      needsReview={needsReview}
-    />
-  );
+  return <TransactionsServer month={month} needsReview={needsReview} />;
 };
 
 export default function TransactionsPage({
@@ -42,4 +37,3 @@ export default function TransactionsPage({
     </Suspense>
   );
 }
-

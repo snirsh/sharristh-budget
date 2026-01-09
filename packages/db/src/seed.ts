@@ -297,21 +297,119 @@ async function main() {
   await prisma.categoryRule.createMany({
     data: [
       // Merchant rules
-      { householdId: household.id, categoryId: supermarketCategory.id, type: 'merchant', pattern: 'Shufersal', priority: 10, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: supermarketCategory.id, type: 'merchant', pattern: 'Rami Levy', priority: 10, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: supermarketCategory.id, type: 'merchant', pattern: 'Victory', priority: 10, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: eatingOutCategory.id, type: 'merchant', pattern: 'Aroma', priority: 10, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: eatingOutCategory.id, type: 'merchant', pattern: 'McDonalds', priority: 10, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: pharmacyCategory.id, type: 'merchant', pattern: 'Super-Pharm', priority: 10, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: publicTransportCategory.id, type: 'merchant', pattern: 'Rav-Kav', priority: 10, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: carExpensesCategory.id, type: 'merchant', pattern: 'Paz', priority: 10, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: carExpensesCategory.id, type: 'merchant', pattern: 'Sonol', priority: 10, createdFrom: 'manual' },
+      {
+        householdId: household.id,
+        categoryId: supermarketCategory.id,
+        type: 'merchant',
+        pattern: 'Shufersal',
+        priority: 10,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: supermarketCategory.id,
+        type: 'merchant',
+        pattern: 'Rami Levy',
+        priority: 10,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: supermarketCategory.id,
+        type: 'merchant',
+        pattern: 'Victory',
+        priority: 10,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: eatingOutCategory.id,
+        type: 'merchant',
+        pattern: 'Aroma',
+        priority: 10,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: eatingOutCategory.id,
+        type: 'merchant',
+        pattern: 'McDonalds',
+        priority: 10,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: pharmacyCategory.id,
+        type: 'merchant',
+        pattern: 'Super-Pharm',
+        priority: 10,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: publicTransportCategory.id,
+        type: 'merchant',
+        pattern: 'Rav-Kav',
+        priority: 10,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: carExpensesCategory.id,
+        type: 'merchant',
+        pattern: 'Paz',
+        priority: 10,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: carExpensesCategory.id,
+        type: 'merchant',
+        pattern: 'Sonol',
+        priority: 10,
+        createdFrom: 'manual',
+      },
       // Keyword rules
-      { householdId: household.id, categoryId: billsCategory.id, type: 'keyword', pattern: 'electricity', priority: 5, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: billsCategory.id, type: 'keyword', pattern: 'water bill', priority: 5, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: billsCategory.id, type: 'keyword', pattern: 'internet', priority: 5, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: salaryCategory.id, type: 'keyword', pattern: 'salary', priority: 5, createdFrom: 'manual' },
-      { householdId: household.id, categoryId: salaryCategory.id, type: 'keyword', pattern: 'payroll', priority: 5, createdFrom: 'manual' },
+      {
+        householdId: household.id,
+        categoryId: billsCategory.id,
+        type: 'keyword',
+        pattern: 'electricity',
+        priority: 5,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: billsCategory.id,
+        type: 'keyword',
+        pattern: 'water bill',
+        priority: 5,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: billsCategory.id,
+        type: 'keyword',
+        pattern: 'internet',
+        priority: 5,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: salaryCategory.id,
+        type: 'keyword',
+        pattern: 'salary',
+        priority: 5,
+        createdFrom: 'manual',
+      },
+      {
+        householdId: household.id,
+        categoryId: salaryCategory.id,
+        type: 'keyword',
+        pattern: 'payroll',
+        priority: 5,
+        createdFrom: 'manual',
+      },
     ],
   });
   console.log('✓ Created category rules');
@@ -428,20 +526,92 @@ async function main() {
   // ========================================
 
   const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-  
+
   await prisma.budget.createMany({
     data: [
       // Expected expenses with limits
-      { householdId: household.id, categoryId: rentExpenseCategory.id, month: currentMonthStr, plannedAmount: 5500, limitAmount: 5500, limitType: 'hard', alertThresholdPct: 1.0 },
-      { householdId: household.id, categoryId: houseCommitteeCategory.id, month: currentMonthStr, plannedAmount: 350, limitAmount: 400, limitType: 'soft', alertThresholdPct: 0.9 },
-      { householdId: household.id, categoryId: billsCategory.id, month: currentMonthStr, plannedAmount: 800, limitAmount: 1000, limitType: 'soft', alertThresholdPct: 0.8 },
-      { householdId: household.id, categoryId: carExpensesCategory.id, month: currentMonthStr, plannedAmount: 1200, limitAmount: 1500, limitType: 'soft', alertThresholdPct: 0.8 },
-      { householdId: household.id, categoryId: supermarketCategory.id, month: currentMonthStr, plannedAmount: 3000, limitAmount: 3500, limitType: 'soft', alertThresholdPct: 0.8 },
-      { householdId: household.id, categoryId: eatingOutCategory.id, month: currentMonthStr, plannedAmount: 1500, limitAmount: 2000, limitType: 'soft', alertThresholdPct: 0.8 },
-      { householdId: household.id, categoryId: publicTransportCategory.id, month: currentMonthStr, plannedAmount: 400, limitAmount: 500, limitType: 'soft', alertThresholdPct: 0.8 },
-      { householdId: household.id, categoryId: pharmacyCategory.id, month: currentMonthStr, plannedAmount: 300, limitAmount: 500, limitType: 'soft', alertThresholdPct: 0.8 },
+      {
+        householdId: household.id,
+        categoryId: rentExpenseCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 5500,
+        limitAmount: 5500,
+        limitType: 'hard',
+        alertThresholdPct: 1.0,
+      },
+      {
+        householdId: household.id,
+        categoryId: houseCommitteeCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 350,
+        limitAmount: 400,
+        limitType: 'soft',
+        alertThresholdPct: 0.9,
+      },
+      {
+        householdId: household.id,
+        categoryId: billsCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 800,
+        limitAmount: 1000,
+        limitType: 'soft',
+        alertThresholdPct: 0.8,
+      },
+      {
+        householdId: household.id,
+        categoryId: carExpensesCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 1200,
+        limitAmount: 1500,
+        limitType: 'soft',
+        alertThresholdPct: 0.8,
+      },
+      {
+        householdId: household.id,
+        categoryId: supermarketCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 3000,
+        limitAmount: 3500,
+        limitType: 'soft',
+        alertThresholdPct: 0.8,
+      },
+      {
+        householdId: household.id,
+        categoryId: eatingOutCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 1500,
+        limitAmount: 2000,
+        limitType: 'soft',
+        alertThresholdPct: 0.8,
+      },
+      {
+        householdId: household.id,
+        categoryId: publicTransportCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 400,
+        limitAmount: 500,
+        limitType: 'soft',
+        alertThresholdPct: 0.8,
+      },
+      {
+        householdId: household.id,
+        categoryId: pharmacyCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 300,
+        limitAmount: 500,
+        limitType: 'soft',
+        alertThresholdPct: 0.8,
+      },
       // Varying expenses - soft limit
-      { householdId: household.id, categoryId: varyingCategory.id, month: currentMonthStr, plannedAmount: 2000, limitAmount: 3000, limitType: 'soft', alertThresholdPct: 0.7 },
+      {
+        householdId: household.id,
+        categoryId: varyingCategory.id,
+        month: currentMonthStr,
+        plannedAmount: 2000,
+        limitAmount: 3000,
+        limitType: 'soft',
+        alertThresholdPct: 0.7,
+      },
     ],
   });
   console.log('✓ Created budgets for', currentMonthStr);
@@ -536,19 +706,61 @@ async function main() {
 
   // Generate varied expense transactions throughout the month
   const expensePatterns = [
-    { categoryId: supermarketCategory.id, merchants: ['Shufersal', 'Rami Levy', 'Victory'], minAmount: 150, maxAmount: 600, frequency: 3 },
-    { categoryId: eatingOutCategory.id, merchants: ['Aroma', 'McDonalds', 'Cafe Cafe', 'Moses'], minAmount: 50, maxAmount: 200, frequency: 4 },
-    { categoryId: carExpensesCategory.id, merchants: ['Paz Gas Station', 'Sonol', 'Delek'], minAmount: 200, maxAmount: 400, frequency: 2 },
-    { categoryId: publicTransportCategory.id, merchants: ['Rav-Kav Charge', 'Israel Railways'], minAmount: 20, maxAmount: 100, frequency: 5 },
-    { categoryId: pharmacyCategory.id, merchants: ['Super-Pharm', 'Be Pharm'], minAmount: 30, maxAmount: 200, frequency: 1 },
-    { categoryId: varyingCategory.id, merchants: ['Amazon', 'AliExpress', 'Local Shop', null], minAmount: 50, maxAmount: 500, frequency: 2 },
+    {
+      categoryId: supermarketCategory.id,
+      merchants: ['Shufersal', 'Rami Levy', 'Victory'],
+      minAmount: 150,
+      maxAmount: 600,
+      frequency: 3,
+    },
+    {
+      categoryId: eatingOutCategory.id,
+      merchants: ['Aroma', 'McDonalds', 'Cafe Cafe', 'Moses'],
+      minAmount: 50,
+      maxAmount: 200,
+      frequency: 4,
+    },
+    {
+      categoryId: carExpensesCategory.id,
+      merchants: ['Paz Gas Station', 'Sonol', 'Delek'],
+      minAmount: 200,
+      maxAmount: 400,
+      frequency: 2,
+    },
+    {
+      categoryId: publicTransportCategory.id,
+      merchants: ['Rav-Kav Charge', 'Israel Railways'],
+      minAmount: 20,
+      maxAmount: 100,
+      frequency: 5,
+    },
+    {
+      categoryId: pharmacyCategory.id,
+      merchants: ['Super-Pharm', 'Be Pharm'],
+      minAmount: 30,
+      maxAmount: 200,
+      frequency: 1,
+    },
+    {
+      categoryId: varyingCategory.id,
+      merchants: ['Amazon', 'AliExpress', 'Local Shop', null],
+      minAmount: 50,
+      maxAmount: 500,
+      frequency: 2,
+    },
   ];
 
   let transactionDay = 2;
   for (const pattern of expensePatterns) {
-    for (let i = 0; i < pattern.frequency && transactionDay <= Math.min(today, daysInMonth - 1); i++) {
+    for (
+      let i = 0;
+      i < pattern.frequency && transactionDay <= Math.min(today, daysInMonth - 1);
+      i++
+    ) {
       const merchant = pattern.merchants[Math.floor(Math.random() * pattern.merchants.length)];
-      const amount = Math.floor(Math.random() * (pattern.maxAmount - pattern.minAmount) + pattern.minAmount);
+      const amount = Math.floor(
+        Math.random() * (pattern.maxAmount - pattern.minAmount) + pattern.minAmount
+      );
       const user = Math.random() > 0.5 ? user1 : user2;
 
       transactions.push({
@@ -633,4 +845,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

@@ -29,9 +29,7 @@ export function recordQueryMetric(metric: QueryMetric): void {
 
   // Log slow queries in development
   if (process.env.NODE_ENV === 'development' && metric.duration > 100) {
-    console.warn(
-      `[DB Slow Query] ${metric.operation} took ${metric.duration}ms`
-    );
+    console.warn(`[DB Slow Query] ${metric.operation} took ${metric.duration}ms`);
   }
 }
 
@@ -49,14 +47,11 @@ export function getQueryStats(): {
     return { total: 0, slow: 0, average: 0, p95: 0, p99: 0 };
   }
 
-  const sorted = [...queryMetrics]
-    .map((m) => m.duration)
-    .sort((a, b) => a - b);
+  const sorted = [...queryMetrics].map((m) => m.duration).sort((a, b) => a - b);
 
   const total = queryMetrics.length;
   const slow = queryMetrics.filter((m) => m.duration > 200).length;
-  const average =
-    queryMetrics.reduce((sum, m) => sum + m.duration, 0) / total;
+  const average = queryMetrics.reduce((sum, m) => sum + m.duration, 0) / total;
   const p95Index = Math.floor(sorted.length * 0.95);
   const p99Index = Math.floor(sorted.length * 0.99);
 
@@ -89,10 +84,7 @@ export function clearQueryMetrics(): void {
 /**
  * Wrapper for timed database operations
  */
-export async function timedQuery<T>(
-  operation: string,
-  fn: () => Promise<T>
-): Promise<T> {
+export async function timedQuery<T>(operation: string, fn: () => Promise<T>): Promise<T> {
   const start = Date.now();
 
   try {

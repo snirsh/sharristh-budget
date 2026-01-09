@@ -1,9 +1,19 @@
 'use client';
 
-import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { formatCurrency, cn } from '@/lib/utils';
-import { X, TrendingUp, Calendar, DollarSign, Sparkles, Loader2, Check, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Calendar,
+  Check,
+  DollarSign,
+  Loader2,
+  Sparkles,
+  TrendingUp,
+  X,
+} from 'lucide-react';
+import { useState } from 'react';
 
 interface PatternDetectionDialogProps {
   isOpen: boolean;
@@ -11,7 +21,11 @@ interface PatternDetectionDialogProps {
   onSuccess?: () => void;
 }
 
-export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDetectionDialogProps) {
+export function PatternDetectionDialog({
+  isOpen,
+  onClose,
+  onSuccess,
+}: PatternDetectionDialogProps) {
   const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
   const [addedPatterns, setAddedPatterns] = useState<Set<string>>(new Set());
   const [creatingPattern, setCreatingPattern] = useState<string | null>(null);
@@ -47,7 +61,7 @@ export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDe
     onClose();
   };
 
-  const handleCreateTemplate = (pattern: typeof patterns[0]) => {
+  const handleCreateTemplate = (pattern: (typeof patterns)[0]) => {
     if (!pattern) return;
 
     // Use the most recent transaction's date as the start date
@@ -55,9 +69,10 @@ export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDe
     if (!mostRecentTx) return;
 
     // Find a category that matches the merchant name and direction
-    const matchedCategory = categories.find((cat) =>
-      cat.name.toLowerCase().includes(pattern.normalizedMerchant.toLowerCase()) &&
-      cat.type === pattern.direction
+    const matchedCategory = categories.find(
+      (cat) =>
+        cat.name.toLowerCase().includes(pattern.normalizedMerchant.toLowerCase()) &&
+        cat.type === pattern.direction
     );
 
     setCreatingPattern(pattern.merchant);
@@ -95,8 +110,8 @@ export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDe
                 {isLoading
                   ? 'Analyzing your transactions...'
                   : addedPatterns.size > 0
-                  ? `Found ${patterns.length} patterns • ${addedPatterns.size} added`
-                  : `Found ${patterns.length} potential recurring transaction${patterns.length !== 1 ? 's' : ''}`}
+                    ? `Found ${patterns.length} patterns • ${addedPatterns.size} added`
+                    : `Found ${patterns.length} potential recurring transaction${patterns.length !== 1 ? 's' : ''}`}
               </p>
             </div>
             <button
@@ -113,14 +128,18 @@ export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDe
           {isLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              <span className="ml-2 text-gray-500 dark:text-gray-400">Analyzing transactions...</span>
+              <span className="ml-2 text-gray-500 dark:text-gray-400">
+                Analyzing transactions...
+              </span>
             </div>
           )}
 
           {!isLoading && patterns.length === 0 && (
             <div className="text-center py-12">
               <Sparkles className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-              <p className="text-gray-500 dark:text-gray-400 font-medium">No recurring patterns detected</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">
+                No recurring patterns detected
+              </p>
               <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                 Try adding more transactions or adjusting the detection settings
               </p>
@@ -138,7 +157,9 @@ export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDe
                     pattern={pattern}
                     isExpanded={selectedPattern === pattern.merchant}
                     onToggle={() =>
-                      setSelectedPattern(selectedPattern === pattern.merchant ? null : pattern.merchant)
+                      setSelectedPattern(
+                        selectedPattern === pattern.merchant ? null : pattern.merchant
+                      )
                     }
                     onCreateTemplate={() => handleCreateTemplate(pattern)}
                     isCreating={isCreatingThis}
@@ -214,8 +235,8 @@ function PatternCard({
     confidencePercent >= 80
       ? 'text-success-700 dark:text-success-400 bg-success-100 dark:bg-success-900/30 border-success-200 dark:border-success-800'
       : confidencePercent >= 60
-      ? 'text-warning-700 dark:text-warning-400 bg-warning-100 dark:bg-warning-900/30 border-warning-200 dark:border-warning-800'
-      : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600';
+        ? 'text-warning-700 dark:text-warning-400 bg-warning-100 dark:bg-warning-900/30 border-warning-200 dark:border-warning-800'
+        : 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600';
 
   const directionBadgeColor = isIncome
     ? 'text-success-700 dark:text-success-400 bg-success-100 dark:bg-success-900/30 border-success-200 dark:border-success-800'
@@ -242,21 +263,23 @@ function PatternCard({
   };
 
   return (
-    <div className={cn(
-      "card p-0 overflow-hidden border",
-      isAdded 
-        ? "border-success-300 dark:border-success-700 bg-success-50/50 dark:bg-success-900/20" 
-        : isIncome
-        ? "border-success-200 dark:border-success-800"
-        : "border-gray-200 dark:border-gray-700"
-    )}>
+    <div
+      className={cn(
+        'card p-0 overflow-hidden border',
+        isAdded
+          ? 'border-success-300 dark:border-success-700 bg-success-50/50 dark:bg-success-900/20'
+          : isIncome
+            ? 'border-success-200 dark:border-success-800'
+            : 'border-gray-200 dark:border-gray-700'
+      )}
+    >
       {/* Header */}
       <div
         className={cn(
-          "p-4 cursor-pointer",
-          isAdded 
-            ? "hover:bg-success-50 dark:hover:bg-success-900/30" 
-            : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+          'p-4 cursor-pointer',
+          isAdded
+            ? 'hover:bg-success-50 dark:hover:bg-success-900/30'
+            : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
         )}
         onClick={onToggle}
       >
@@ -302,13 +325,20 @@ function PatternCard({
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mt-4">
           <div className="flex items-center gap-2 text-sm">
-            <DollarSign className={cn("h-4 w-4", isIncome ? "text-success-500" : "text-gray-400")} />
+            <DollarSign
+              className={cn('h-4 w-4', isIncome ? 'text-success-500' : 'text-gray-400')}
+            />
             <div>
-              <div className={cn(
-                "font-medium",
-                isIncome ? "text-success-600 dark:text-success-400" : "text-gray-900 dark:text-white"
-              )}>
-                {isIncome ? '+' : ''}{formatCurrency(pattern.averageAmount)}
+              <div
+                className={cn(
+                  'font-medium',
+                  isIncome
+                    ? 'text-success-600 dark:text-success-400'
+                    : 'text-gray-900 dark:text-white'
+                )}
+              >
+                {isIncome ? '+' : ''}
+                {formatCurrency(pattern.averageAmount)}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">Average amount</div>
             </div>
@@ -395,18 +425,8 @@ function PatternCard({
 
 function Plus({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 4v16m8-8H4"
-      />
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
   );
 }

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { UserPlus, Copy, Check, Trash2, Clock, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Check, Clock, Copy, Trash2, User, UserPlus } from 'lucide-react';
+import { useState } from 'react';
 
 export function PartnerInvites() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -119,7 +119,8 @@ export function PartnerInvites() {
 
           {generatedInvite.expiresAt && (
             <p className="text-xs text-gray-600 mt-2">
-              Expires {formatDistanceToNow(new Date(generatedInvite.expiresAt), { addSuffix: true })}
+              Expires{' '}
+              {formatDistanceToNow(new Date(generatedInvite.expiresAt), { addSuffix: true })}
             </p>
           )}
 
@@ -227,7 +228,9 @@ export function PartnerInvites() {
         </div>
       ) : (
         !showCreateForm && (
-          <p className="mt-4 text-sm text-gray-500">No active invites. Create one to invite your partner.</p>
+          <p className="mt-4 text-sm text-gray-500">
+            No active invites. Create one to invite your partner.
+          </p>
         )
       )}
     </div>

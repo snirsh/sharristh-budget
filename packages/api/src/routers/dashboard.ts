@@ -1,14 +1,14 @@
-import { z } from 'zod';
-import { router, protectedProcedure } from '../trpc';
-import { monthSchema } from '@sfam/domain/schemas';
 import {
-  calculateMonthlyKPIs,
-  evaluateBudgetStatus,
-  calculateCategorySpending,
-  getAlertBudgets,
   type Budget,
   type Transaction,
+  calculateCategorySpending,
+  calculateMonthlyKPIs,
+  evaluateBudgetStatus,
+  getAlertBudgets,
 } from '@sfam/domain';
+import { monthSchema } from '@sfam/domain/schemas';
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
 
 // Helper to map Prisma budget to domain type
 function toBudget(b: {
@@ -28,24 +28,26 @@ function toBudget(b: {
 }
 
 // Helper to map Prisma transactions to domain type
-function toTransactions<T extends {
-  id: string;
-  householdId: string;
-  accountId: string;
-  userId?: string | null;
-  categoryId?: string | null;
-  date: Date;
-  description: string;
-  merchant?: string | null;
-  amount: number;
-  direction: string;
-  needsReview: boolean;
-  isIgnored: boolean;
-  isRecurringInstance: boolean;
-  recurringTemplateId?: string | null;
-  recurringInstanceKey?: string | null;
-}>(txs: T[]): Transaction[] {
-  return txs.map(t => ({
+function toTransactions<
+  T extends {
+    id: string;
+    householdId: string;
+    accountId: string;
+    userId?: string | null;
+    categoryId?: string | null;
+    date: Date;
+    description: string;
+    merchant?: string | null;
+    amount: number;
+    direction: string;
+    needsReview: boolean;
+    isIgnored: boolean;
+    isRecurringInstance: boolean;
+    recurringTemplateId?: string | null;
+    recurringInstanceKey?: string | null;
+  },
+>(txs: T[]): Transaction[] {
+  return txs.map((t) => ({
     ...t,
     direction: t.direction as 'income' | 'expense' | 'transfer',
     date: new Date(t.date),
@@ -57,10 +59,12 @@ export const dashboardRouter = router({
    * Get full dashboard data in a single request (consolidated for performance)
    */
   getFullDashboard: protectedProcedure
-    .input(z.object({
-      month: monthSchema,
-      recentLimit: z.number().default(5),
-    }))
+    .input(
+      z.object({
+        month: monthSchema,
+        recentLimit: z.number().default(5),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const [year, monthNum] = input.month.split('-').map(Number);
       const startDate = new Date(year!, monthNum! - 1, 1);
@@ -165,7 +169,9 @@ export const dashboardRouter = router({
 
       // Calculate category breakdown
       const categoryBreakdown = categories.map((category) => {
-        const categoryTransactions = transactions.filter((t) => t.categoryId === category.id && t.direction === 'expense');
+        const categoryTransactions = transactions.filter(
+          (t) => t.categoryId === category.id && t.direction === 'expense'
+        );
         const actualAmount = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
         const budget = category.budgets[0];
 
@@ -220,7 +226,7 @@ export const dashboardRouter = router({
       };
 
       // Format recent transactions on server
-      const formattedRecentTransactions = recentTransactions.map(tx => ({
+      const formattedRecentTransactions = recentTransactions.map((tx) => ({
         ...tx,
         formattedAmount: new Intl.NumberFormat('en-US', {
           style: 'currency',
@@ -333,12 +339,8 @@ export const dashboardRouter = router({
     const domainTransactions = toTransactions(transactions);
     const kpis = calculateMonthlyKPIs(domainTransactions, input);
 
-    const budgetEvaluations = budgets.map((budget: typeof budgets[number]) => {
-      const actualAmount = calculateCategorySpending(
-        domainTransactions,
-        budget.categoryId,
-        input
-      );
+    const budgetEvaluations = budgets.map((budget: (typeof budgets)[number]) => {
+      const actualAmount = calculateCategorySpending(domainTransactions, budget.categoryId, input);
 
       return {
         ...evaluateBudgetStatus(toBudget(budget), actualAmount),
@@ -351,9 +353,8 @@ export const dashboardRouter = router({
 
     // Get varying expenses (uncategorized or varying category)
     const varyingExpenses = transactions.filter(
-      (t: typeof transactions[number]) =>
-        t.direction === 'expense' &&
-        (t.categoryId === varyingCategory?.id || t.categoryId === null)
+      (t: (typeof transactions)[number]) =>
+        t.direction === 'expense' && (t.categoryId === varyingCategory?.id || t.categoryId === null)
     );
 
     return {
@@ -361,14 +362,24 @@ export const dashboardRouter = router({
       kpis,
       budgetSummary: {
         total: budgetEvaluations.length,
-        onTrack: budgetEvaluations.filter((e: typeof budgetEvaluations[number]) => e.status === 'ok').length,
-        nearingLimit: budgetEvaluations.filter((e: typeof budgetEvaluations[number]) => e.status === 'nearing_limit').length,
-        exceededSoft: budgetEvaluations.filter((e: typeof budgetEvaluations[number]) => e.status === 'exceeded_soft').length,
-        exceededHard: budgetEvaluations.filter((e: typeof budgetEvaluations[number]) => e.status === 'exceeded_hard').length,
+        onTrack: budgetEvaluations.filter(
+          (e: (typeof budgetEvaluations)[number]) => e.status === 'ok'
+        ).length,
+        nearingLimit: budgetEvaluations.filter(
+          (e: (typeof budgetEvaluations)[number]) => e.status === 'nearing_limit'
+        ).length,
+        exceededSoft: budgetEvaluations.filter(
+          (e: (typeof budgetEvaluations)[number]) => e.status === 'exceeded_soft'
+        ).length,
+        exceededHard: budgetEvaluations.filter(
+          (e: (typeof budgetEvaluations)[number]) => e.status === 'exceeded_hard'
+        ).length,
       },
       alerts: alerts.map((a) => ({
         categoryId: a.budget.categoryId,
-        categoryName: budgets.find((b: typeof budgets[number]) => b.categoryId === a.budget.categoryId)?.category.name,
+        categoryName: budgets.find(
+          (b: (typeof budgets)[number]) => b.categoryId === a.budget.categoryId
+        )?.category.name,
         status: a.status,
         percentUsed: a.percentUsed,
         actualAmount: a.actualAmount,
@@ -377,7 +388,10 @@ export const dashboardRouter = router({
       })),
       varyingExpenses: {
         count: varyingExpenses.length,
-        total: varyingExpenses.reduce((sum: number, t: typeof varyingExpenses[number]) => sum + t.amount, 0),
+        total: varyingExpenses.reduce(
+          (sum: number, t: (typeof varyingExpenses)[number]) => sum + t.amount,
+          0
+        ),
       },
       needsReviewCount,
     };
@@ -420,9 +434,14 @@ export const dashboardRouter = router({
       }),
     ]);
 
-    return categories.map((category: typeof categories[number]) => {
-      const categoryTransactions = transactions.filter((t: typeof transactions[number]) => t.categoryId === category.id);
-      const actualAmount = categoryTransactions.reduce((sum: number, t: typeof categoryTransactions[number]) => sum + t.amount, 0);
+    return categories.map((category: (typeof categories)[number]) => {
+      const categoryTransactions = transactions.filter(
+        (t: (typeof transactions)[number]) => t.categoryId === category.id
+      );
+      const actualAmount = categoryTransactions.reduce(
+        (sum: number, t: (typeof categoryTransactions)[number]) => sum + t.amount,
+        0
+      );
       const budget = category.budgets[0];
 
       let status = 'ok';
@@ -517,10 +536,12 @@ export const dashboardRouter = router({
    * Get recent transactions for a month
    */
   recentTransactions: protectedProcedure
-    .input(z.object({ 
-      limit: z.number().default(10),
-      month: monthSchema.optional(),
-    }))
+    .input(
+      z.object({
+        limit: z.number().default(10),
+        month: monthSchema.optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {
         householdId: ctx.householdId,
@@ -564,7 +585,10 @@ export const dashboardRouter = router({
       orderBy: { name: 'asc' },
     });
 
-    const totalBalance = accounts.reduce((sum: number, a: typeof accounts[number]) => sum + a.balance, 0);
+    const totalBalance = accounts.reduce(
+      (sum: number, a: (typeof accounts)[number]) => sum + a.balance,
+      0
+    );
 
     return {
       accounts,
@@ -679,9 +703,9 @@ export const dashboardRouter = router({
       ]);
 
       // Calculate credit card expenses total
-      const creditCardAccountIds = new Set(creditCardAccounts.map(a => a.id));
+      const creditCardAccountIds = new Set(creditCardAccounts.map((a) => a.id));
       const creditCardTotal = transactionsWithAccounts
-        .filter(t => creditCardAccountIds.has(t.accountId))
+        .filter((t) => creditCardAccountIds.has(t.accountId))
         .reduce((sum, t) => sum + t.amount, 0);
 
       // Calculate expected expenses (sum of all budgeted amounts)
@@ -693,13 +717,10 @@ export const dashboardRouter = router({
       // Calculate month comparison
       const currentMonthTotal = currentMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
       const previousMonthTotal = previousMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
-      const percentChange = previousMonthTotal > 0 
-        ? ((currentMonthTotal - previousMonthTotal) / previousMonthTotal) 
-        : 0;
-      const trend: 'up' | 'down' | 'flat' = 
-        percentChange > 0.02 ? 'up' : 
-        percentChange < -0.02 ? 'down' : 
-        'flat';
+      const percentChange =
+        previousMonthTotal > 0 ? (currentMonthTotal - previousMonthTotal) / previousMonthTotal : 0;
+      const trend: 'up' | 'down' | 'flat' =
+        percentChange > 0.02 ? 'up' : percentChange < -0.02 ? 'down' : 'flat';
 
       // Calculate top merchants (group by merchant, sum amounts)
       const merchantMap = new Map<string, { merchant: string; total: number; count: number }>();
@@ -718,7 +739,10 @@ export const dashboardRouter = router({
         .slice(0, 5);
 
       // Calculate top categories
-      const categoryMap = new Map<string, { categoryId: string; name: string; icon: string | null; total: number; count: number }>();
+      const categoryMap = new Map<
+        string,
+        { categoryId: string; name: string; icon: string | null; total: number; count: number }
+      >();
       for (const tx of currentMonthTransactions) {
         if (!tx.category) continue;
         const existing = categoryMap.get(tx.category.id);
@@ -743,7 +767,7 @@ export const dashboardRouter = router({
       const largestTransactions = [...currentMonthTransactions]
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 5)
-        .map(tx => ({
+        .map((tx) => ({
           id: tx.id,
           description: tx.description,
           merchant: tx.merchant,
@@ -755,12 +779,13 @@ export const dashboardRouter = router({
         }));
 
       // Currency formatter
-      const formatCurrency = (amount: number) => new Intl.NumberFormat('he-IL', {
-        style: 'currency',
-        currency: 'ILS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(amount);
+      const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('he-IL', {
+          style: 'currency',
+          currency: 'ILS',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(amount);
 
       return {
         creditCardTotal,
@@ -783,15 +808,15 @@ export const dashboardRouter = router({
             signDisplay: 'exceptZero',
           }).format(percentChange),
         },
-        topMerchants: topMerchants.map(m => ({
+        topMerchants: topMerchants.map((m) => ({
           ...m,
           formattedTotal: formatCurrency(m.total),
         })),
-        topCategories: topCategories.map(c => ({
+        topCategories: topCategories.map((c) => ({
           ...c,
           formattedTotal: formatCurrency(c.total),
         })),
-        largestTransactions: largestTransactions.map(tx => ({
+        largestTransactions: largestTransactions.map((tx) => ({
           ...tx,
           formattedAmount: formatCurrency(tx.amount),
           formattedDate: new Intl.DateTimeFormat('en-US', {
@@ -804,4 +829,3 @@ export const dashboardRouter = router({
       };
     }),
 });
-

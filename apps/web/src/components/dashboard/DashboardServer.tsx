@@ -1,6 +1,6 @@
 import { serverTrpc } from '@/lib/trpc/server';
-import { DashboardClient } from './DashboardClient';
 import { redirect } from 'next/navigation';
+import { DashboardClient } from './DashboardClient';
 
 type DashboardServerProps = {
   month?: string;

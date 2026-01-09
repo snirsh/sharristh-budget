@@ -12,4 +12,3 @@ export {
   timedQuery,
   logQueryStatsSummary,
 } from './monitoring';
-

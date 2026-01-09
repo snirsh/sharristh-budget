@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Unit tests for bank connection sync logic
- * 
+ *
  * These tests verify:
  * - Sync status checking logic
  * - Stale connection detection
@@ -124,7 +124,7 @@ describe('Bank Connection Sync', () => {
         { connectionId: '4', success: true, transactionsNew: 0 },
       ];
 
-      const successCount = results.filter(r => r.success).length;
+      const successCount = results.filter((r) => r.success).length;
       expect(successCount).toBe(3);
     });
 
@@ -149,20 +149,21 @@ describe('Bank Connection Sync', () => {
       ];
 
       const authErrors = results.filter(
-        r => !r.success && 
-        (r.errorMessage?.includes('re-authenticate') || r.errorMessage?.includes('expired'))
+        (r) =>
+          !r.success &&
+          (r.errorMessage?.includes('re-authenticate') || r.errorMessage?.includes('expired'))
       );
 
       expect(authErrors.length).toBe(2);
-      expect(authErrors.map(r => r.connectionId)).toEqual(['2', '3']);
+      expect(authErrors.map((r) => r.connectionId)).toEqual(['2', '3']);
     });
   });
 
   describe('Auth Error Detection', () => {
     it('should detect AUTH_REQUIRED error type', () => {
       const result = { errorType: 'AUTH_REQUIRED', errorMessage: 'Session expired' };
-      
-      const isAuthError = 
+
+      const isAuthError =
         result.errorType === 'AUTH_REQUIRED' ||
         result.errorMessage?.includes('re-authenticate') ||
         result.errorMessage?.includes('expired') ||
@@ -173,8 +174,8 @@ describe('Bank Connection Sync', () => {
 
     it('should detect re-authenticate message', () => {
       const result = { errorType: 'UNKNOWN', errorMessage: 'Please re-authenticate your account' };
-      
-      const isAuthError = 
+
+      const isAuthError =
         result.errorType === 'AUTH_REQUIRED' ||
         result.errorMessage?.includes('re-authenticate') ||
         result.errorMessage?.includes('expired') ||
@@ -185,8 +186,8 @@ describe('Bank Connection Sync', () => {
 
     it('should detect expired token message', () => {
       const result = { errorType: 'UNKNOWN', errorMessage: 'Token has expired' };
-      
-      const isAuthError = 
+
+      const isAuthError =
         result.errorType === 'AUTH_REQUIRED' ||
         result.errorMessage?.includes('re-authenticate') ||
         result.errorMessage?.includes('expired') ||
@@ -197,8 +198,8 @@ describe('Bank Connection Sync', () => {
 
     it('should detect idToken error message', () => {
       const result = { errorType: 'UNKNOWN', errorMessage: 'Invalid idToken' };
-      
-      const isAuthError = 
+
+      const isAuthError =
         result.errorType === 'AUTH_REQUIRED' ||
         result.errorMessage?.includes('re-authenticate') ||
         result.errorMessage?.includes('expired') ||
@@ -209,8 +210,8 @@ describe('Bank Connection Sync', () => {
 
     it('should not falsely detect auth error for network issues', () => {
       const result = { errorType: 'NETWORK_ERROR', errorMessage: 'Connection timeout' };
-      
-      const isAuthError = 
+
+      const isAuthError =
         result.errorType === 'AUTH_REQUIRED' ||
         result.errorMessage?.includes('re-authenticate') ||
         result.errorMessage?.includes('expired') ||
@@ -224,7 +225,7 @@ describe('Bank Connection Sync', () => {
     it('should validate cron schedule format for Vercel', () => {
       // Vercel uses standard cron format: minute hour day month weekday
       const validSchedule = '0 3 * * *'; // 3 AM UTC daily
-      
+
       const parts = validSchedule.split(' ');
       expect(parts.length).toBe(5);
       expect(parts[0]).toBe('0'); // minute

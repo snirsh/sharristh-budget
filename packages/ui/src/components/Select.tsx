@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  Modal,
-  FlatList,
-  type ViewProps,
-} from 'react-native';
+import { FlatList, Modal, Pressable, Text, View, type ViewProps } from 'react-native';
 import { cn } from '../utils';
 
 export interface SelectOption {
@@ -43,9 +36,7 @@ export function Select({
 
   return (
     <View className={cn('w-full', className)} {...props}>
-      {label && (
-        <Text className="mb-1.5 text-sm font-medium text-gray-700">{label}</Text>
-      )}
+      {label && <Text className="mb-1.5 text-sm font-medium text-gray-700">{label}</Text>}
       <Pressable
         onPress={() => !disabled && setIsOpen(true)}
         className={cn(
@@ -54,12 +45,7 @@ export function Select({
           disabled && 'opacity-50'
         )}
       >
-        <Text
-          className={cn(
-            'text-base',
-            selectedOption ? 'text-gray-900' : 'text-gray-400'
-          )}
-        >
+        <Text className={cn('text-base', selectedOption ? 'text-gray-900' : 'text-gray-400')}>
           {selectedOption?.label || placeholder}
         </Text>
         <Text className="text-gray-400">▼</Text>
@@ -72,15 +58,10 @@ export function Select({
         animationType="fade"
         onRequestClose={() => setIsOpen(false)}
       >
-        <Pressable
-          className="flex-1 justify-end bg-black/50"
-          onPress={() => setIsOpen(false)}
-        >
+        <Pressable className="flex-1 justify-end bg-black/50" onPress={() => setIsOpen(false)}>
           <View className="max-h-96 rounded-t-2xl bg-white p-4">
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-semibold">
-                {label || 'Select Option'}
-              </Text>
+              <Text className="text-lg font-semibold">{label || 'Select Option'}</Text>
               <Pressable onPress={() => setIsOpen(false)}>
                 <Text className="text-primary-500 font-medium">Done</Text>
               </Pressable>
@@ -106,17 +87,13 @@ export function Select({
                     <Text
                       className={cn(
                         'text-base',
-                        item.value === value
-                          ? 'font-medium text-primary-500'
-                          : 'text-gray-900'
+                        item.value === value ? 'font-medium text-primary-500' : 'text-gray-900'
                       )}
                     >
                       {item.label}
                     </Text>
                   </View>
-                  {item.value === value && (
-                    <Text className="text-primary-500">✓</Text>
-                  )}
+                  {item.value === value && <Text className="text-primary-500">✓</Text>}
                 </Pressable>
               )}
             />
@@ -126,4 +103,3 @@ export function Select({
     </View>
   );
 }
-

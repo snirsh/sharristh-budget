@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { MappedTransaction } from '../../types';
 import {
-  generateTransactionHash,
   filterNewTransactions,
+  generateTransactionHash,
   groupByAccount,
 } from '../../utils/deduplication';
-import type { MappedTransaction } from '../../types';
 
 describe('deduplication', () => {
   const createTransaction = (overrides: Partial<MappedTransaction> = {}): MappedTransaction => ({
@@ -127,6 +127,3 @@ describe('deduplication', () => {
     });
   });
 });
-
-
-

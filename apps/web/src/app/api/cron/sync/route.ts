@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 
 /**
  * Vercel Cron Job endpoint for syncing all bank connections
- * 
+ *
  * This endpoint is called by Vercel's cron scheduler (configured in vercel.json)
  * Security: Validates CRON_SECRET header to prevent unauthorized access
- * 
+ *
  * NOTE: sync-service is dynamically imported to avoid Prisma initialization during build
- * 
+ *
  * @see https://vercel.com/docs/cron-jobs
  */
 export const maxDuration = 300; // 5 minutes max for Pro plan, adjust if needed
@@ -33,7 +33,7 @@ interface CronSyncResult {
 
 export async function GET(request: Request): Promise<NextResponse<CronSyncResult>> {
   const startTime = Date.now();
-  
+
   console.log('[Cron/Sync] Received cron sync request');
 
   // Validate CRON_SECRET for security
@@ -88,11 +88,11 @@ export async function GET(request: Request): Promise<NextResponse<CronSyncResult
 
   try {
     console.log('[Cron/Sync] Starting sync for all connections...');
-    
+
     // Dynamic import to avoid Prisma initialization during build
     const { syncAllConnectionsForCron } = await import('@/lib/sync-service');
     const result = await syncAllConnectionsForCron();
-    
+
     const duration = Date.now() - startTime;
     console.log(`[Cron/Sync] Completed in ${duration}ms:`, {
       synced: result.syncedConnections,
@@ -107,9 +107,9 @@ export async function GET(request: Request): Promise<NextResponse<CronSyncResult
   } catch (error) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     console.error('[Cron/Sync] Fatal error:', error);
-    
+
     return NextResponse.json(
       {
         success: false,

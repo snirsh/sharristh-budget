@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  calculateNextRunAt,
   expandRecurringToMonth,
   expandRecurringToRange,
-  calculateNextRunAt,
   getScheduleDescription,
   validateRecurringSchedule,
 } from './recurring';
-import type { RecurringTransactionTemplate, RecurringOverride } from './types';
+import type { RecurringOverride, RecurringTransactionTemplate } from './types';
 
 describe('expandRecurringToMonth', () => {
   const monthlyTemplate: RecurringTransactionTemplate = {
@@ -300,4 +300,3 @@ describe('validateRecurringSchedule', () => {
     expect(errors).toContain('End date must be after start date');
   });
 });
-

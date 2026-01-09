@@ -1,12 +1,8 @@
-import { createScraper, CompanyTypes } from 'israeli-bank-scrapers';
+import { CompanyTypes, createScraper } from 'israeli-bank-scrapers';
+import { getScraperBrowserOptions } from '../chromium-config';
+import type { IsraCardCredentials, ScrapeResult, ScrapedAccount } from '../types';
 import type { ScraperAdapter } from './base';
 import { registerAdapter } from './base';
-import type {
-  IsraCardCredentials,
-  ScrapeResult,
-  ScrapedAccount,
-} from '../types';
-import { getScraperBrowserOptions } from '../chromium-config';
 
 /**
  * Isracard Credit Card Adapter
@@ -17,10 +13,7 @@ class IsracardAdapter implements ScraperAdapter {
   readonly displayName = 'Isracard';
   readonly requiresTwoFactor = false;
 
-  async scrape(
-    startDate: Date,
-    credentials: object,
-  ): Promise<ScrapeResult> {
+  async scrape(startDate: Date, credentials: object): Promise<ScrapeResult> {
     const creds = credentials as IsraCardCredentials;
 
     console.log('[Isracard] Starting scrape with startDate:', startDate.toISOString());
@@ -30,7 +23,7 @@ class IsracardAdapter implements ScraperAdapter {
     try {
       // Get browser options optimized for Vercel/serverless environments
       const browserOptions = await getScraperBrowserOptions();
-      
+
       console.log('[Isracard] Browser options:', {
         hasExecutablePath: !!browserOptions.executablePath,
         argsCount: browserOptions.args?.length || 0,
@@ -66,13 +59,15 @@ class IsracardAdapter implements ScraperAdapter {
       }
 
       console.log('[Isracard] Scrape successful, accounts:', result.accounts?.length || 0);
-      
+
       // Log transaction date range for debugging
       for (const acc of result.accounts || []) {
         if (acc.txns.length > 0) {
-          const dates = acc.txns.map(t => t.date.split('T')[0]);
+          const dates = acc.txns.map((t) => t.date.split('T')[0]);
           const uniqueDates = [...new Set(dates)].sort();
-          console.log(`[Isracard] Account ${acc.accountNumber}: ${acc.txns.length} transactions, dates: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]}`);
+          console.log(
+            `[Isracard] Account ${acc.accountNumber}: ${acc.txns.length} transactions, dates: ${uniqueDates[0]} to ${uniqueDates[uniqueDates.length - 1]}`
+          );
         } else {
           console.log(`[Isracard] Account ${acc.accountNumber}: 0 transactions`);
         }
@@ -125,6 +120,3 @@ class IsracardAdapter implements ScraperAdapter {
 registerAdapter(new IsracardAdapter());
 
 export { IsracardAdapter };
-
-
-

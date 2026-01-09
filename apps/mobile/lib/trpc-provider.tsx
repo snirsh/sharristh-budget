@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
+import Constants from 'expo-constants';
 import { useState } from 'react';
 import superjson from 'superjson';
 import { trpc } from './trpc';
-import Constants from 'expo-constants';
 
 function getBaseUrl() {
   // In development, use your local machine's IP address

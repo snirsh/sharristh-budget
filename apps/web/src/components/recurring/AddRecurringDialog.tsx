@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { X, Plus, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Plus, Repeat, X } from 'lucide-react';
+import { useState } from 'react';
 
 interface Category {
   id: string;
@@ -66,12 +66,12 @@ export function AddRecurringDialog({
     createMutation.mutate({
       name,
       direction,
-      amount: parseFloat(amount),
+      amount: Number.parseFloat(amount),
       defaultCategoryId: categoryId || undefined,
       description: description || undefined,
       frequency,
-      interval: parseInt(interval),
-      byMonthDay: frequency === 'monthly' ? parseInt(byMonthDay) : undefined,
+      interval: Number.parseInt(interval),
+      byMonthDay: frequency === 'monthly' ? Number.parseInt(byMonthDay) : undefined,
       startDate: new Date(),
     });
   };
@@ -91,7 +91,9 @@ export function AddRecurringDialog({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <Repeat className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Recurring Transaction</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Add Recurring Transaction
+            </h2>
           </div>
           <button
             onClick={handleClose}
@@ -214,10 +216,15 @@ export function AddRecurringDialog({
                   className="input w-20"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {frequency === 'monthly' && interval === '2' ? 'months (bimonthly)' :
-                   frequency === 'monthly' ? 'month(s)' :
-                   frequency === 'yearly' ? 'year(s)' :
-                   frequency === 'weekly' ? 'week(s)' : 'day(s)'}
+                  {frequency === 'monthly' && interval === '2'
+                    ? 'months (bimonthly)'
+                    : frequency === 'monthly'
+                      ? 'month(s)'
+                      : frequency === 'yearly'
+                        ? 'year(s)'
+                        : frequency === 'weekly'
+                          ? 'week(s)'
+                          : 'day(s)'}
                 </span>
               </div>
             </div>
