@@ -8,11 +8,49 @@ import {
   AlertTriangle,
   ArrowRight,
   Receipt,
+  CreditCard,
+  Calendar,
+  Repeat,
+  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
 import { MonthSelector } from '@/components/layout/MonthSelector';
 import { useMonth } from '@/lib/useMonth';
 import { trpc } from '@/lib/trpc/client';
+import { InsightCard } from './InsightCard';
+import { TopMerchantsList } from './TopMerchantsList';
+import { LargestTransactionsList } from './LargestTransactionsList';
+
+// Helper to format relative time
+function formatRelativeTime(date: Date | null): string {
+  if (!date) return 'Never';
+  
+  const now = new Date();
+  const diff = now.getTime() - new Date(date).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date));
+}
+
+// Helper to get sync status color
+function getSyncStatusColor(date: Date | null): string {
+  if (!date) return 'text-gray-400 dark:text-gray-500';
+  
+  const now = new Date();
+  const diff = now.getTime() - new Date(date).getTime();
+  const hours = diff / 3600000;
+  
+  if (hours < 24) return 'text-success-500 dark:text-success-400';
+  if (hours < 168) return 'text-warning-500 dark:text-warning-400'; // 7 days
+  return 'text-danger-500 dark:text-danger-400';
+}
 
 export const DashboardContent = () => {
   const { currentMonth } = useMonth();
@@ -21,6 +59,11 @@ export const DashboardContent = () => {
   const { data: dashboardData } = trpc.dashboard.getFullDashboard.useQuery({
     month: currentMonth,
     recentLimit: 5,
+  });
+
+  // Fetch expense insights
+  const { data: insightsData } = trpc.dashboard.getExpenseInsights.useQuery({
+    month: currentMonth,
   });
 
   const overview = dashboardData?.overview;
@@ -33,13 +76,27 @@ export const DashboardContent = () => {
   const varyingExpenses = overview?.varyingExpenses ?? { count: 0, total: 0 };
   const needsReviewCount = overview?.needsReviewCount ?? 0;
 
+  // Expense insights data
+  const insights = insightsData ?? null;
+
   return (
     <div className="space-y-6 animate-in">
       {/* Header with Month Navigation */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-500 dark:text-gray-400">Overview for the selected month</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-gray-500 dark:text-gray-400">Overview for the selected month</p>
+            {insights?.lastSyncAt && (
+              <div className={cn(
+                'flex items-center gap-1.5 text-xs',
+                getSyncStatusColor(insights.lastSyncAt)
+              )}>
+                <RefreshCw className="h-3 w-3" />
+                <span>Synced {formatRelativeTime(insights.lastSyncAt)}</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Link href={`/transactions?month=${currentMonth}`} className="btn-secondary btn-sm">
@@ -78,6 +135,37 @@ export const DashboardContent = () => {
           subtitle={`${varyingExpenses.count} transactions`}
         />
       </div>
+
+      {/* Expense Insights Cards */}
+      {insights && (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <InsightCard
+            title="Credit Card"
+            value={insights.formattedCreditCardTotal}
+            icon={CreditCard}
+          />
+          <InsightCard
+            title="Expected"
+            value={insights.formattedExpectedExpenses}
+            subtitle="budgeted"
+            icon={Calendar}
+          />
+          <InsightCard
+            title="vs Last Month"
+            value={insights.monthComparison.formattedPercentChange}
+            trend={insights.monthComparison.trend}
+            trendValue={insights.monthComparison.formattedCurrentMonth}
+            trendPositive="down"
+            subtitle="expenses"
+          />
+          <InsightCard
+            title="Recurring"
+            value={insights.formattedRecurringTotal}
+            subtitle="monthly"
+            icon={Repeat}
+          />
+        </div>
+      )}
 
       {/* Alerts Section */}
       {alerts.length > 0 && (
@@ -194,6 +282,14 @@ export const DashboardContent = () => {
           </div>
         </div>
       </div>
+
+      {/* Expense Insights Lists */}
+      {insights && (insights.topMerchants.length > 0 || insights.largestTransactions.length > 0) && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <TopMerchantsList merchants={insights.topMerchants} />
+          <LargestTransactionsList transactions={insights.largestTransactions} />
+        </div>
+      )}
 
       {/* Budget Summary */}
       <div className="card">

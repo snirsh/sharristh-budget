@@ -13,17 +13,23 @@ export async function DashboardServer({ month }: DashboardServerProps) {
   const currentMonth = month || new Date().toISOString().slice(0, 7);
 
   try {
-    // Pre-fetch dashboard data on the server
-    const dashboardData = await trpc.dashboard.getFullDashboard({
-      month: currentMonth,
-      recentLimit: 5,
-    });
+    // Pre-fetch dashboard data and expense insights in parallel
+    const [dashboardData, insightsData] = await Promise.all([
+      trpc.dashboard.getFullDashboard({
+        month: currentMonth,
+        recentLimit: 5,
+      }),
+      trpc.dashboard.getExpenseInsights({
+        month: currentMonth,
+      }),
+    ]);
 
     // Pass pre-fetched data to client component
     return (
       <DashboardClient
         initialData={dashboardData}
         initialMonth={currentMonth}
+        initialInsights={insightsData}
       />
     );
   } catch (error) {

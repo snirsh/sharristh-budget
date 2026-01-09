@@ -571,5 +571,235 @@ export const dashboardRouter = router({
       totalBalance,
     };
   }),
+
+  /**
+   * Get expense insights for a month (credit card, expected, recurring, comparison, top merchants, largest transactions, last sync)
+   */
+  getExpenseInsights: protectedProcedure
+    .input(z.object({ month: monthSchema }))
+    .query(async ({ ctx, input }) => {
+      const [year, monthNum] = input.month.split('-').map(Number);
+      const startDate = new Date(year!, monthNum! - 1, 1);
+      const endDate = new Date(year!, monthNum!, 0, 23, 59, 59, 999);
+
+      // Calculate previous month dates
+      const prevMonthDate = new Date(year!, monthNum! - 2, 1);
+      const prevYear = prevMonthDate.getFullYear();
+      const prevMonth = prevMonthDate.getMonth() + 1;
+      const prevStartDate = new Date(prevYear, prevMonth - 1, 1);
+      const prevEndDate = new Date(prevYear, prevMonth, 0, 23, 59, 59, 999);
+
+      // Run all queries in parallel for maximum performance
+      const [
+        creditCardAccounts,
+        currentMonthTransactions,
+        previousMonthTransactions,
+        budgets,
+        recurringTemplates,
+        lastSyncConnection,
+        transactionsWithAccounts,
+      ] = await Promise.all([
+        // Get credit card accounts
+        ctx.prisma.account.findMany({
+          where: {
+            householdId: ctx.householdId,
+            type: 'credit',
+            isActive: true,
+          },
+          select: { id: true },
+        }),
+        // Current month expense transactions
+        ctx.prisma.transaction.findMany({
+          where: {
+            householdId: ctx.householdId,
+            isIgnored: false,
+            direction: 'expense',
+            date: { gte: startDate, lte: endDate },
+          },
+          include: {
+            category: {
+              select: { id: true, name: true, icon: true },
+            },
+            account: {
+              select: { id: true, name: true, type: true },
+            },
+          },
+        }),
+        // Previous month expense transactions (for comparison)
+        ctx.prisma.transaction.findMany({
+          where: {
+            householdId: ctx.householdId,
+            isIgnored: false,
+            direction: 'expense',
+            date: { gte: prevStartDate, lte: prevEndDate },
+          },
+          select: { amount: true },
+        }),
+        // Budgets for expected expenses
+        ctx.prisma.budget.findMany({
+          where: {
+            householdId: ctx.householdId,
+            month: input.month,
+          },
+          select: { plannedAmount: true },
+        }),
+        // Active recurring expense templates
+        ctx.prisma.recurringTransactionTemplate.findMany({
+          where: {
+            householdId: ctx.householdId,
+            isActive: true,
+            direction: 'expense',
+          },
+          select: { amount: true, name: true },
+        }),
+        // Most recent bank sync
+        ctx.prisma.bankConnection.findFirst({
+          where: {
+            householdId: ctx.householdId,
+            isActive: true,
+            lastSyncAt: { not: null },
+          },
+          orderBy: { lastSyncAt: 'desc' },
+          select: { lastSyncAt: true, lastSyncStatus: true },
+        }),
+        // Transactions with account info for credit card filtering
+        ctx.prisma.transaction.findMany({
+          where: {
+            householdId: ctx.householdId,
+            isIgnored: false,
+            direction: 'expense',
+            date: { gte: startDate, lte: endDate },
+          },
+          include: {
+            account: {
+              select: { id: true, type: true },
+            },
+          },
+        }),
+      ]);
+
+      // Calculate credit card expenses total
+      const creditCardAccountIds = new Set(creditCardAccounts.map(a => a.id));
+      const creditCardTotal = transactionsWithAccounts
+        .filter(t => creditCardAccountIds.has(t.accountId))
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      // Calculate expected expenses (sum of all budgeted amounts)
+      const expectedExpenses = budgets.reduce((sum, b) => sum + b.plannedAmount, 0);
+
+      // Calculate recurring expenses total
+      const recurringTotal = recurringTemplates.reduce((sum, t) => sum + t.amount, 0);
+
+      // Calculate month comparison
+      const currentMonthTotal = currentMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
+      const previousMonthTotal = previousMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
+      const percentChange = previousMonthTotal > 0 
+        ? ((currentMonthTotal - previousMonthTotal) / previousMonthTotal) 
+        : 0;
+      const trend: 'up' | 'down' | 'flat' = 
+        percentChange > 0.02 ? 'up' : 
+        percentChange < -0.02 ? 'down' : 
+        'flat';
+
+      // Calculate top merchants (group by merchant, sum amounts)
+      const merchantMap = new Map<string, { merchant: string; total: number; count: number }>();
+      for (const tx of currentMonthTransactions) {
+        const merchantName = tx.merchant || tx.description.split(' ')[0] || 'Unknown';
+        const existing = merchantMap.get(merchantName);
+        if (existing) {
+          existing.total += tx.amount;
+          existing.count += 1;
+        } else {
+          merchantMap.set(merchantName, { merchant: merchantName, total: tx.amount, count: 1 });
+        }
+      }
+      const topMerchants = Array.from(merchantMap.values())
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5);
+
+      // Calculate top categories
+      const categoryMap = new Map<string, { categoryId: string; name: string; icon: string | null; total: number; count: number }>();
+      for (const tx of currentMonthTransactions) {
+        if (!tx.category) continue;
+        const existing = categoryMap.get(tx.category.id);
+        if (existing) {
+          existing.total += tx.amount;
+          existing.count += 1;
+        } else {
+          categoryMap.set(tx.category.id, {
+            categoryId: tx.category.id,
+            name: tx.category.name,
+            icon: tx.category.icon,
+            total: tx.amount,
+            count: 1,
+          });
+        }
+      }
+      const topCategories = Array.from(categoryMap.values())
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5);
+
+      // Get largest transactions
+      const largestTransactions = [...currentMonthTransactions]
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5)
+        .map(tx => ({
+          id: tx.id,
+          description: tx.description,
+          merchant: tx.merchant,
+          amount: tx.amount,
+          date: tx.date,
+          categoryName: tx.category?.name ?? null,
+          categoryIcon: tx.category?.icon ?? null,
+          accountName: tx.account?.name ?? null,
+        }));
+
+      // Currency formatter
+      const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(amount);
+
+      return {
+        creditCardTotal,
+        formattedCreditCardTotal: formatCurrency(creditCardTotal),
+        expectedExpenses,
+        formattedExpectedExpenses: formatCurrency(expectedExpenses),
+        recurringTotal,
+        formattedRecurringTotal: formatCurrency(recurringTotal),
+        monthComparison: {
+          currentMonth: currentMonthTotal,
+          previousMonth: previousMonthTotal,
+          percentChange,
+          trend,
+          formattedCurrentMonth: formatCurrency(currentMonthTotal),
+          formattedPreviousMonth: formatCurrency(previousMonthTotal),
+          formattedPercentChange: new Intl.NumberFormat('en-US', {
+            style: 'percent',
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+            signDisplay: 'exceptZero',
+          }).format(percentChange),
+        },
+        topMerchants: topMerchants.map(m => ({
+          ...m,
+          formattedTotal: formatCurrency(m.total),
+        })),
+        topCategories: topCategories.map(c => ({
+          ...c,
+          formattedTotal: formatCurrency(c.total),
+        })),
+        largestTransactions: largestTransactions.map(tx => ({
+          ...tx,
+          formattedAmount: formatCurrency(tx.amount),
+          formattedDate: new Intl.DateTimeFormat('en-US', {
+            month: 'short',
+            day: 'numeric',
+          }).format(new Date(tx.date)),
+        })),
+        lastSyncAt: lastSyncConnection?.lastSyncAt ?? null,
+        lastSyncStatus: lastSyncConnection?.lastSyncStatus ?? null,
+      };
+    }),
 });
 
