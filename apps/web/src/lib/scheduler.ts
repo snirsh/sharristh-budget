@@ -8,10 +8,9 @@
  * 
  * NOTE: node-cron has been removed as it doesn't work on Vercel serverless.
  * The cron schedule "0 3 * * *" in vercel.json runs at 6 AM Israel time (UTC+3).
+ * 
+ * IMPORTANT: All imports are dynamic to avoid Prisma initialization during Next.js build.
  */
-
-import { syncStaleConnectionsForHousehold, hasStaleConnections } from './sync-service';
-import { prisma } from '@sfam/db';
 
 let isInitialized = false;
 
@@ -55,9 +54,15 @@ export async function initScheduler(): Promise<void> {
 /**
  * Check and sync stale connections across all households
  * Used during local development startup
+ * 
+ * Uses dynamic imports to avoid Prisma initialization during build
  */
 async function checkAndSyncAllStaleConnections(): Promise<void> {
   console.log('[Scheduler] Checking for stale connections...');
+
+  // Dynamic import to avoid build-time Prisma initialization
+  const { prisma } = await import('@sfam/db');
+  const { syncStaleConnectionsForHousehold, hasStaleConnections } = await import('./sync-service');
 
   // Get all households with active connections
   const households = await prisma.household.findMany({
@@ -92,6 +97,3 @@ async function checkAndSyncAllStaleConnections(): Promise<void> {
     }
   }
 }
-
-// Re-export sync functions for use by other modules
-export { syncStaleConnectionsForHousehold, hasStaleConnections } from './sync-service';

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { syncAllConnectionsForCron, type CronSyncResult } from '@/lib/sync-service';
 
 /**
  * Vercel Cron Job endpoint for syncing all bank connections
@@ -7,10 +6,30 @@ import { syncAllConnectionsForCron, type CronSyncResult } from '@/lib/sync-servi
  * This endpoint is called by Vercel's cron scheduler (configured in vercel.json)
  * Security: Validates CRON_SECRET header to prevent unauthorized access
  * 
+ * NOTE: sync-service is dynamically imported to avoid Prisma initialization during build
+ * 
  * @see https://vercel.com/docs/cron-jobs
  */
 export const maxDuration = 300; // 5 minutes max for Pro plan, adjust if needed
 export const dynamic = 'force-dynamic';
+
+// Type definition for the response (avoiding build-time import)
+interface CronSyncResult {
+  success: boolean;
+  message: string;
+  syncedConnections: number;
+  totalTransactionsNew: number;
+  totalTransactionsFound?: number;
+  errors: string[];
+  duration?: number;
+  details?: Array<{
+    connectionId: string;
+    displayName: string;
+    success: boolean;
+    transactionsNew?: number;
+    error?: string;
+  }>;
+}
 
 export async function GET(request: Request): Promise<NextResponse<CronSyncResult>> {
   const startTime = Date.now();
@@ -70,6 +89,8 @@ export async function GET(request: Request): Promise<NextResponse<CronSyncResult
   try {
     console.log('[Cron/Sync] Starting sync for all connections...');
     
+    // Dynamic import to avoid Prisma initialization during build
+    const { syncAllConnectionsForCron } = await import('@/lib/sync-service');
     const result = await syncAllConnectionsForCron();
     
     const duration = Date.now() - startTime;
