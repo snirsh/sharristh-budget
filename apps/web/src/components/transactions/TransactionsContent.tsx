@@ -3,10 +3,11 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { formatCurrency, formatDate, formatMonth, cn } from '@/lib/utils';
-import { Search, Filter, Check, X, ChevronDown, ChevronLeft, ChevronRight, Plus, Wand2, EyeOff, Eye, Trash2, CheckCheck, Minus, Loader2 } from 'lucide-react';
+import { Search, Filter, Check, X, ChevronDown, ChevronLeft, ChevronRight, Plus, Wand2, EyeOff, Eye, Trash2, CheckCheck, Minus, Loader2, BookmarkPlus } from 'lucide-react';
 import { TransactionSummary } from './TransactionSummary';
 import { AddTransactionDialog } from './AddTransactionDialog';
 import { AICategoryBadgeCompact } from './AICategoryBadge';
+import { CategoryCombobox } from '@/components/ui/CategoryCombobox';
 
 type Category = {
   id: string;
@@ -15,12 +16,6 @@ type Category = {
   icon?: string | null;
 };
 
-type TransactionsData = {
-  transactions: any[];
-  total?: number;
-  hasMore: boolean;
-  nextCursor?: string;
-};
 
 type TransactionsContentProps = {
   categories: Category[];
@@ -107,19 +102,76 @@ export const TransactionsContent = ({
     includeIgnored: showIgnored || undefined,
   });
 
+  const utils = trpc.useUtils();
+
   const recategorizeMutation = trpc.transactions.recategorize.useMutation({
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Cast to access new fields (TypeScript doesn't know about them yet)
+      const result = data as typeof data & { additionalUpdated?: number; ruleCreated?: boolean };
+      
+      // If additional transactions were updated by the rule, invalidate the cache
+      // to show all the updates
+      if (result.additionalUpdated && result.additionalUpdated > 0) {
+        utils.transactions.list.invalidate();
+        // Show user feedback about the rule being applied
+        setTimeout(() => {
+          alert(`Category saved! Also applied the rule to ${result.additionalUpdated} other matching transaction(s).`);
+        }, 100);
+      } else {
+        // Optimistically update the cache for immediate feedback
+        utils.transactions.list.setInfiniteData(
+          {
+            limit: 100,
+            startDate,
+            endDate,
+            needsReview: needsReviewFilter || undefined,
+            categoryId: selectedCategory || undefined,
+            search: searchQuery || undefined,
+            includeIgnored: showIgnored || undefined,
+          },
+          (oldData) => {
+            if (!oldData) return oldData;
+            return {
+              ...oldData,
+              pages: oldData.pages.map((page) => ({
+                ...page,
+                transactions: page.transactions.map((tx) =>
+                  tx.id === variables.transactionId
+                    ? {
+                        ...tx,
+                        categoryId: variables.categoryId,
+                        categorizationSource: 'manual',
+                        confidence: 1,
+                        needsReview: false,
+                      }
+                    : tx
+                ),
+              })),
+            };
+          }
+        );
+      }
+      setEditingTransaction(null);
+      // Refetch in background to ensure consistency
       refetch();
       refetchSummary();
-      setEditingTransaction(null);
     },
   });
 
   const applyCategorizationMutation = trpc.transactions.applyCategorization.useMutation({
     onSuccess: (data) => {
+      // Immediately invalidate and refetch all transaction queries
+      utils.transactions.list.invalidate();
+      utils.transactions.monthlySummary.invalidate();
       refetch();
       refetchSummary();
-      alert(data.message);
+      // Show message in a less intrusive way
+      if (data.remaining && data.remaining > 0) {
+        // If there are more to process, show a notification
+        alert(`${data.message}\n\nClick "Auto-Categorize" again to continue.`);
+      } else {
+        alert(data.message);
+      }
     },
   });
 
@@ -161,11 +213,19 @@ export const TransactionsContent = ({
   });
 
   const batchRecategorizeMutation = trpc.transactions.batchRecategorize.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Cast to access new fields
+      const result = data as typeof data & { ruleCreated?: boolean; additionalUpdated?: number };
+      
+      utils.transactions.list.invalidate();
       refetch();
       refetchSummary();
       setSelectedIds(new Set());
       setBatchCategoryId('');
+      // Notify user if a rule was created and applied
+      if (result.ruleCreated && result.additionalUpdated && result.additionalUpdated > 0) {
+        alert(`Updated ${result.updated} selected transaction(s) and ${result.additionalUpdated} additional matching transaction(s) with the new rule.`);
+      }
     },
   });
 
@@ -395,18 +455,13 @@ export const TransactionsContent = ({
             Ignore
           </button>
           <div className="flex items-center gap-2">
-            <select
+            <CategoryCombobox
+              categories={categories}
               value={batchCategoryId}
-              onChange={(e) => setBatchCategoryId(e.target.value)}
-              className="input text-sm py-1.5 w-40"
-            >
-              <option value="">Set category...</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Set category..."
+              className="w-44"
+              onSelect={(catId) => setBatchCategoryId(catId)}
+            />
             <button
               onClick={handleBatchRecategorize}
               disabled={!batchCategoryId || batchRecategorizeMutation.isPending}
@@ -522,6 +577,7 @@ export const TransactionsContent = ({
                       categories={categories}
                       currentCategoryId={tx.category?.id}
                       transactionDirection={tx.direction as 'income' | 'expense'}
+                      transactionMerchant={tx.merchant}
                       onSelect={(catId, createRule) => {
                         handleRecategorize(tx.id, catId, createRule);
                       }}
@@ -726,6 +782,7 @@ export const TransactionsContent = ({
                   categories={categories}
                   currentCategoryId={tx.category?.id}
                   transactionDirection={tx.direction as 'income' | 'expense'}
+                  transactionMerchant={tx.merchant}
                   onSelect={(catId, createRule) => {
                     handleRecategorize(tx.id, catId, createRule);
                   }}
@@ -868,64 +925,100 @@ const CategorySelector = ({
   categories,
   currentCategoryId,
   transactionDirection,
+  transactionMerchant,
   onSelect,
   onCancel,
 }: {
   categories: Category[];
   currentCategoryId?: string;
   transactionDirection: 'income' | 'expense';
+  transactionMerchant?: string | null;
   onSelect: (categoryId: string, createRule: boolean) => void;
   onCancel: () => void;
 }) => {
-  const [selectedId, setSelectedId] = useState(currentCategoryId || '');
   const [createRule, setCreateRule] = useState(false);
+  const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(null);
 
-  // Filter categories based on transaction direction
-  const filteredCategories = categories.filter((cat) => {
-    if (transactionDirection === 'income') {
-      return cat.type === 'income';
+  // When a category is selected, either save immediately or show rule option
+  const handleCategorySelect = (categoryId: string) => {
+    if (createRule || pendingCategoryId) {
+      // Already in "rule mode", just update the selection
+      setPendingCategoryId(categoryId);
+    } else {
+      // Quick save - just apply the category immediately
+      onSelect(categoryId, false);
     }
-    // For expenses, show expense categories (not income)
-    return cat.type !== 'income';
-  });
+  };
+
+  // Handle saving with rule creation
+  const handleSaveWithRule = () => {
+    const catId = pendingCategoryId || currentCategoryId;
+    if (catId) {
+      onSelect(catId, createRule);
+    }
+  };
+
+  // When "create rule" is toggled, keep category selection pending
+  const handleCreateRuleToggle = (checked: boolean) => {
+    setCreateRule(checked);
+    if (checked && !pendingCategoryId && currentCategoryId) {
+      setPendingCategoryId(currentCategoryId);
+    }
+  };
+
+  const showRuleControls = createRule || pendingCategoryId;
 
   return (
-    <div className="flex items-center gap-2">
-      <select
-        value={selectedId}
-        onChange={(e) => setSelectedId(e.target.value)}
-        className="input text-sm py-1 w-40"
+    <div className="flex items-center gap-2 flex-wrap">
+      <CategoryCombobox
+        categories={categories}
+        value={pendingCategoryId || currentCategoryId}
+        transactionDirection={transactionDirection}
+        placeholder="Search categories..."
         autoFocus
+        className="w-48"
+        onSelect={handleCategorySelect}
+        onCancel={onCancel}
+      />
+      
+      <label 
+        className={cn(
+          "flex items-center gap-1.5 text-xs px-2 py-1 rounded cursor-pointer transition-colors",
+          createRule 
+            ? "bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300" 
+            : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+        )}
+        title={transactionMerchant ? `Create rule for "${transactionMerchant}"` : 'Create rule for this pattern'}
       >
-        <option value="">Select category...</option>
-        {filteredCategories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.icon} {cat.name}
-          </option>
-        ))}
-      </select>
-      <label className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
         <input
           type="checkbox"
           checked={createRule}
-          onChange={(e) => setCreateRule(e.target.checked)}
-          className="rounded"
+          onChange={(e) => handleCreateRuleToggle(e.target.checked)}
+          className="rounded w-3.5 h-3.5"
         />
-        Create rule
+        <BookmarkPlus className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Rule</span>
       </label>
-      <button
-        onClick={() => selectedId && onSelect(selectedId, createRule)}
-        disabled={!selectedId}
-        className="p-1 text-success-600 hover:bg-success-50 dark:hover:bg-success-900/30 rounded disabled:opacity-50"
-      >
-        <Check className="h-4 w-4" />
-      </button>
-      <button
-        onClick={onCancel}
-        className="p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-      >
-        <X className="h-4 w-4" />
-      </button>
+
+      {showRuleControls && (
+        <>
+          <button
+            onClick={handleSaveWithRule}
+            disabled={!pendingCategoryId}
+            className="p-1.5 text-success-600 hover:bg-success-50 dark:hover:bg-success-900/30 rounded disabled:opacity-50 transition-colors"
+            title="Save with rule"
+          >
+            <Check className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onCancel}
+            className="p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            title="Cancel"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </>
+      )}
     </div>
   );
 };
@@ -934,66 +1027,171 @@ const MobileCategorySelector = ({
   categories,
   currentCategoryId,
   transactionDirection,
+  transactionMerchant,
   onSelect,
   onCancel,
 }: {
   categories: Category[];
   currentCategoryId?: string;
   transactionDirection: 'income' | 'expense';
+  transactionMerchant?: string | null;
   onSelect: (categoryId: string, createRule: boolean) => void;
   onCancel: () => void;
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState(currentCategoryId || '');
   const [createRule, setCreateRule] = useState(false);
 
-  // Filter categories based on transaction direction
-  const filteredCategories = categories.filter((cat) => {
-    if (transactionDirection === 'income') {
-      return cat.type === 'income';
+  // Filter categories based on transaction direction and search
+  const filteredCategories = useMemo(() => {
+    let filtered = categories.filter((cat) => {
+      if (transactionDirection === 'income') {
+        return cat.type === 'income';
+      }
+      return cat.type !== 'income';
+    });
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (cat) =>
+          cat.name.toLowerCase().includes(query) ||
+          (cat.icon && cat.icon.includes(query))
+      );
     }
-    return cat.type !== 'income';
-  });
+
+    return filtered;
+  }, [categories, transactionDirection, searchQuery]);
+
+  // Quick select - immediately saves when tapping a category (unless createRule is on)
+  const handleQuickSelect = (categoryId: string) => {
+    if (createRule) {
+      setSelectedId(categoryId);
+    } else {
+      onSelect(categoryId, false);
+    }
+  };
 
   return (
     <div className="space-y-3">
-      <select
-        value={selectedId}
-        onChange={(e) => setSelectedId(e.target.value)}
-        className="input w-full text-base py-3"
-        autoFocus
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search categories..."
+          className="input w-full pl-10 text-base py-3"
+          autoFocus
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+          >
+            <X className="h-4 w-4 text-gray-400" />
+          </button>
+        )}
+      </div>
+
+      {/* Category Grid */}
+      <div className="max-h-64 overflow-y-auto">
+        <div className="grid grid-cols-2 gap-2">
+          {filteredCategories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => handleQuickSelect(cat.id)}
+              className={cn(
+                'flex items-center gap-2 px-3 py-3 rounded-lg text-left transition-colors',
+                cat.id === selectedId
+                  ? 'bg-primary-100 dark:bg-primary-900/50 border-2 border-primary-500'
+                  : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
+              )}
+            >
+              <span className="text-xl">{cat.icon || '📁'}</span>
+              <span className={cn(
+                'text-sm truncate',
+                cat.id === selectedId 
+                  ? 'font-medium text-primary-700 dark:text-primary-300' 
+                  : 'text-gray-700 dark:text-gray-200'
+              )}>
+                {cat.name}
+              </span>
+            </button>
+          ))}
+        </div>
+        {filteredCategories.length === 0 && (
+          <p className="text-center py-8 text-gray-500 dark:text-gray-400">
+            No categories found
+          </p>
+        )}
+      </div>
+
+      {/* Rule Toggle */}
+      <label 
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors",
+          createRule 
+            ? "bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800" 
+            : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+        )}
       >
-        <option value="">Select category...</option>
-        {filteredCategories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.icon} {cat.name}
-          </option>
-        ))}
-      </select>
-      <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
         <input
           type="checkbox"
           checked={createRule}
           onChange={(e) => setCreateRule(e.target.checked)}
-          className="rounded w-5 h-5"
+          className="rounded w-5 h-5 text-primary-600"
         />
-        <span>Create rule for this merchant/pattern</span>
+        <div className="flex-1">
+          <span className={cn(
+            "text-sm font-medium",
+            createRule ? "text-primary-700 dark:text-primary-300" : "text-gray-700 dark:text-gray-300"
+          )}>
+            Create rule for this pattern
+          </span>
+          {transactionMerchant && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Will apply to "{transactionMerchant}" in future
+            </p>
+          )}
+        </div>
+        <BookmarkPlus className={cn(
+          "h-5 w-5",
+          createRule ? "text-primary-600 dark:text-primary-400" : "text-gray-400"
+        )} />
       </label>
-      <div className="flex gap-2">
-        <button
-          onClick={() => selectedId && onSelect(selectedId, createRule)}
-          disabled={!selectedId}
-          className="flex-1 btn btn-primary py-3 disabled:opacity-50"
-        >
-          <Check className="h-5 w-5 mr-2" />
-          Save Category
-        </button>
+
+      {/* Action Buttons - Only show if createRule is on */}
+      {createRule && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => selectedId && onSelect(selectedId, createRule)}
+            disabled={!selectedId}
+            className="flex-1 btn btn-primary py-3 disabled:opacity-50"
+          >
+            <Check className="h-5 w-5 mr-2" />
+            Save with Rule
+          </button>
+          <button
+            onClick={onCancel}
+            className="btn btn-outline py-3"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Cancel only button when not in rule mode */}
+      {!createRule && (
         <button
           onClick={onCancel}
-          className="btn btn-outline py-3"
+          className="w-full btn btn-ghost py-2 text-gray-500"
         >
-          <X className="h-5 w-5" />
+          Cancel
         </button>
-      </div>
+      )}
     </div>
   );
 };

@@ -593,6 +593,7 @@ export const transactionsRouter = router({
 
   /**
    * Recategorize a transaction and optionally create a rule
+   * When creating a rule, also applies it to all matching uncategorized transactions
    */
   recategorize: protectedProcedure
     .input(
@@ -623,21 +624,69 @@ export const transactionsRouter = router({
         include: { category: true },
       });
 
-      // Optionally create a rule
-      if (input.createRule && transaction.merchant) {
-        await ctx.prisma.categoryRule.create({
-          data: {
-            householdId: ctx.householdId,
-            categoryId: input.categoryId,
-            type: 'merchant',
-            pattern: transaction.merchant,
-            priority: 10,
-            createdFrom: 'correction',
-          },
-        });
+      let ruleCreated = false;
+      let additionalUpdated = 0;
+
+      // Optionally create a rule and apply it to matching transactions
+      if (input.createRule) {
+        // Determine the pattern - prefer merchant, fallback to keyword from description
+        const pattern = transaction.merchant || extractKeyword(transaction.description);
+        const ruleType = transaction.merchant ? 'merchant' : 'keyword';
+
+        if (pattern && pattern.length >= 3) {
+          // Check if similar rule already exists
+          const existingRule = await ctx.prisma.categoryRule.findFirst({
+            where: {
+              householdId: ctx.householdId,
+              pattern: { contains: pattern, mode: 'insensitive' },
+            },
+          });
+
+          if (!existingRule) {
+            // Create the new rule
+            await ctx.prisma.categoryRule.create({
+              data: {
+                householdId: ctx.householdId,
+                categoryId: input.categoryId,
+                type: ruleType,
+                pattern: pattern,
+                priority: 10,
+                createdFrom: 'correction',
+              },
+            });
+            ruleCreated = true;
+
+            // Apply the rule to all matching uncategorized transactions
+            // Use case-insensitive matching
+            const matchCondition = ruleType === 'merchant'
+              ? { merchant: { contains: pattern, mode: 'insensitive' as const } }
+              : { description: { contains: pattern, mode: 'insensitive' as const } };
+
+            const additionalResult = await ctx.prisma.transaction.updateMany({
+              where: {
+                householdId: ctx.householdId,
+                categoryId: null, // Only uncategorized
+                id: { not: input.transactionId }, // Exclude the current transaction
+                isIgnored: false,
+                ...matchCondition,
+              },
+              data: {
+                categoryId: input.categoryId,
+                categorizationSource: 'rule',
+                confidence: ruleType === 'merchant' ? 0.95 : 0.80,
+                needsReview: false,
+              },
+            });
+            additionalUpdated = additionalResult.count;
+          }
+        }
       }
 
-      return updated;
+      return {
+        ...updated,
+        ruleCreated,
+        additionalUpdated,
+      };
     }),
 
   /**
@@ -721,6 +770,7 @@ export const transactionsRouter = router({
 
   /**
    * Batch recategorize - apply a category to multiple transactions
+   * When creating a rule, also applies it to all matching uncategorized transactions
    */
   batchRecategorize: protectedProcedure
     .input(
@@ -731,40 +781,52 @@ export const transactionsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // If createRule is requested, get the first transaction to extract merchant pattern
+      let ruleCreated = false;
+      let additionalUpdated = 0;
+      let pattern: string | null = null;
+      let ruleType: 'merchant' | 'keyword' = 'merchant';
+
+      // If createRule is requested, get the first transaction to extract pattern
       if (input.createRule) {
         const firstTransaction = await ctx.prisma.transaction.findFirst({
           where: {
             id: { in: input.transactionIds },
             householdId: ctx.householdId,
-            merchant: { not: null },
           },
         });
 
-        if (firstTransaction?.merchant) {
-          // Check if rule already exists
-          const existingRule = await ctx.prisma.categoryRule.findFirst({
-            where: {
-              householdId: ctx.householdId,
-              pattern: { contains: firstTransaction.merchant, mode: 'insensitive' },
-            },
-          });
+        if (firstTransaction) {
+          // Prefer merchant, fallback to keyword from description
+          pattern = firstTransaction.merchant || extractKeyword(firstTransaction.description);
+          ruleType = firstTransaction.merchant ? 'merchant' : 'keyword';
 
-          if (!existingRule) {
-            await ctx.prisma.categoryRule.create({
-              data: {
+          if (pattern && pattern.length >= 3) {
+            // Check if rule already exists
+            const existingRule = await ctx.prisma.categoryRule.findFirst({
+              where: {
                 householdId: ctx.householdId,
-                categoryId: input.categoryId,
-                type: 'merchant',
-                pattern: firstTransaction.merchant,
-                priority: 10,
-                createdFrom: 'correction',
+                pattern: { contains: pattern, mode: 'insensitive' },
               },
             });
+
+            if (!existingRule) {
+              await ctx.prisma.categoryRule.create({
+                data: {
+                  householdId: ctx.householdId,
+                  categoryId: input.categoryId,
+                  type: ruleType,
+                  pattern: pattern,
+                  priority: 10,
+                  createdFrom: 'correction',
+                },
+              });
+              ruleCreated = true;
+            }
           }
         }
       }
 
+      // Update the selected transactions
       const result = await ctx.prisma.transaction.updateMany({
         where: {
           id: { in: input.transactionIds },
@@ -778,7 +840,35 @@ export const transactionsRouter = router({
         },
       });
 
-      return { updated: result.count };
+      // If a rule was created, apply it to all matching uncategorized transactions
+      if (ruleCreated && pattern) {
+        const matchCondition = ruleType === 'merchant'
+          ? { merchant: { contains: pattern, mode: 'insensitive' as const } }
+          : { description: { contains: pattern, mode: 'insensitive' as const } };
+
+        const additionalResult = await ctx.prisma.transaction.updateMany({
+          where: {
+            householdId: ctx.householdId,
+            categoryId: null, // Only uncategorized
+            id: { notIn: input.transactionIds }, // Exclude the selected transactions
+            isIgnored: false,
+            ...matchCondition,
+          },
+          data: {
+            categoryId: input.categoryId,
+            categorizationSource: 'rule',
+            confidence: ruleType === 'merchant' ? 0.95 : 0.80,
+            needsReview: false,
+          },
+        });
+        additionalUpdated = additionalResult.count;
+      }
+
+      return { 
+        updated: result.count, 
+        ruleCreated, 
+        additionalUpdated 
+      };
     }),
 
   /**
