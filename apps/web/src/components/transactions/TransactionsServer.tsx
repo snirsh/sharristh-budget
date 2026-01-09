@@ -3,7 +3,7 @@ import { TransactionsClient } from './TransactionsClient';
 import { redirect } from 'next/navigation';
 
 type TransactionsServerProps = {
-  month: string;
+  month?: string;
   needsReview?: boolean;
 };
 

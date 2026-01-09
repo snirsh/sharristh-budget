@@ -20,7 +20,8 @@ const TransactionsPageContent = async ({
 }) => {
   const params = await searchParams;
   const needsReview = params.needsReview === 'true';
-  const month = params.month ?? getCurrentMonth();
+  // When needsReview is true and no month is explicitly set, don't filter by month (show all time)
+  const month = params.month ?? (needsReview ? undefined : getCurrentMonth());
 
   return (
     <TransactionsServer

@@ -20,7 +20,7 @@ type Category = {
 type TransactionsContentProps = {
   categories: Category[];
   initialNeedsReview?: boolean;
-  initialMonth: string;
+  initialMonth?: string;
 };
 
 export const TransactionsContent = ({
@@ -28,7 +28,8 @@ export const TransactionsContent = ({
   initialNeedsReview = false,
   initialMonth,
 }: TransactionsContentProps) => {
-  const [currentMonth, setCurrentMonth] = useState(initialMonth);
+  // When month is undefined (e.g., showing all needs review), currentMonth is null
+  const [currentMonth, setCurrentMonth] = useState<string | null>(initialMonth ?? null);
   const [searchQuery, setSearchQuery] = useState('');
   const [needsReviewFilter, setNeedsReviewFilter] = useState(initialNeedsReview);
   const [showIgnored, setShowIgnored] = useState(false);
@@ -39,7 +40,13 @@ export const TransactionsContent = ({
   const [batchCategoryId, setBatchCategoryId] = useState<string>('');
 
   // Calculate date range for the current month in Israel timezone
+  // Returns undefined dates when showing all transactions (no month filter)
   const { startDate, endDate } = useMemo(() => {
+    if (!currentMonth) {
+      // No date filtering - show all transactions
+      return { startDate: undefined, endDate: undefined };
+    }
+
     const [year, monthNum] = currentMonth.split('-').map(Number);
 
     // Create dates at midnight Israel time (UTC+2) to match server-side transaction dates
@@ -57,12 +64,18 @@ export const TransactionsContent = ({
   }, [currentMonth]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    const [year, monthNum] = currentMonth.split('-').map(Number);
+    // If currently showing all time, start from current month
+    const baseMonth = currentMonth ?? new Date().toISOString().slice(0, 7);
+    const [year, monthNum] = baseMonth.split('-').map(Number);
     const date = new Date(year!, monthNum! - 1);
     date.setMonth(date.getMonth() + (direction === 'next' ? 1 : -1));
     setCurrentMonth(
       `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     );
+  };
+
+  const showAllTime = () => {
+    setCurrentMonth(null);
   };
 
   // Use infinite query for proper pagination
@@ -71,6 +84,7 @@ export const TransactionsContent = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isLoading,
     refetch,
   } = trpc.transactions.list.useInfiniteQuery(
     {
@@ -96,11 +110,17 @@ export const TransactionsContent = ({
   const hasMore = hasNextPage ?? false;
 
   // Fetch monthly summary from server (calculates from ALL transactions in DB)
-  const { data: monthlySummary, refetch: refetchSummary } = trpc.transactions.monthlySummary.useQuery({
-    startDate,
-    endDate,
-    includeIgnored: showIgnored || undefined,
-  });
+  // Only fetch when we have a specific month selected (not "all time" mode)
+  const { data: monthlySummary, refetch: refetchSummary } = trpc.transactions.monthlySummary.useQuery(
+    {
+      startDate: startDate!,
+      endDate: endDate!,
+      includeIgnored: showIgnored || undefined,
+    },
+    {
+      enabled: !!startDate && !!endDate, // Only run query when dates are available
+    }
+  );
 
   const utils = trpc.useUtils();
 
@@ -324,6 +344,80 @@ export const TransactionsContent = ({
     }
   };
 
+  // Show loading skeleton on initial load
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-in">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
+            <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-1" />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="flex items-center gap-2">
+              <div className="h-9 w-9 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-6 w-36 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-9 w-9 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Summary Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card p-4">
+              <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+              <div className="h-8 w-28 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+
+        {/* Filters Skeleton */}
+        <div className="flex flex-wrap gap-3">
+          <div className="h-10 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          <div className="h-10 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="card p-0 overflow-hidden">
+          <div className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+            <div className="flex items-center gap-4">
+              <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse ml-auto" />
+            </div>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="px-4 py-4 flex items-center gap-4">
+                <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="flex-1">
+                  <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
+                  <div className="h-3 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                </div>
+                <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400 dark:text-gray-500" />
+            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+              Loading transactions...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in">
       {/* Header with Month Navigation */}
@@ -351,9 +445,19 @@ export const TransactionsContent = ({
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="text-lg font-medium min-w-[160px] text-center">
-              {formatMonth(currentMonth)}
-            </span>
+            {currentMonth ? (
+              <button
+                onClick={showAllTime}
+                className="text-lg font-medium min-w-[160px] text-center hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                title="Click to show all time"
+              >
+                {formatMonth(currentMonth)}
+              </button>
+            ) : (
+              <span className="text-lg font-medium min-w-[160px] text-center text-primary-600 dark:text-primary-400">
+                All Time
+              </span>
+            )}
             <button
               onClick={() => navigateMonth('next')}
               className="btn-outline btn-sm"
@@ -657,21 +761,30 @@ export const TransactionsContent = ({
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                   <div className="space-y-2">
-                    <p>No transactions found for {formatMonth(currentMonth)}</p>
-                    <p className="text-sm">
-                      Try navigating to a previous month using the arrows above, or{' '}
-                      <button
-                        onClick={() => navigateMonth('prev')}
-                        className="text-primary-500 hover:underline"
-                      >
-                        go to {formatMonth((() => {
-                          const [year, monthNum] = currentMonth.split('-').map(Number);
-                          const date = new Date(year!, monthNum! - 1);
-                          date.setMonth(date.getMonth() - 1);
-                          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                        })())}
-                      </button>
+                    <p>
+                      {currentMonth 
+                        ? `No transactions found for ${formatMonth(currentMonth)}`
+                        : needsReviewFilter 
+                          ? 'No transactions need review'
+                          : 'No transactions found'
+                      }
                     </p>
+                    {currentMonth && (
+                      <p className="text-sm">
+                        Try navigating to a previous month using the arrows above, or{' '}
+                        <button
+                          onClick={() => navigateMonth('prev')}
+                          className="text-primary-500 hover:underline"
+                        >
+                          go to {formatMonth((() => {
+                            const [year, monthNum] = currentMonth.split('-').map(Number);
+                            const date = new Date(year!, monthNum! - 1);
+                            date.setMonth(date.getMonth() - 1);
+                            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                          })())}
+                        </button>
+                      </p>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -867,21 +980,30 @@ export const TransactionsContent = ({
         {transactions.length === 0 && (
           <div className="card p-12 text-center text-gray-500 dark:text-gray-400">
             <div className="space-y-2">
-              <p>No transactions found for {formatMonth(currentMonth)}</p>
-              <p className="text-sm">
-                Try navigating to a previous month using the arrows above, or{' '}
-                <button
-                  onClick={() => navigateMonth('prev')}
-                  className="text-primary-500 hover:underline"
-                >
-                  go to {formatMonth((() => {
-                    const [year, monthNum] = currentMonth.split('-').map(Number);
-                    const date = new Date(year!, monthNum! - 1);
-                    date.setMonth(date.getMonth() - 1);
-                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                  })())}
-                </button>
+              <p>
+                {currentMonth 
+                  ? `No transactions found for ${formatMonth(currentMonth)}`
+                  : needsReviewFilter 
+                    ? 'No transactions need review'
+                    : 'No transactions found'
+                }
               </p>
+              {currentMonth && (
+                <p className="text-sm">
+                  Try navigating to a previous month using the arrows above, or{' '}
+                  <button
+                    onClick={() => navigateMonth('prev')}
+                    className="text-primary-500 hover:underline"
+                  >
+                    go to {formatMonth((() => {
+                      const [year, monthNum] = currentMonth.split('-').map(Number);
+                      const date = new Date(year!, monthNum! - 1);
+                      date.setMonth(date.getMonth() - 1);
+                      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    })())}
+                  </button>
+                </p>
+              )}
             </div>
           </div>
         )}

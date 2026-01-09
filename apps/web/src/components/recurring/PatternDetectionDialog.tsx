@@ -3,15 +3,18 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { formatCurrency, cn } from '@/lib/utils';
-import { X, TrendingUp, Calendar, DollarSign, Sparkles, Loader2 } from 'lucide-react';
+import { X, TrendingUp, Calendar, DollarSign, Sparkles, Loader2, Check } from 'lucide-react';
 
 interface PatternDetectionDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDialogProps) {
+export function PatternDetectionDialog({ isOpen, onClose, onSuccess }: PatternDetectionDialogProps) {
   const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
+  const [addedPatterns, setAddedPatterns] = useState<Set<string>>(new Set());
+  const [creatingPattern, setCreatingPattern] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -23,15 +26,26 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
   const { data: categories = [] } = trpc.categories.list.useQuery();
 
   const createMutation = trpc.recurring.createFromPattern.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       utils.recurring.list.invalidate();
-      alert('Recurring template created successfully!');
-      onClose();
+      onSuccess?.();
+      // Mark the pattern as added using the merchant name
+      setAddedPatterns((prev) => new Set(prev).add(variables.merchant));
+      setCreatingPattern(null);
     },
     onError: (error) => {
       alert(`Error: ${error.message}`);
+      setCreatingPattern(null);
     },
   });
+
+  // Reset state when dialog closes
+  const handleClose = () => {
+    setSelectedPattern(null);
+    setAddedPatterns(new Set());
+    setCreatingPattern(null);
+    onClose();
+  };
 
   const handleCreateTemplate = (pattern: typeof patterns[0]) => {
     if (!pattern) return;
@@ -45,6 +59,8 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
       cat.name.toLowerCase().includes(pattern.normalizedMerchant.toLowerCase())
     );
 
+    setCreatingPattern(pattern.merchant);
+
     createMutation.mutate({
       merchant: pattern.merchant,
       amount: pattern.averageAmount,
@@ -55,6 +71,11 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
       startDate: new Date(mostRecentTx.date),
     });
   };
+
+  // Filter out already-added patterns and sort them (added ones at the end)
+  const remainingPatterns = patterns.filter((p) => !addedPatterns.has(p.merchant));
+  const addedPatternsList = patterns.filter((p) => addedPatterns.has(p.merchant));
+  const sortedPatterns = [...remainingPatterns, ...addedPatternsList];
 
   if (!isOpen) return null;
 
@@ -71,11 +92,13 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {isLoading
                   ? 'Analyzing your transactions...'
+                  : addedPatterns.size > 0
+                  ? `Found ${patterns.length} patterns • ${addedPatterns.size} added`
                   : `Found ${patterns.length} potential recurring transaction${patterns.length !== 1 ? 's' : ''}`}
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             >
               <X className="h-5 w-5" />
@@ -104,28 +127,41 @@ export function PatternDetectionDialog({ isOpen, onClose }: PatternDetectionDial
 
           {!isLoading && patterns.length > 0 && (
             <div className="space-y-4">
-              {patterns.map((pattern, idx) => (
-                <PatternCard
-                  key={idx}
-                  pattern={pattern}
-                  isExpanded={selectedPattern === `${idx}`}
-                  onToggle={() =>
-                    setSelectedPattern(selectedPattern === `${idx}` ? null : `${idx}`)
-                  }
-                  onCreateTemplate={() => handleCreateTemplate(pattern)}
-                  isCreating={createMutation.isPending}
-                />
-              ))}
+              {sortedPatterns.map((pattern, idx) => {
+                const isAdded = addedPatterns.has(pattern.merchant);
+                const isCreatingThis = creatingPattern === pattern.merchant;
+                return (
+                  <PatternCard
+                    key={pattern.merchant}
+                    pattern={pattern}
+                    isExpanded={selectedPattern === pattern.merchant}
+                    onToggle={() =>
+                      setSelectedPattern(selectedPattern === pattern.merchant ? null : pattern.merchant)
+                    }
+                    onCreateTemplate={() => handleCreateTemplate(pattern)}
+                    isCreating={isCreatingThis}
+                    isAdded={isAdded}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex justify-end gap-3">
-            <button onClick={onClose} className="btn btn-outline">
-              Close
-            </button>
+          <div className="flex items-center justify-between">
+            {addedPatterns.size > 0 && (
+              <p className="text-sm text-success-600 dark:text-success-400 flex items-center gap-1">
+                <Check className="h-4 w-4" />
+                {addedPatterns.size} template{addedPatterns.size !== 1 ? 's' : ''} added
+              </p>
+            )}
+            <div className="flex justify-end gap-3 ml-auto">
+              <button onClick={handleClose} className="btn btn-outline">
+                {addedPatterns.size > 0 ? 'Done' : 'Close'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -157,6 +193,7 @@ interface PatternCardProps {
   onToggle: () => void;
   onCreateTemplate: () => void;
   isCreating: boolean;
+  isAdded: boolean;
 }
 
 function PatternCard({
@@ -165,6 +202,7 @@ function PatternCard({
   onToggle,
   onCreateTemplate,
   isCreating,
+  isAdded,
 }: PatternCardProps) {
   const confidencePercent = Math.round(pattern.confidence * 100);
 
@@ -196,24 +234,41 @@ function PatternCard({
   };
 
   return (
-    <div className="card p-0 overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className={cn(
+      "card p-0 overflow-hidden border",
+      isAdded 
+        ? "border-success-300 dark:border-success-700 bg-success-50/50 dark:bg-success-900/20" 
+        : "border-gray-200 dark:border-gray-700"
+    )}>
       {/* Header */}
       <div
-        className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+        className={cn(
+          "p-4 cursor-pointer",
+          isAdded 
+            ? "hover:bg-success-50 dark:hover:bg-success-900/30" 
+            : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+        )}
         onClick={onToggle}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h3 className="font-semibold text-gray-900 dark:text-white">{pattern.merchant}</h3>
-              <span
-                className={cn(
-                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
-                  confidenceColor
-                )}
-              >
-                {confidencePercent}% confidence
-              </span>
+              {isAdded ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border text-success-700 dark:text-success-400 bg-success-100 dark:bg-success-900/30 border-success-200 dark:border-success-800">
+                  <Check className="h-3 w-3" />
+                  Added
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+                    confidenceColor
+                  )}
+                >
+                  {confidencePercent}% confidence
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{pattern.reason}</p>
           </div>
@@ -276,26 +331,33 @@ function PatternCard({
           </div>
 
           <div className="flex justify-end">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onCreateTemplate();
-              }}
-              disabled={isCreating}
-              className="btn btn-primary"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  Create Recurring Template
-                </>
-              )}
-            </button>
+            {isAdded ? (
+              <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-success-700 dark:text-success-400">
+                <Check className="h-4 w-4" />
+                Template Created
+              </span>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCreateTemplate();
+                }}
+                disabled={isCreating}
+                className="btn btn-primary"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    Create Recurring Template
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -111,7 +111,7 @@ export const DashboardContent = () => {
 
       {/* Needs Review Banner */}
       {needsReviewCount > 0 && (
-        <Link href={`/transactions?month=${currentMonth}&needsReview=true`} className="block">
+        <Link href="/transactions?needsReview=true" className="block">
           <div className="card border-l-4 border-primary-500 bg-primary-50 dark:bg-primary-900/30 hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

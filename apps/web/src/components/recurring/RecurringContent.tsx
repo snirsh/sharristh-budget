@@ -180,6 +180,7 @@ export function RecurringContent() {
       <PatternDetectionDialog
         isOpen={isPatternDialogOpen}
         onClose={() => setIsPatternDialogOpen(false)}
+        onSuccess={() => utils.recurring.list.invalidate()}
       />
     </div>
   );
