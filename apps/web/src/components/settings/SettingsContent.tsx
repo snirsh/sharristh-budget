@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
-import { Trash2, AlertTriangle, RefreshCw, CreditCard } from 'lucide-react';
+import { Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { PartnerInvites } from './PartnerInvites';
 
 export function SettingsContent() {
@@ -40,16 +40,6 @@ export function SettingsContent() {
     },
   });
 
-  const fixAccountTypesMutation = trpc.accounts.fixAccountTypes.useMutation({
-    onSuccess: (data) => {
-      alert(`✅ ${data.message}`);
-      window.location.reload();
-    },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
-    },
-  });
-
   return (
     <div className="space-y-6 animate-in">
       {/* Header */}
@@ -60,31 +50,6 @@ export function SettingsContent() {
 
       {/* Partner Invites */}
       <PartnerInvites />
-
-      {/* Fix Account Types */}
-      <div className="card border-purple-200 bg-purple-50">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-purple-100 rounded-lg">
-            <CreditCard className="h-6 w-6 text-purple-600" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold text-purple-900 mb-1">Fix Account Types</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Fix account types based on bank connection provider:
-              Isracard → Credit Card, OneZero → Checking.
-              This ensures the dashboard shows correct Credit Card totals.
-            </p>
-            <button
-              onClick={() => fixAccountTypesMutation.mutate()}
-              disabled={fixAccountTypesMutation.isPending}
-              className="btn bg-purple-600 text-white hover:bg-purple-700"
-            >
-              <CreditCard className="h-4 w-4" />
-              {fixAccountTypesMutation.isPending ? 'Fixing...' : 'Fix Account Types'}
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Category Migration */}
       <div className="card border-blue-200 bg-blue-50">
