@@ -649,6 +649,241 @@ export const bankConnectionsRouter = router({
       },
     ];
   }),
+
+  /**
+   * Check if connections need syncing and return status
+   * Used by the frontend to determine if a background sync should be triggered
+   * 
+   * This is a lightweight check that doesn't perform the actual sync,
+   * allowing the frontend to decide whether to trigger a background sync.
+   */
+  checkSyncStatus: protectedProcedure.query(async ({ ctx }) => {
+    const staleThresholdHours = 12;
+    const staleThreshold = new Date();
+    staleThreshold.setHours(staleThreshold.getHours() - staleThresholdHours);
+
+    // Get count of active connections
+    const activeCount = await ctx.prisma.bankConnection.count({
+      where: {
+        householdId: ctx.householdId,
+        isActive: true,
+      },
+    });
+
+    if (activeCount === 0) {
+      return {
+        hasActiveConnections: false,
+        hasStaleConnections: false,
+        staleCount: 0,
+        lastSyncAt: null,
+      };
+    }
+
+    // Get count of stale connections
+    const staleCount = await ctx.prisma.bankConnection.count({
+      where: {
+        householdId: ctx.householdId,
+        isActive: true,
+        OR: [
+          { lastSyncAt: null },
+          { lastSyncAt: { lt: staleThreshold } },
+        ],
+      },
+    });
+
+    // Get the most recent sync time
+    const mostRecentSync = await ctx.prisma.bankConnection.findFirst({
+      where: {
+        householdId: ctx.householdId,
+        isActive: true,
+        lastSyncAt: { not: null },
+      },
+      orderBy: { lastSyncAt: 'desc' },
+      select: { lastSyncAt: true },
+    });
+
+    return {
+      hasActiveConnections: activeCount > 0,
+      hasStaleConnections: staleCount > 0,
+      staleCount,
+      lastSyncAt: mostRecentSync?.lastSyncAt ?? null,
+    };
+  }),
+
+  /**
+   * Sync stale connections in the background
+   * Only syncs connections that haven't been synced in the last 12 hours
+   * 
+   * This is designed to be called after checkSyncStatus indicates stale connections.
+   * It runs synchronously but is meant to be called in a "fire and forget" manner
+   * by the frontend (not awaiting the result for UI purposes).
+   */
+  syncStaleConnections: protectedProcedure
+    .input(
+      z.object({
+        staleThresholdHours: z.number().min(1).max(48).default(12),
+      }).optional()
+    )
+    .mutation(async ({ ctx, input }) => {
+      const thresholdHours = input?.staleThresholdHours ?? 12;
+      const staleThreshold = new Date();
+      staleThreshold.setHours(staleThreshold.getHours() - thresholdHours);
+
+      // Get stale connections
+      const staleConnections = await ctx.prisma.bankConnection.findMany({
+        where: {
+          householdId: ctx.householdId,
+          isActive: true,
+          OR: [
+            { lastSyncAt: null },
+            { lastSyncAt: { lt: staleThreshold } },
+          ],
+        },
+      });
+
+      if (staleConnections.length === 0) {
+        return {
+          success: true,
+          message: 'All connections are up to date',
+          syncedCount: 0,
+          totalTransactionsNew: 0,
+          results: [],
+        };
+      }
+
+      console.log(`[SyncStale] Found ${staleConnections.length} stale connection(s) for household ${ctx.householdId}`);
+
+      const results: Array<{
+        connectionId: string;
+        displayName: string;
+        success: boolean;
+        transactionsNew?: number;
+        errorMessage?: string;
+      }> = [];
+
+      let totalNew = 0;
+      let successCount = 0;
+
+      for (const connection of staleConnections) {
+        try {
+          // Create a sync job
+          const syncJob = await ctx.prisma.syncJob.create({
+            data: {
+              connectionId: connection.id,
+              status: 'running',
+              startedAt: new Date(),
+            },
+          });
+
+          // Get existing external IDs for deduplication
+          const existingTransactions = await ctx.prisma.transaction.findMany({
+            where: {
+              householdId: ctx.householdId,
+              externalId: { not: null },
+            },
+            select: { externalId: true },
+          });
+          const existingExternalIds = new Set<string>(
+            existingTransactions
+              .map((t: typeof existingTransactions[number]) => t.externalId)
+              .filter((id: string | null): id is string => id !== null)
+          );
+
+          // Perform the sync
+          const { result, transactions } = await scraperService.syncConnection(
+            {
+              id: connection.id,
+              provider: connection.provider as BankProvider,
+              encryptedCreds: connection.encryptedCreds,
+              longTermToken: connection.longTermToken,
+            },
+            existingExternalIds
+          );
+
+          if (!result.success) {
+            const isAuthError = 
+              result.errorType === 'AUTH_REQUIRED' ||
+              result.errorMessage?.includes('re-authenticate') ||
+              result.errorMessage?.includes('expired');
+
+            await ctx.prisma.syncJob.update({
+              where: { id: syncJob.id },
+              data: {
+                status: 'error',
+                completedAt: new Date(),
+                errorMessage: result.errorMessage,
+              },
+            });
+
+            await ctx.prisma.bankConnection.update({
+              where: { id: connection.id },
+              data: {
+                lastSyncAt: new Date(),
+                lastSyncStatus: isAuthError ? 'auth_required' : 'error',
+              },
+            });
+
+            results.push({
+              connectionId: connection.id,
+              displayName: connection.displayName,
+              success: false,
+              errorMessage: result.errorMessage,
+            });
+            continue;
+          }
+
+          // Import new transactions
+          if (transactions.length > 0) {
+            await importTransactions(ctx, transactions, connection);
+          }
+
+          // Update sync job and connection
+          await ctx.prisma.syncJob.update({
+            where: { id: syncJob.id },
+            data: {
+              status: 'success',
+              completedAt: new Date(),
+              transactionsFound: result.transactionsFound,
+              transactionsNew: result.transactionsNew,
+            },
+          });
+
+          await ctx.prisma.bankConnection.update({
+            where: { id: connection.id },
+            data: {
+              lastSyncAt: new Date(),
+              lastSyncStatus: 'success',
+            },
+          });
+
+          successCount++;
+          totalNew += result.transactionsNew;
+
+          results.push({
+            connectionId: connection.id,
+            displayName: connection.displayName,
+            success: true,
+            transactionsNew: result.transactionsNew,
+          });
+        } catch (error) {
+          console.error(`[SyncStale] Error syncing connection ${connection.id}:`, error);
+          results.push({
+            connectionId: connection.id,
+            displayName: connection.displayName,
+            success: false,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      return {
+        success: successCount > 0,
+        message: `Synced ${successCount}/${staleConnections.length} stale connections`,
+        syncedCount: successCount,
+        totalTransactionsNew: totalNew,
+        results,
+      };
+    }),
 });
 
 /**
