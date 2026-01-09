@@ -381,7 +381,7 @@ describe('Transactions Router Integration Tests', () => {
       // For now, we test the rule creation logic path
 
       // Create a transaction that would trigger AI categorization
-      const transaction = await prisma.transaction.create({
+      await prisma.transaction.create({
         data: {
           householdId: testData.household.id,
           accountId: testData.account.id,
@@ -423,7 +423,7 @@ describe('Transactions Router Integration Tests', () => {
       });
 
       // Create a normal transaction
-      const normal = await prisma.transaction.create({
+      await prisma.transaction.create({
         data: {
           householdId: testData.household.id,
           accountId: testData.account.id,
@@ -455,7 +455,7 @@ describe('Transactions Router Integration Tests', () => {
   describe('Performance and Edge Cases', () => {
     it('should handle batch categorization limit correctly', async () => {
       // Create 25 uncategorized transactions
-      const transactions = await Promise.all(
+      await Promise.all(
         Array.from({ length: 25 }, (_, i) =>
           prisma.transaction.create({
             data: {

@@ -23,15 +23,18 @@ export const createTestContext = (opts: {
   householdId: string;
   userId: string;
 }) => {
+  const user = {
+    id: opts.userId,
+    email: 'test@example.com',
+    name: 'Test User',
+  };
   return {
     prisma: opts.prisma,
     householdId: opts.householdId,
     userId: opts.userId,
+    user,
     session: {
-      user: {
-        id: opts.userId,
-        email: 'test@example.com',
-      },
+      user,
     },
   };
 };
@@ -68,7 +71,15 @@ export const createTestFixtures = async (prisma: PrismaClient) => {
       id: 'test-user-1',
       email: 'test@example.com',
       name: 'Test User',
-      defaultHouseholdId: household.id,
+    },
+  });
+
+  // Create household membership
+  await prisma.householdMember.create({
+    data: {
+      householdId: household.id,
+      userId: user.id,
+      role: 'owner',
     },
   });
 
@@ -89,7 +100,6 @@ export const createTestFixtures = async (prisma: PrismaClient) => {
       id: 'test-cat-income',
       householdId: household.id,
       name: 'Salary',
-      nameHe: 'משכורת',
       icon: '💰',
       color: '#10b981',
       type: 'income',
@@ -102,7 +112,6 @@ export const createTestFixtures = async (prisma: PrismaClient) => {
       id: 'test-cat-expense',
       householdId: household.id,
       name: 'Groceries',
-      nameHe: 'מכולת',
       icon: '🛒',
       color: '#3b82f6',
       type: 'expense',
@@ -115,7 +124,6 @@ export const createTestFixtures = async (prisma: PrismaClient) => {
       id: 'test-cat-varying',
       householdId: household.id,
       name: 'Other',
-      nameHe: 'אחר',
       icon: '❓',
       color: '#6b7280',
       type: 'expense',
@@ -161,7 +169,15 @@ export const createSecondTestHousehold = async (prisma: PrismaClient) => {
       id: 'test-user-2',
       email: 'test2@example.com',
       name: 'Test User 2',
-      defaultHouseholdId: household.id,
+    },
+  });
+
+  // Create household membership
+  await prisma.householdMember.create({
+    data: {
+      householdId: household.id,
+      userId: user.id,
+      role: 'owner',
     },
   });
 
@@ -180,7 +196,6 @@ export const createSecondTestHousehold = async (prisma: PrismaClient) => {
       id: 'test-cat-2',
       householdId: household.id,
       name: 'Category 2',
-      nameHe: 'קטגוריה 2',
       icon: '🏠',
       color: '#8b5cf6',
       type: 'expense',

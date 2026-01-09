@@ -27,7 +27,12 @@ describe('Bank Connection Sync', () => {
       const staleThreshold = new Date();
       staleThreshold.setHours(staleThreshold.getHours() - staleThresholdHours);
 
-      const isStale = lastSyncAt === null || lastSyncAt < staleThreshold;
+      // Helper function to check if stale
+      const checkIsStale = (syncAt: Date | null, threshold: Date): boolean => {
+        if (syncAt === null) return true;
+        return syncAt < threshold;
+      };
+      const isStale = checkIsStale(lastSyncAt, staleThreshold);
       expect(isStale).toBe(true);
     });
 
@@ -87,7 +92,7 @@ describe('Bank Connection Sync', () => {
 
     it('should reject empty authorization header', () => {
       const cronSecret = 'test-secret-123';
-      const emptyHeader = '';
+      const emptyHeader: string = '';
 
       const isAuthorized = emptyHeader === `Bearer ${cronSecret}`;
       expect(isAuthorized).toBe(false);
@@ -252,7 +257,7 @@ describe('Bank Connection Sync', () => {
     });
 
     it('should not skip sync when demo mode is false', () => {
-      const demoMode = 'false';
+      const demoMode: string = 'false';
       const shouldSkip = demoMode === 'true';
       expect(shouldSkip).toBe(false);
     });

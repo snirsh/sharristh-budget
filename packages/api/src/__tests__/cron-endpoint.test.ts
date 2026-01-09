@@ -51,7 +51,7 @@ describe('Cron Sync Endpoint', () => {
 
     it('should reject invalid Bearer token', () => {
       const cronSecret = 'test-secret-123';
-      const authHeader = 'Bearer wrong-secret';
+      const authHeader: string = 'Bearer wrong-secret';
 
       const isAuthorized = authHeader === `Bearer ${cronSecret}`;
       expect(isAuthorized).toBe(false);
@@ -59,14 +59,14 @@ describe('Cron Sync Endpoint', () => {
 
     it('should reject missing Bearer prefix', () => {
       const cronSecret = 'test-secret-123';
-      const authHeader = 'test-secret-123';
+      const authHeader: string = 'test-secret-123';
 
       const isAuthorized = authHeader === `Bearer ${cronSecret}`;
       expect(isAuthorized).toBe(false);
     });
 
     it('should allow requests in development without CRON_SECRET', () => {
-      const nodeEnv = 'development';
+      const nodeEnv: string = 'development';
       const cronSecret: string | undefined = undefined;
 
       const isProduction = nodeEnv === 'production';
@@ -79,13 +79,13 @@ describe('Cron Sync Endpoint', () => {
 
   describe('Demo Mode', () => {
     it('should skip sync when DEMO_MODE is true', () => {
-      const demoMode = 'true';
+      const demoMode: string = 'true';
       const shouldSkip = demoMode === 'true';
       expect(shouldSkip).toBe(true);
     });
 
     it('should proceed with sync when DEMO_MODE is false', () => {
-      const demoMode = 'false';
+      const demoMode: string = 'false';
       const shouldSkip = demoMode === 'true';
       expect(shouldSkip).toBe(false);
     });
