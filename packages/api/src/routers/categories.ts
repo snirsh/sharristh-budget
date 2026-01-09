@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { createCategorySchema, updateCategorySchema } from '@sfam/domain/schemas';
 import type { PrismaClient } from '@sfam/db';
-import { unstable_cache, revalidateTag } from 'next/cache';
 
 export const categoriesRouter = router({
   /**
@@ -30,67 +29,43 @@ export const categoriesRouter = router({
         where.isActive = true;
       }
 
-      // Cache categories list for 1 hour (rarely changes)
-      const getCachedCategories = unstable_cache(
-        async () => {
-          return ctx.prisma.category.findMany({
-            where,
-            include: {
-              children: {
-                where: input?.includeInactive ? {} : { isActive: true },
-                orderBy: { sortOrder: 'asc' },
-              },
-              parent: true,
-            },
-            orderBy: [{ type: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
-          });
+      return ctx.prisma.category.findMany({
+        where,
+        include: {
+          children: {
+            where: input?.includeInactive ? {} : { isActive: true },
+            orderBy: { sortOrder: 'asc' },
+          },
+          parent: true,
         },
-        [`categories-list-${ctx.householdId}-${input?.type ?? 'all'}-${input?.includeInactive ?? false}`],
-        {
-          revalidate: 3600, // 1 hour
-          tags: ['categories', `household-${ctx.householdId}`],
-        }
-      );
-
-      return getCachedCategories();
+        orderBy: [{ type: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
+      });
     }),
 
   /**
    * Get category tree (hierarchical)
    */
   tree: protectedProcedure.query(async ({ ctx }) => {
-    // Cache category tree for 1 hour (rarely changes)
-    const getCachedCategoryTree = unstable_cache(
-      async () => {
-        return ctx.prisma.category.findMany({
-          where: {
-            householdId: ctx.householdId,
-            isActive: true,
-            parentCategoryId: null, // Only top-level
-          },
+    return ctx.prisma.category.findMany({
+      where: {
+        householdId: ctx.householdId,
+        isActive: true,
+        parentCategoryId: null, // Only top-level
+      },
+      include: {
+        children: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' },
           include: {
             children: {
               where: { isActive: true },
               orderBy: { sortOrder: 'asc' },
-              include: {
-                children: {
-                  where: { isActive: true },
-                  orderBy: { sortOrder: 'asc' },
-                },
-              },
             },
           },
-          orderBy: [{ type: 'asc' }, { sortOrder: 'asc' }],
-        });
+        },
       },
-      [`category-tree-${ctx.householdId}`],
-      {
-        revalidate: 3600, // 1 hour
-        tags: ['categories', 'category-tree', `household-${ctx.householdId}`],
-      }
-    );
-
-    return getCachedCategoryTree();
+      orderBy: [{ type: 'asc' }, { sortOrder: 'asc' }],
+    });
   }),
 
   /**
@@ -139,11 +114,6 @@ export const categoriesRouter = router({
         parent: true,
       },
     });
-
-    // Invalidate category caches
-    revalidateTag('categories');
-    revalidateTag('category-tree');
-    revalidateTag(`household-${ctx.householdId}`);
 
     return category;
   }),
@@ -233,11 +203,6 @@ export const categoriesRouter = router({
         },
       });
 
-      // Invalidate category caches
-      revalidateTag('categories');
-      revalidateTag('category-tree');
-      revalidateTag(`household-${ctx.householdId}`);
-
       return updatedCategory;
     }),
 
@@ -259,11 +224,6 @@ export const categoriesRouter = router({
       data: { isActive: false },
     });
 
-    // Invalidate category caches
-    revalidateTag('categories');
-    revalidateTag('category-tree');
-    revalidateTag(`household-${ctx.householdId}`);
-
     return disabledCategory;
   }),
 
@@ -275,11 +235,6 @@ export const categoriesRouter = router({
       where: { id: input, householdId: ctx.householdId },
       data: { isActive: true },
     });
-
-    // Invalidate category caches
-    revalidateTag('categories');
-    revalidateTag('category-tree');
-    revalidateTag(`household-${ctx.householdId}`);
 
     return enabledCategory;
   }),
@@ -305,11 +260,6 @@ export const categoriesRouter = router({
           })
         )
       );
-
-      // Invalidate category caches
-      revalidateTag('categories');
-      revalidateTag('category-tree');
-      revalidateTag(`household-${ctx.householdId}`);
 
       return { success: true };
     }),
@@ -481,11 +431,6 @@ export const categoriesRouter = router({
         where: { id: input, householdId: ctx.householdId },
       });
     });
-
-    // Invalidate category caches
-    revalidateTag('categories');
-    revalidateTag('category-tree');
-    revalidateTag(`household-${ctx.householdId}`);
 
     return { success: true, deletedCount: allCategoryIds.length };
   }),
@@ -1099,11 +1044,6 @@ export const categoriesRouter = router({
         id: { in: oldCategories.map((c) => c.id) },
       },
     });
-
-    // Invalidate caches
-    revalidateTag('categories');
-    revalidateTag('category-tree');
-    revalidateTag(`household-${ctx.householdId}`);
 
     return {
       success: true,

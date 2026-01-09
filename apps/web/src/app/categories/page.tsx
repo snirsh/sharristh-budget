@@ -1,7 +1,7 @@
 import { CategoriesContent } from '@/components/categories/CategoriesContent';
 
-// ISR: Revalidate every hour for categories (rarely change)
-export const revalidate = 3600;
+// Force dynamic rendering - database queries can't run at build time
+export const dynamic = 'force-dynamic';
 
 export default async function CategoriesPage() {
   return <CategoriesContent />;

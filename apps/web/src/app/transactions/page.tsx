@@ -3,8 +3,8 @@ import { TransactionsServer } from '@/components/transactions/TransactionsServer
 import { Loader2 } from 'lucide-react';
 import { getCurrentMonth } from '@/lib/utils';
 
-// ISR: Revalidate every 30 seconds for transaction data
-export const revalidate = 30;
+// Force dynamic rendering - database queries can't run at build time
+export const dynamic = 'force-dynamic';
 
 const Loading = () => (
   <div className="flex items-center justify-center py-12">

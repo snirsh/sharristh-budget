@@ -2,8 +2,8 @@ import { Suspense } from 'react';
 import { DashboardServer } from '@/components/dashboard/DashboardServer';
 import { Loader2 } from 'lucide-react';
 
-// ISR: Revalidate every 60 seconds for dashboard data
-export const revalidate = 60;
+// Force dynamic rendering - database queries can't run at build time
+export const dynamic = 'force-dynamic';
 
 const Loading = () => (
   <div className="flex items-center justify-center py-12">
