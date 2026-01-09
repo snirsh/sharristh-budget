@@ -39,6 +39,11 @@ export const transactionsRouter = router({
       where.isIgnored = false;
     }
 
+    // Filter out auto-generated recurring instances by default
+    // These are transactions created by recurring templates - we only want to show
+    // the actual bank transactions with a "recurring" badge instead
+    where.isRecurringInstance = false;
+
     if (input.startDate) {
       where.date = { ...(where.date as Record<string, unknown> || {}), gte: input.startDate };
     }
@@ -64,6 +69,22 @@ export const transactionsRouter = router({
       ];
     }
 
+    // Fetch active recurring templates to match against transactions
+    const recurringTemplates = await ctx.prisma.recurringTransactionTemplate.findMany({
+      where: {
+        householdId: ctx.householdId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        merchant: true,
+        description: true,
+        amount: true,
+        frequency: true,
+      },
+    });
+
     // Use cursor-based pagination if cursor is provided, otherwise use offset
     const queryOptions: any = {
       where,
@@ -73,6 +94,9 @@ export const transactionsRouter = router({
         },
         account: {
           select: { id: true, name: true },
+        },
+        template: {
+          select: { id: true, name: true, frequency: true },
         },
       },
       orderBy: [{ date: 'desc' }, { id: 'desc' }], // Secondary sort by ID for stable ordering
@@ -89,11 +113,23 @@ export const transactionsRouter = router({
       queryOptions.take = input.limit; // Don't fetch extra for offset pagination
     }
 
-    const [transactions, total] = await Promise.all([
+    // Type for transaction with includes
+    type TransactionWithRelations = Awaited<ReturnType<typeof ctx.prisma.transaction.findFirst<{
+      include: {
+        category: { select: { id: true; name: true; icon: true; color: true; type: true } };
+        account: { select: { id: true; name: true } };
+        template: { select: { id: true; name: true; frequency: true } };
+      };
+    }>>>;
+
+    const [transactionsRaw, total] = await Promise.all([
       ctx.prisma.transaction.findMany(queryOptions),
       // Only count if using offset pagination (expensive query)
       input.cursor ? Promise.resolve(0) : ctx.prisma.transaction.count({ where }),
     ]);
+
+    // Cast to proper type with relations
+    const transactions = transactionsRaw as NonNullable<TransactionWithRelations>[];
 
     // Check if there are more results (for cursor pagination)
     const hasMore = input.cursor
@@ -105,27 +141,78 @@ export const transactionsRouter = router({
       ? transactions.slice(0, -1)
       : transactions;
 
+    // Helper function to match transaction with recurring templates
+    const findMatchingRecurringTemplate = (tx: typeof actualTransactions[number]) => {
+      // If already linked to a template, use that
+      if (tx.template) {
+        return {
+          id: tx.template.id,
+          name: tx.template.name,
+          frequency: tx.template.frequency,
+        };
+      }
+
+      // Try to match by merchant or description
+      const txMerchant = tx.merchant?.toLowerCase().trim();
+      const txDescription = tx.description?.toLowerCase().trim();
+
+      for (const template of recurringTemplates) {
+        const templateMerchant = template.merchant?.toLowerCase().trim();
+        const templateDesc = template.description?.toLowerCase().trim();
+        const templateName = template.name?.toLowerCase().trim();
+
+        // Match by merchant (exact or contains)
+        if (txMerchant && templateMerchant) {
+          if (txMerchant.includes(templateMerchant) || templateMerchant.includes(txMerchant)) {
+            return { id: template.id, name: template.name, frequency: template.frequency };
+          }
+        }
+
+        // Match by description containing template name or vice versa
+        if (txDescription && templateName) {
+          if (txDescription.includes(templateName) || templateName.includes(txDescription)) {
+            return { id: template.id, name: template.name, frequency: template.frequency };
+          }
+        }
+
+        // Match by description containing template description
+        if (txDescription && templateDesc) {
+          if (txDescription.includes(templateDesc) || templateDesc.includes(txDescription)) {
+            return { id: template.id, name: template.name, frequency: template.frequency };
+          }
+        }
+      }
+
+      return null;
+    };
+
     // Format data on server to reduce client-side computation
-    const formattedTransactions = actualTransactions.map(tx => ({
-      ...tx,
-      // Pre-format currency on server (reduces client work)
-      formattedAmount: new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(Math.abs(tx.amount)),
-      // Pre-format date on server
-      formattedDate: new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      }).format(new Date(tx.date)),
-      // Build category path on server
-      categoryPath: tx.category
-        ? tx.category.name
-        : 'Uncategorized',
-    }));
+    const formattedTransactions = actualTransactions.map(tx => {
+      const recurringTemplate = findMatchingRecurringTemplate(tx);
+      
+      return {
+        ...tx,
+        // Pre-format currency on server (reduces client work)
+        formattedAmount: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(Math.abs(tx.amount)),
+        // Pre-format date on server
+        formattedDate: new Intl.DateTimeFormat('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }).format(new Date(tx.date)),
+        // Build category path on server
+        categoryPath: tx.category
+          ? tx.category.name
+          : 'Uncategorized',
+        // Add recurring template info if matched
+        recurringTemplate,
+      };
+    });
 
     // Get the next cursor (last item's ID)
     const nextCursor = hasMore && formattedTransactions.length > 0

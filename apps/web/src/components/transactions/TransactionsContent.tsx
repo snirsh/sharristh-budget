@@ -7,6 +7,7 @@ import { Search, Filter, Check, X, ChevronDown, ChevronLeft, ChevronRight, Plus,
 import { TransactionSummary } from './TransactionSummary';
 import { AddTransactionDialog } from './AddTransactionDialog';
 import { AICategoryBadgeCompact } from './AICategoryBadge';
+import { RecurringBadgeCompact } from './RecurringBadge';
 import { CategoryCombobox } from '@/components/ui/CategoryCombobox';
 
 type Category = {
@@ -703,6 +704,9 @@ export const TransactionsContent = ({
                         source={tx.categorizationSource}
                         confidence={tx.confidence}
                       />
+                      <RecurringBadgeCompact
+                        recurringTemplate={tx.recurringTemplate}
+                      />
                     </div>
                   )}
                 </td>
@@ -916,6 +920,9 @@ export const TransactionsContent = ({
                   <AICategoryBadgeCompact
                     source={tx.categorizationSource}
                     confidence={tx.confidence}
+                  />
+                  <RecurringBadgeCompact
+                    recurringTemplate={tx.recurringTemplate}
                   />
                 </div>
               )}

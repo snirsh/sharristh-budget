@@ -948,8 +948,11 @@ export const bankConnectionsRouter = router({
 async function importTransactions(
   ctx: { prisma: typeof import('@sfam/db').prisma; householdId: string },
   transactions: MappedTransaction[],
-  connection: { id: string; accountMappings: string | null }
+  connection: { id: string; accountMappings: string | null; provider: string }
 ) {
+  // Determine default account type based on provider
+  // Credit card providers should create 'credit' accounts
+  const defaultAccountType = connection.provider === 'isracard' ? 'credit' : 'checking';
   // Parse account mappings
   const accountMappings: Record<string, string> = connection.accountMappings
     ? JSON.parse(connection.accountMappings)
@@ -978,7 +981,7 @@ async function importTransactions(
           data: {
             householdId: ctx.householdId,
             name: `Imported Account (${externalId})`,
-            type: 'checking',
+            type: defaultAccountType,
             externalAccountId: externalId,
           },
         });
@@ -991,7 +994,7 @@ async function importTransactions(
         data: {
           householdId: ctx.householdId,
           name: `Imported Account (${externalId})`,
-          type: 'checking',
+          type: defaultAccountType,
           externalAccountId: externalId,
         },
       });

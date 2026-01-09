@@ -755,9 +755,11 @@ export const dashboardRouter = router({
         }));
 
       // Currency formatter
-      const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', {
+      const formatCurrency = (amount: number) => new Intl.NumberFormat('he-IL', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'ILS',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
       }).format(amount);
 
       return {
