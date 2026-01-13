@@ -7,5 +7,5 @@ export default defineConfig({
   format: ['cjs', 'esm'],
   dts: isProduction,
   clean: true,
-  external: ['@prisma/client', '@sfam/db', '@sfam/domain', '@sfam/scraper'],
+  external: ['@prisma/client', '@sfam/db', '@sfam/domain', '@sfam/scraper', 'next/cache'],
 });

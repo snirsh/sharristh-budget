@@ -26,7 +26,13 @@
         "PGUSER",
         "PGPASSWORD",
         "PGDATABASE",
-        "NEON_PROJECT_ID"
+        "NEON_PROJECT_ID",
+        "rpID",
+        "rpName",
+        "origin",
+        "env_RP_ID",
+        "env_RP_ORIGIN",
+        "GEMINI_API_KEY"
       ]
     },
     "dev": {
