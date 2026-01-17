@@ -599,6 +599,7 @@ export const categoriesRouter = router({
           { name: 'Entertainment (בידור)', icon: '🎬', sortOrder: 2 },
           { name: 'Vacations (חופשות)', icon: '🏖️', sortOrder: 3 },
           { name: 'Gifts (מתנות)', icon: '🎁', sortOrder: 4 },
+          { name: 'Haircuts (תספורות)', icon: '💇', sortOrder: 5 },
         ],
       },
       {
@@ -609,6 +610,7 @@ export const categoriesRouter = router({
           { name: 'Food (מזון)', icon: '🍖', sortOrder: 1 },
           { name: 'Vet (וטרינר)', icon: '🏥', sortOrder: 2 },
           { name: 'Supplies (ציוד)', icon: '🦴', sortOrder: 3 },
+          { name: 'Pet Insurance (ביטוח חיות מחמד)', icon: '🐶', sortOrder: 4 },
         ],
       },
       {
@@ -618,6 +620,7 @@ export const categoriesRouter = router({
         subcategories: [
           { name: 'Nonprofits (עמותות)', icon: '🏛️', sortOrder: 1 },
           { name: 'Community Giving (תרומות קהילה)', icon: '🤝', sortOrder: 2 },
+          { name: 'Donations (תרומות)', icon: '💰', sortOrder: 3 },
         ],
       },
       {
