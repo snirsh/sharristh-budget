@@ -1,39 +1,38 @@
 /**
- * AI-powered category suggestion using Google Gemini (free tier)
- * Provides cloud-based AI categorization for transactions
- * Free tier: 15 requests/minute, 1M tokens/month
+ * AI-powered category suggestion using Vercel AI SDK with AI Gateway
+ * Provides reliable cloud-based AI categorization for transactions with structured output
+ *
+ * Uses Vercel AI Gateway for:
+ * - Unified API across multiple providers (OpenAI, Anthropic, Google)
+ * - Built-in rate limiting and error handling
+ * - Type-safe structured output with Zod schemas
  */
 
+import { z } from 'zod';
 import type {
   CategorizationResult as BaseCategorizationResult,
   CategoryForCategorization,
   TransactionInput,
 } from './types';
 
-type GeminiResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-  }>;
-  error?: {
-    message: string;
-  };
-};
+// Response schema for AI categorization using Zod
+const categorizationResponseSchema = z.object({
+  categoryId: z.string().describe('The exact category ID from the available categories'),
+  confidence: z.number().min(0).max(1).describe('Confidence score between 0.0 and 1.0'),
+  reasoning: z.string().describe('Brief explanation for the category selection'),
+});
 
-type ParsedAIResponse = {
-  categoryId: string | null;
-  confidence: number;
-  reasoning: string;
-};
+// Type inference for IDE support (used by generateObject at runtime)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _CategorizationResponse = z.infer<typeof categorizationResponseSchema>;
 
 /**
- * Suggest a category for a transaction using Google Gemini AI
+ * Suggest a category for a transaction using Vercel AI SDK
+ * Falls back to direct API call if AI SDK is not available
+ *
  * @param tx - Transaction to categorize
  * @param categories - Available categories
- * @param apiKey - Google AI API key
+ * @param apiKey - AI Gateway API key or legacy Gemini API key
  * @returns Categorization result or null if AI fails
  */
 export const suggestCategoryWithAI = async (
@@ -47,64 +46,14 @@ export const suggestCategoryWithAI = async (
   }
 
   try {
-    const prompt = buildPrompt(tx, categories);
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1, // Very low for consistent categorization
-            maxOutputTokens: 256, // Increased to avoid truncation
-          },
-        }),
-        signal: AbortSignal.timeout(10000), // 10 second timeout
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn(`Gemini API returned status ${response.status}: ${errorText}`);
-      return null;
+    // Try Vercel AI Gateway first (if generateObject is available)
+    const result = await categorizeWithVercelAI(tx, categories, apiKey);
+    if (result) {
+      return result;
     }
 
-    const data = (await response.json()) as GeminiResponse;
-
-    if (data.error) {
-      console.warn(`Gemini API error: ${data.error.message}`);
-      return null;
-    }
-
-    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!responseText) {
-      console.warn('Gemini returned empty response');
-      return null;
-    }
-
-    const result = parseResponse(responseText, categories);
-
-    if (!result.categoryId) {
-      console.warn('AI did not return a valid category ID');
-      return null;
-    }
-
-    // Cap confidence at 0.85 (AI suggestions are good but not perfect)
-    const cappedConfidence = Math.min(result.confidence, 0.85);
-
-    return {
-      categoryId: result.categoryId,
-      confidence: cappedConfidence,
-      source: 'ai_suggestion',
-      reason: `AI: ${result.reasoning}`,
-      matchedRule: null,
-    };
+    // Fall back to direct API call (legacy Gemini)
+    return await categorizeWithDirectAPI(tx, categories, apiKey);
   } catch (error) {
     // Graceful degradation - log but don't fail
     if (error instanceof Error && error.name === 'TimeoutError') {
@@ -119,9 +68,200 @@ export const suggestCategoryWithAI = async (
 };
 
 /**
- * Build a prompt for the AI to categorize the transaction
+ * Categorize using Vercel AI SDK with generateObject for structured output
  */
-const buildPrompt = (tx: TransactionInput, categories: CategoryForCategorization[]): string => {
+async function categorizeWithVercelAI(
+  tx: TransactionInput,
+  categories: CategoryForCategorization[],
+  apiKey: string
+): Promise<BaseCategorizationResult | null> {
+  try {
+    // Dynamically import AI SDK to avoid build issues if not installed
+    const { generateObject } = await import('ai');
+    const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible');
+
+    // Create the AI Gateway provider
+    const gateway = createOpenAICompatible({
+      name: 'vercel-ai-gateway',
+      apiKey,
+      baseURL: 'https://ai-gateway.vercel.sh/v1',
+    });
+
+    // Build the prompt
+    const prompt = buildPromptForVercel(tx, categories);
+
+    // Generate structured output
+    const { object } = await generateObject({
+      model: gateway('anthropic/claude-sonnet-4'),
+      schema: categorizationResponseSchema,
+      prompt,
+      maxTokens: 256,
+    });
+
+    // Validate that the category ID exists in our list
+    const validCategory = categories.find((c) => c.id === object.categoryId);
+
+    if (!validCategory) {
+      console.warn(`AI returned invalid category ID: ${object.categoryId}`);
+      // Try partial match
+      const partialMatch = categories.find(
+        (c) =>
+          c.id.includes(object.categoryId) ||
+          object.categoryId.includes(c.id) ||
+          c.name.toLowerCase().includes(object.reasoning.toLowerCase())
+      );
+
+      if (partialMatch) {
+        return {
+          categoryId: partialMatch.id,
+          confidence: Math.min(object.confidence * 0.8, 0.7),
+          source: 'ai_suggestion',
+          reason: `AI (partial match): ${object.reasoning}`,
+          matchedRule: null,
+        };
+      }
+      return null;
+    }
+
+    // Cap confidence at 0.85 (AI suggestions are good but not perfect)
+    const cappedConfidence = Math.min(object.confidence, 0.85);
+
+    return {
+      categoryId: object.categoryId,
+      confidence: cappedConfidence,
+      source: 'ai_suggestion',
+      reason: `AI: ${object.reasoning}`,
+      matchedRule: null,
+    };
+  } catch (error) {
+    // If AI SDK is not available or fails, return null to try fallback
+    if (
+      error instanceof Error &&
+      (error.message.includes('Cannot find module') || error.message.includes('MODULE_NOT_FOUND'))
+    ) {
+      console.info('Vercel AI SDK not available, using direct API fallback');
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Build prompt for Vercel AI SDK
+ */
+function buildPromptForVercel(
+  tx: TransactionInput,
+  categories: CategoryForCategorization[]
+): string {
+  // Group categories by type for better context
+  const incomeCategories = categories.filter((c) => c.type === 'income');
+  const expenseCategories = categories.filter((c) => c.type === 'expense');
+
+  const relevantCategories = tx.direction === 'income' ? incomeCategories : expenseCategories;
+
+  const categoryList = relevantCategories.map((c) => `- ${c.id}: ${c.name}`).join('\n');
+
+  return `You are a financial transaction categorization assistant for a Hebrew/Israeli user. Categorize this transaction.
+
+Transaction:
+- Description: ${tx.description}
+- Merchant: ${tx.merchant || 'Unknown'}
+- Amount: ₪${tx.amount}
+- Type: ${tx.direction}
+
+Available Categories (choose from these EXACT IDs):
+${categoryList}
+
+IMPORTANT: The categoryId MUST be one of the exact IDs listed above (e.g., "cm123abc..."). 
+Hebrew text in descriptions is common - understand them contextually.
+Provide a confidence score (0.0-1.0) and brief reasoning in English.`;
+}
+
+/**
+ * Fallback: Direct API call to Gemini (legacy method)
+ */
+async function categorizeWithDirectAPI(
+  tx: TransactionInput,
+  categories: CategoryForCategorization[],
+  apiKey: string
+): Promise<BaseCategorizationResult | null> {
+  const prompt = buildLegacyPrompt(tx, categories);
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1, // Very low for consistent categorization
+          maxOutputTokens: 256,
+        },
+      }),
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.warn(`Gemini API returned status ${response.status}: ${errorText}`);
+    return null;
+  }
+
+  type GeminiResponse = {
+    candidates?: Array<{
+      content?: {
+        parts?: Array<{
+          text?: string;
+        }>;
+      };
+    }>;
+    error?: {
+      message: string;
+    };
+  };
+
+  const data = (await response.json()) as GeminiResponse;
+
+  if (data.error) {
+    console.warn(`Gemini API error: ${data.error.message}`);
+    return null;
+  }
+
+  const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!responseText) {
+    console.warn('Gemini returned empty response');
+    return null;
+  }
+
+  const result = parseLegacyResponse(responseText, categories);
+
+  if (!result.categoryId) {
+    console.warn('AI did not return a valid category ID');
+    return null;
+  }
+
+  // Cap confidence at 0.85 (AI suggestions are good but not perfect)
+  const cappedConfidence = Math.min(result.confidence, 0.85);
+
+  return {
+    categoryId: result.categoryId,
+    confidence: cappedConfidence,
+    source: 'ai_suggestion',
+    reason: `AI: ${result.reasoning}`,
+    matchedRule: null,
+  };
+}
+
+/**
+ * Build a prompt for legacy direct API call
+ */
+function buildLegacyPrompt(tx: TransactionInput, categories: CategoryForCategorization[]): string {
   // Group categories by type for better context
   const incomeCategories = categories.filter((c) => c.type === 'income');
   const expenseCategories = categories.filter((c) => c.type === 'expense');
@@ -149,16 +289,22 @@ Instructions:
 
 Respond ONLY with valid JSON in this exact format (no other text, no markdown):
 {"categoryId": "<exact category ID from list>", "confidence": <number between 0.0 and 1.0>, "reasoning": "<brief explanation in 1 sentence>"}`;
+}
+
+type ParsedAIResponse = {
+  categoryId: string | null;
+  confidence: number;
+  reasoning: string;
 };
 
 /**
- * Parse AI response and validate the category ID
+ * Parse legacy API response and validate the category ID
  * Handles various malformed JSON cases from AI responses
  */
-const parseResponse = (
+function parseLegacyResponse(
   response: string,
   categories: CategoryForCategorization[]
-): ParsedAIResponse => {
+): ParsedAIResponse {
   try {
     // Clean up response - remove markdown code blocks if present
     const cleaned = response
@@ -240,4 +386,4 @@ const parseResponse = (
       reasoning: 'Parse error',
     };
   }
-};
+}

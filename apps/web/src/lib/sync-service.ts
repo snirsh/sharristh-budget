@@ -545,9 +545,9 @@ async function importTransactions(
     type: c.type as 'income' | 'expense',
   }));
 
-  // Check if AI is enabled
-  const aiEnabled = !!process.env.GEMINI_API_KEY;
-  const aiApiKey = process.env.GEMINI_API_KEY;
+  // Check if AI is enabled (support both Vercel AI Gateway and legacy Gemini)
+  const aiApiKey = process.env.AI_GATEWAY_API_KEY || process.env.GEMINI_API_KEY;
+  const aiEnabled = !!aiApiKey;
 
   if (aiEnabled) {
     console.log(

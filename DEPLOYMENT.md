@@ -555,7 +555,10 @@ If you want AI-powered transaction categorization (free):
 3. Update your `.env`:
    ```bash
    nano .env
-   # Add: GEMINI_API_KEY=your-api-key-here
+   # Option 1 (Recommended): Vercel AI Gateway
+   # AI_GATEWAY_API_KEY=your-vercel-ai-gateway-api-key
+   # Option 2 (Legacy): Google Gemini direct API
+   # GEMINI_API_KEY=your-api-key-here
    ```
 4. Restart web:
    ```bash

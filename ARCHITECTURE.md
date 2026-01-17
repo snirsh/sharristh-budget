@@ -117,16 +117,20 @@ SharristhBudget/
 6. **Fallback** (0.50) - Default category from database
 
 **AI Categorization** (`packages/domain/src/ai-categorization.ts`):
-- **Model**: Google Gemini 2.0 Flash
+- **Primary**: Vercel AI Gateway with Claude Sonnet 4 (structured output via Zod schemas)
+- **Fallback**: Google Gemini 2.0 Flash (direct API)
 - **Cloud-based**: Works on Vercel serverless
 - **Timeout**: 10 seconds (graceful fallback)
-- **Temperature**: 0.1 (consistent results)
 - **Confidence Cap**: 0.85 (never exceeds rule-based methods)
 - **Review Flag**: AI suggestions marked `needsReview: true`
 - **Auto-Learning**: Creates rules automatically from high-confidence AI suggestions (≥75%)
 
-**Environment Variables**:
+**Environment Variables** (choose one):
 ```bash
+# Option 1: Vercel AI Gateway (recommended - unified access to multiple models)
+AI_GATEWAY_API_KEY=your-vercel-ai-gateway-api-key
+
+# Option 2: Legacy Google Gemini direct API
 GEMINI_API_KEY=your-api-key-from-google-ai-studio
 ```
 

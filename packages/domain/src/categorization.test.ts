@@ -128,7 +128,7 @@ describe('categorizeTransaction', () => {
     expect(result.categoryId).toBeNull();
     expect(result.source).toBe('fallback');
     expect(result.confidence).toBe(0.5);
-    expect(result.reason).toContain('varying expenses');
+    expect(result.reason).toContain('needs categorization');
   });
 
   it('should fallback with null categoryId for unmatched income (API determines actual category)', async () => {

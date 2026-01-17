@@ -295,8 +295,8 @@ export const transactionsRouter = router({
         rules,
         categories,
         {
-          enableAI: !!process.env.GEMINI_API_KEY,
-          aiApiKey: process.env.GEMINI_API_KEY,
+          enableAI: !!(process.env.AI_GATEWAY_API_KEY || process.env.GEMINI_API_KEY),
+          aiApiKey: process.env.AI_GATEWAY_API_KEY || process.env.GEMINI_API_KEY,
         }
       );
 
@@ -559,7 +559,8 @@ export const transactionsRouter = router({
         }
 
         // No rule match - try AI if enabled (with rate limiting)
-        if (process.env.GEMINI_API_KEY) {
+        const aiApiKey = process.env.AI_GATEWAY_API_KEY || process.env.GEMINI_API_KEY;
+        if (aiApiKey) {
           // Rate limit AI calls
           if (aiCallCount > 0) {
             await delay(AI_DELAY_MS);
@@ -577,7 +578,7 @@ export const transactionsRouter = router({
             categories,
             {
               enableAI: true,
-              aiApiKey: process.env.GEMINI_API_KEY,
+              aiApiKey,
             }
           );
 
@@ -674,7 +675,7 @@ export const transactionsRouter = router({
       remaining: hasMore ? remaining : 0,
       message: hasMore
         ? `Updated ${updatedCount} transaction(s). ${remaining} more need categorization - click again to continue.`
-        : `Updated ${updatedCount} transaction(s) with categorization rules${process.env.GEMINI_API_KEY ? ' and AI suggestions' : ''}`,
+        : `Updated ${updatedCount} transaction(s) with categorization rules${process.env.AI_GATEWAY_API_KEY || process.env.GEMINI_API_KEY ? ' and AI suggestions' : ''}`,
     };
   }),
 

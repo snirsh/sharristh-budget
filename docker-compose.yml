@@ -22,7 +22,10 @@ services:
       # Production mode
       NODE_ENV: production
 
-      # Optional: Google Gemini AI for categorization (free tier)
+      # Optional: AI for categorization (choose one)
+      # Vercel AI Gateway (recommended - unified access to multiple models)
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
+      # Legacy: Google Gemini direct API
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       DEMO_MODE: false
     volumes:
