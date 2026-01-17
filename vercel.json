@@ -1,11 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "NODE_ENV=production pnpm --filter @sfam/db db:generate && NODE_ENV=production pnpm exec turbo build --filter=@sfam/web",
-  "installCommand": "pnpm install",
-  "crons": [
-    {
-      "path": "/api/cron/sync",
-      "schedule": "0 6 * * *"
-    }
-  ]
+  "_note": "This file is NOT used when Root Directory is set (apps/web). See apps/web/vercel.json for actual config."
 }
