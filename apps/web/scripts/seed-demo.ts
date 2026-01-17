@@ -1,10 +1,11 @@
 #!/usr/bin/env tsx
 /**
  * Script to seed demo data for demo mode
- * Run with: pnpm tsx apps/web/scripts/seed-demo.ts
+ * Run from packages/db: pnpm tsx ../../apps/web/scripts/seed-demo.ts
+ * Or run: cd packages/db && pnpm tsx src/seed-demo.ts
  */
 
-import { PrismaClient } from '@sfam/db';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -231,15 +232,21 @@ async function seedDemoData() {
     categoryId: categoryMap['Electricity (חשמל)'],
   });
 
-  // Random expenses
+  // Random expenses - category names must match categoryMap keys (bilingual format)
   const randomExpenses = [
-    { desc: 'רמי לוי', merchant: 'רמי לוי', category: 'מכולת', min: 150, max: 450 },
-    { desc: 'שופרסל', merchant: 'שופרסל', category: 'מכולת', min: 100, max: 350 },
-    { desc: 'מסעדה', merchant: 'טאיזו', category: 'מסעדות', min: 120, max: 280 },
-    { desc: 'קפה', merchant: 'ארומה', category: 'מסעדות', min: 35, max: 85 },
-    { desc: 'דלק', merchant: 'דלק', category: 'תחבורה', min: 200, max: 350 },
-    { desc: 'H&M', merchant: 'H&M', category: 'קניות', min: 150, max: 500 },
-    { desc: 'סרט בקולנוע', merchant: 'יס פלאנט', category: 'בילויים', min: 80, max: 150 },
+    { desc: 'רמי לוי', merchant: 'רמי לוי', category: 'Groceries (מכולת)', min: 150, max: 450 },
+    { desc: 'שופרסל', merchant: 'שופרסל', category: 'Groceries (מכולת)', min: 100, max: 350 },
+    { desc: 'מסעדה', merchant: 'טאיזו', category: 'Restaurants (מסעדות)', min: 120, max: 280 },
+    { desc: 'קפה', merchant: 'ארומה', category: 'Restaurants (מסעדות)', min: 35, max: 85 },
+    { desc: 'דלק', merchant: 'דלק', category: 'Transportation (תחבורה)', min: 200, max: 350 },
+    { desc: 'H&M', merchant: 'H&M', category: 'Shopping (קניות)', min: 150, max: 500 },
+    {
+      desc: 'סרט בקולנוע',
+      merchant: 'יס פלאנט',
+      category: 'Entertainment (בילויים)',
+      min: 80,
+      max: 150,
+    },
   ];
 
   for (let monthsAgo = 2; monthsAgo >= 0; monthsAgo--) {

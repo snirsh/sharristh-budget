@@ -1020,6 +1020,127 @@ export const transactionsRouter = router({
     }),
 
   /**
+   * Get transactions grouped by category with budget info
+   * Returns categories that have transactions, with total spent and budget data
+   */
+  groupedByCategory: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.coerce.date().optional(),
+        endDate: z.coerce.date().optional(),
+        month: z
+          .string()
+          .regex(/^\d{4}-\d{2}$/)
+          .optional(), // YYYY-MM format for budget lookup
+        includeIgnored: z.boolean().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Record<string, unknown> = {
+        householdId: ctx.householdId,
+        isRecurringInstance: false,
+      };
+
+      // Filter out ignored transactions by default
+      if (!input.includeIgnored) {
+        where.isIgnored = false;
+      }
+
+      // Add date filters
+      if (input.startDate) {
+        where.date = { ...((where.date as Record<string, unknown>) || {}), gte: input.startDate };
+      }
+      if (input.endDate) {
+        where.date = { ...((where.date as Record<string, unknown>) || {}), lte: input.endDate };
+      }
+
+      // Get transactions with category data
+      const transactions = await ctx.prisma.transaction.findMany({
+        where,
+        include: {
+          category: {
+            select: { id: true, name: true, icon: true, color: true, type: true },
+          },
+          account: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      });
+
+      // Get budgets for the month if provided
+      const budgetMap = new Map<string, { plannedAmount: number; limitAmount: number | null }>();
+      if (input.month) {
+        const budgets = await ctx.prisma.budget.findMany({
+          where: {
+            householdId: ctx.householdId,
+            month: input.month,
+          },
+        });
+        for (const budget of budgets) {
+          budgetMap.set(budget.categoryId, {
+            plannedAmount: budget.plannedAmount,
+            limitAmount: budget.limitAmount,
+          });
+        }
+      }
+
+      // Group transactions by category
+      const categoryGroups = new Map<
+        string,
+        {
+          category: {
+            id: string;
+            name: string;
+            icon: string | null;
+            color: string | null;
+            type: string;
+          } | null;
+          transactions: typeof transactions;
+          totalAmount: number;
+          transactionCount: number;
+          plannedAmount: number | null;
+          limitAmount: number | null;
+        }
+      >();
+
+      for (const tx of transactions) {
+        const categoryId = tx.categoryId || 'uncategorized';
+        const existing = categoryGroups.get(categoryId);
+
+        if (existing) {
+          existing.transactions.push(tx);
+          existing.totalAmount += tx.amount;
+          existing.transactionCount++;
+        } else {
+          const budget = tx.categoryId ? budgetMap.get(tx.categoryId) : null;
+          categoryGroups.set(categoryId, {
+            category: tx.category,
+            transactions: [tx],
+            totalAmount: tx.amount,
+            transactionCount: 1,
+            plannedAmount: budget?.plannedAmount ?? null,
+            limitAmount: budget?.limitAmount ?? null,
+          });
+        }
+      }
+
+      // Convert to array and sort by total amount (highest first)
+      const groups = Array.from(categoryGroups.entries())
+        .map(([categoryId, data]) => ({
+          categoryId,
+          ...data,
+        }))
+        .sort((a, b) => b.totalAmount - a.totalAmount);
+
+      return {
+        groups,
+        totalTransactions: transactions.length,
+        totalCategories: groups.length,
+      };
+    }),
+
+  /**
    * Debug endpoint to diagnose transaction date issues
    * Shows transaction counts by date and reveals any date range problems
    */

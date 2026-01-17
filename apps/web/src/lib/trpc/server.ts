@@ -24,6 +24,17 @@ async function getDemoHouseholdId(): Promise<string> {
   const DEMO_USER_ID = 'demo-user';
   const DEMO_HOUSEHOLD_NAME = '🎭 Demo Household';
 
+  // Ensure demo user exists first (required before creating household membership)
+  await prisma.user.upsert({
+    where: { id: DEMO_USER_ID },
+    update: {},
+    create: {
+      id: DEMO_USER_ID,
+      email: 'demo@example.com',
+      name: 'Demo User',
+    },
+  });
+
   // Check if demo household exists
   let household = await prisma.household.findFirst({
     where: { name: DEMO_HOUSEHOLD_NAME },
