@@ -21,6 +21,15 @@ import { type BankProvider, type MappedTransaction, scraperService } from '@sfam
 // AI rate limiting: Gemini allows 15 req/min, use 4.5s delay (~13 req/min to be safe)
 const AI_RATE_LIMIT_DELAY_MS = 4500;
 
+export interface CronSyncDetail {
+  connectionId: string;
+  displayName: string;
+  success: boolean;
+  transactionsNew?: number;
+  aiCategorized?: number;
+  error?: string;
+}
+
 export interface CronSyncResult {
   success: boolean;
   message: string;
@@ -30,14 +39,7 @@ export interface CronSyncResult {
   totalAICategorized?: number;
   errors: string[];
   duration?: number;
-  details?: Array<{
-    connectionId: string;
-    displayName: string;
-    success: boolean;
-    transactionsNew?: number;
-    aiCategorized?: number;
-    error?: string;
-  }>;
+  details?: Array<CronSyncDetail>;
 }
 
 export interface ConnectionSyncResult {
@@ -55,89 +57,131 @@ export interface ConnectionSyncResult {
 export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
   console.log('[SyncService] Starting cron sync for all connections');
 
-  const connections = await prisma.bankConnection.findMany({
-    where: { isActive: true },
-    include: { household: true },
+  const households: { id: string }[] = await prisma.household.findMany({
+    where: {
+      bankConnections: { some: { isActive: true } },
+    },
+    select: { id: true },
   });
 
-  console.log(`[SyncService] Found ${connections.length} active connections to sync`);
+  console.log(`[SyncService] Found ${households.length} households to sync`);
 
-  if (connections.length === 0) {
-    return {
-      success: true,
-      message: 'No active connections to sync',
-      syncedConnections: 0,
-      totalTransactionsNew: 0,
-      errors: [],
-      details: [],
-    };
-  }
-
-  const results: CronSyncResult['details'] = [];
-  const errors: string[] = [];
-  let totalNew = 0;
-  let totalFound = 0;
-  let totalAICategorized = 0;
-  let successCount = 0;
-
-  for (const connection of connections) {
-    try {
-      console.log(`[SyncService] Syncing connection ${connection.id} (${connection.displayName})`);
-
-      const result = await syncSingleConnection({
-        id: connection.id,
-        householdId: connection.householdId,
-        provider: connection.provider,
-        encryptedCreds: connection.encryptedCreds,
-        longTermToken: connection.longTermToken,
-        accountMappings: connection.accountMappings,
-        lastSyncAt: connection.lastSyncAt,
+  const results = await Promise.all(
+    households.map(async (household: { id: string }) => {
+      const connections = await prisma.bankConnection.findMany({
+        where: { isActive: true, householdId: household.id },
+        include: { household: true },
       });
 
-      if (result.success) {
-        successCount++;
-        totalNew += result.transactionsNew;
-        totalFound += result.transactionsFound;
-        totalAICategorized += result.aiCategorized;
-      } else {
-        errors.push(`${connection.displayName}: ${result.errorMessage}`);
+      console.log(`[SyncService] Found ${connections.length} active connections to sync`);
+
+      if (connections.length === 0) {
+        return {
+          success: true,
+          message: 'No active connections to sync',
+          syncedConnections: 0,
+          totalTransactionsNew: 0,
+          errors: [],
+          details: [],
+        };
       }
 
-      results?.push({
-        connectionId: connection.id,
-        displayName: connection.displayName,
-        success: result.success,
-        transactionsNew: result.transactionsNew,
-        aiCategorized: result.aiCategorized,
-        error: result.errorMessage,
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[SyncService] Error syncing connection ${connection.id}:`, error);
-      errors.push(`${connection.displayName}: ${errorMessage}`);
+      const results: CronSyncResult['details'] = [];
+      const errors: string[] = [];
+      let totalNew = 0;
+      let totalFound = 0;
+      let totalAICategorized = 0;
+      let successCount = 0;
 
-      results?.push({
-        connectionId: connection.id,
-        displayName: connection.displayName,
-        success: false,
-        error: errorMessage,
-      });
-    }
-  }
+      for (const connection of connections) {
+        try {
+          console.log(
+            `[SyncService] Syncing connection ${connection.id} (${connection.displayName})`
+          );
 
-  console.log(
-    `[SyncService] Completed: ${successCount}/${connections.length} successful, ${totalNew} new transactions, ${totalAICategorized} AI-categorized`
+          const result = await syncSingleConnection({
+            id: connection.id,
+            householdId: connection.householdId,
+            provider: connection.provider,
+            encryptedCreds: connection.encryptedCreds,
+            longTermToken: connection.longTermToken,
+            accountMappings: connection.accountMappings,
+            lastSyncAt: connection.lastSyncAt,
+          });
+
+          if (result.success) {
+            successCount++;
+            totalNew += result.transactionsNew;
+            totalFound += result.transactionsFound;
+            totalAICategorized += result.aiCategorized;
+          } else {
+            errors.push(`${connection.displayName}: ${result.errorMessage}`);
+          }
+
+          results?.push({
+            connectionId: connection.id,
+            displayName: connection.displayName,
+            success: result.success,
+            transactionsNew: result.transactionsNew,
+            aiCategorized: result.aiCategorized,
+            error: result.errorMessage,
+          });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`[SyncService] Error syncing connection ${connection.id}:`, error);
+          errors.push(`${connection.displayName}: ${errorMessage}`);
+
+          results?.push({
+            connectionId: connection.id,
+            displayName: connection.displayName,
+            success: false,
+            error: errorMessage,
+          });
+        }
+      }
+
+      console.log(
+        `[SyncService] Completed: ${successCount}/${connections.length} successful, ${totalNew} new transactions, ${totalAICategorized} AI-categorized`
+      );
+
+      return {
+        success: successCount > 0 || connections.length === 0,
+        message: `Synced ${successCount}/${connections.length} connections`,
+        syncedConnections: successCount,
+        totalTransactionsNew: totalNew,
+        totalTransactionsFound: totalFound,
+        totalAICategorized,
+        errors,
+        details: results.map((r) => {
+          return {
+            connectionId: r.connectionId,
+            displayName: r.displayName,
+            success: r.success,
+            transactionsNew: r.transactionsNew,
+            aiCategorized: r.aiCategorized,
+            error: r.error,
+          };
+        }),
+      };
+    })
   );
 
+  const totalConnections = results.length;
+  const totalSuccess = results.filter((r) => r.success).length;
+  const totalNew = results.reduce((sum, r) => sum + (r.totalTransactionsNew || 0), 0);
+  const totalFound = results.reduce((sum, r) => sum + (r.totalTransactionsFound || 0), 0);
+  const totalAICategorized = results.reduce((sum, r) => sum + (r.totalAICategorized || 0), 0);
+  const errors = results.filter((r) => !r.success).flatMap((r) => r.errors);
+
   return {
-    success: successCount > 0 || connections.length === 0,
-    message: `Synced ${successCount}/${connections.length} connections`,
-    syncedConnections: successCount,
+    success: totalSuccess > 0,
+    message: `Synced ${totalSuccess}/${totalConnections} connections`,
+    syncedConnections: totalSuccess,
     totalTransactionsNew: totalNew,
     totalTransactionsFound: totalFound,
     totalAICategorized,
     errors,
-    details: results,
+    details: results.flatMap((r) => r.details),
   };
 }
 
