@@ -7,11 +7,19 @@
  * - On-access stale sync (checkAndSync)
  *
  * This module is stateless and can be imported in serverless environments.
+ *
+ * Features:
+ * - Automatic AI categorization during sync (with rate limiting)
+ * - Auto-creation of categorization rules from high-confidence AI suggestions
  */
 
 import { prisma } from '@sfam/db';
 import { categorizeTransaction } from '@sfam/domain';
+import type { CategoryForCategorization } from '@sfam/domain';
 import { type BankProvider, type MappedTransaction, scraperService } from '@sfam/scraper';
+
+// AI rate limiting: Gemini allows 15 req/min, use 4.5s delay (~13 req/min to be safe)
+const AI_RATE_LIMIT_DELAY_MS = 4500;
 
 export interface CronSyncResult {
   success: boolean;
@@ -19,6 +27,7 @@ export interface CronSyncResult {
   syncedConnections: number;
   totalTransactionsNew: number;
   totalTransactionsFound?: number;
+  totalAICategorized?: number;
   errors: string[];
   duration?: number;
   details?: Array<{
@@ -26,6 +35,7 @@ export interface CronSyncResult {
     displayName: string;
     success: boolean;
     transactionsNew?: number;
+    aiCategorized?: number;
     error?: string;
   }>;
 }
@@ -34,6 +44,7 @@ export interface ConnectionSyncResult {
   success: boolean;
   transactionsFound: number;
   transactionsNew: number;
+  aiCategorized: number;
   errorMessage?: string;
 }
 
@@ -66,6 +77,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
   const errors: string[] = [];
   let totalNew = 0;
   let totalFound = 0;
+  let totalAICategorized = 0;
   let successCount = 0;
 
   for (const connection of connections) {
@@ -86,6 +98,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
         successCount++;
         totalNew += result.transactionsNew;
         totalFound += result.transactionsFound;
+        totalAICategorized += result.aiCategorized;
       } else {
         errors.push(`${connection.displayName}: ${result.errorMessage}`);
       }
@@ -95,6 +108,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
         displayName: connection.displayName,
         success: result.success,
         transactionsNew: result.transactionsNew,
+        aiCategorized: result.aiCategorized,
         error: result.errorMessage,
       });
     } catch (error) {
@@ -112,7 +126,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
   }
 
   console.log(
-    `[SyncService] Completed: ${successCount}/${connections.length} successful, ${totalNew} new transactions`
+    `[SyncService] Completed: ${successCount}/${connections.length} successful, ${totalNew} new transactions, ${totalAICategorized} AI-categorized`
   );
 
   return {
@@ -121,6 +135,7 @@ export async function syncAllConnectionsForCron(): Promise<CronSyncResult> {
     syncedConnections: successCount,
     totalTransactionsNew: totalNew,
     totalTransactionsFound: totalFound,
+    totalAICategorized,
     errors,
     details: results,
   };
@@ -163,6 +178,7 @@ export async function syncStaleConnectionsForHousehold(
   const results: CronSyncResult['details'] = [];
   const errors: string[] = [];
   let totalNew = 0;
+  let totalAICategorized = 0;
   let successCount = 0;
 
   for (const connection of staleConnections) {
@@ -180,6 +196,7 @@ export async function syncStaleConnectionsForHousehold(
       if (result.success) {
         successCount++;
         totalNew += result.transactionsNew;
+        totalAICategorized += result.aiCategorized;
       } else {
         errors.push(`${connection.displayName}: ${result.errorMessage}`);
       }
@@ -189,6 +206,7 @@ export async function syncStaleConnectionsForHousehold(
         displayName: connection.displayName,
         success: result.success,
         transactionsNew: result.transactionsNew,
+        aiCategorized: result.aiCategorized,
         error: result.errorMessage,
       });
     } catch (error) {
@@ -202,6 +220,7 @@ export async function syncStaleConnectionsForHousehold(
     message: `Synced ${successCount}/${staleConnections.length} stale connections`,
     syncedConnections: successCount,
     totalTransactionsNew: totalNew,
+    totalAICategorized,
     errors,
     details: results,
   };
@@ -320,13 +339,16 @@ async function syncSingleConnection(connection: {
         success: false,
         transactionsFound: 0,
         transactionsNew: 0,
+        aiCategorized: 0,
         errorMessage: result.errorMessage,
       };
     }
 
-    // Import new transactions
+    // Import new transactions with AI categorization
+    let aiCategorized = 0;
     if (transactions.length > 0) {
-      await importTransactions(connection, transactions);
+      const importResult = await importTransactions(connection, transactions);
+      aiCategorized = importResult.aiCategorized;
     }
 
     // Update sync job and connection
@@ -349,13 +371,14 @@ async function syncSingleConnection(connection: {
     });
 
     console.log(
-      `[SyncService] Sync completed for ${connection.id}: ${result.transactionsNew} new transactions`
+      `[SyncService] Sync completed for ${connection.id}: ${result.transactionsNew} new transactions, ${aiCategorized} AI-categorized`
     );
 
     return {
       success: true,
       transactionsFound: result.transactionsFound,
       transactionsNew: result.transactionsNew,
+      aiCategorized,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -382,7 +405,34 @@ async function syncSingleConnection(connection: {
 }
 
 /**
+ * Extract the most meaningful keyword from a description for rule creation
+ * Returns the longest word (≥4 chars) that's likely to be a merchant/business name
+ */
+function extractKeyword(description: string): string | null {
+  const words = description
+    .split(/\s+/)
+    .filter((w) => w.length >= 4)
+    // Filter out common Hebrew words and numbers
+    .filter((w) => !/^\d+$/.test(w))
+    .filter((w) => !['תשלום', 'העברה', 'משיכה', 'הפקדה', 'עמלה'].includes(w));
+
+  if (words.length === 0) return null;
+
+  // Return the longest word (likely to be the merchant name)
+  return words.sort((a, b) => b.length - a.length)[0] ?? null;
+}
+
+/**
+ * Helper to delay between operations
+ */
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
  * Import transactions into the database with auto-categorization
+ * Features:
+ * - Rule-based categorization (fast, no rate limiting)
+ * - AI categorization for uncategorized transactions (rate-limited)
+ * - Auto-creates categorization rules from high-confidence AI suggestions
  */
 async function importTransactions(
   connection: {
@@ -390,7 +440,10 @@ async function importTransactions(
     accountMappings: string | null;
   },
   transactions: MappedTransaction[]
-): Promise<void> {
+): Promise<{ aiCategorized: number }> {
+  let aiCategorizedCount = 0;
+  let aiCallCount = 0;
+
   // Parse account mappings
   const accountMappings: Record<string, string> = connection.accountMappings
     ? JSON.parse(connection.accountMappings)
@@ -438,6 +491,26 @@ async function importTransactions(
     type: r.type as 'merchant' | 'keyword' | 'regex',
   }));
 
+  // Get categories for AI categorization
+  const categoriesRaw = await prisma.category.findMany({
+    where: { householdId: connection.householdId, isActive: true },
+    select: { id: true, name: true, type: true },
+  });
+  const categories: CategoryForCategorization[] = categoriesRaw.map((c) => ({
+    ...c,
+    type: c.type as 'income' | 'expense',
+  }));
+
+  // Check if AI is enabled
+  const aiEnabled = !!process.env.GEMINI_API_KEY;
+  const aiApiKey = process.env.GEMINI_API_KEY;
+
+  if (aiEnabled) {
+    console.log(
+      `[SyncService] AI categorization enabled for sync (${transactions.length} transactions)`
+    );
+  }
+
   // Create transactions
   for (const txn of transactions) {
     const accountId = accountIdMap.get(txn.externalAccountId);
@@ -447,6 +520,7 @@ async function importTransactions(
       // Try to use external category first
       let validCategoryId: string | null = null;
       let categorizationSource = 'fallback';
+      let confidence = 0;
 
       if (txn.externalCategory) {
         // Look for existing category with this name
@@ -487,33 +561,114 @@ async function importTransactions(
         if (category) {
           validCategoryId = category.id;
           categorizationSource = 'imported';
+          confidence = 1;
         }
       }
 
-      // If no external category, try rule-based categorization
+      // If no external category, try rule-based categorization first (fast, no AI)
       if (!validCategoryId) {
-        const categorizationResult = await categorizeTransaction(
+        const ruleResult = await categorizeTransaction(
           {
             description: txn.description,
             merchant: txn.merchant,
             amount: txn.amount,
             direction: txn.direction,
           },
-          rules
+          rules,
+          undefined, // No categories for rule-only check
+          { enableAI: false }
         );
 
-        categorizationSource = categorizationResult.source;
-
-        if (categorizationResult.categoryId) {
+        // Only accept rule-based matches (not fallback)
+        if (ruleResult.categoryId && ruleResult.source !== 'fallback') {
           const category = await prisma.category.findFirst({
             where: {
-              id: categorizationResult.categoryId,
+              id: ruleResult.categoryId,
               householdId: connection.householdId,
             },
           });
 
           if (category) {
             validCategoryId = category.id;
+            categorizationSource = ruleResult.source;
+            confidence = ruleResult.confidence;
+          }
+        }
+      }
+
+      // If still no category and AI is enabled, try AI categorization (with rate limiting)
+      if (!validCategoryId && aiEnabled && categories.length > 0) {
+        // Apply rate limiting for AI calls
+        if (aiCallCount > 0) {
+          await delay(AI_RATE_LIMIT_DELAY_MS);
+        }
+        aiCallCount++;
+
+        const aiResult = await categorizeTransaction(
+          {
+            description: txn.description,
+            merchant: txn.merchant,
+            amount: txn.amount,
+            direction: txn.direction,
+          },
+          rules,
+          categories,
+          { enableAI: true, aiApiKey }
+        );
+
+        if (aiResult.categoryId && aiResult.source === 'ai_suggestion') {
+          // Validate category exists in household
+          const category = await prisma.category.findFirst({
+            where: {
+              id: aiResult.categoryId,
+              householdId: connection.householdId,
+            },
+          });
+
+          if (category) {
+            validCategoryId = category.id;
+            categorizationSource = 'ai_suggestion';
+            confidence = aiResult.confidence;
+            aiCategorizedCount++;
+
+            // Auto-create rule from high-confidence AI suggestion (≥75%)
+            // This helps the system "learn" and reduces future AI calls
+            if (aiResult.confidence >= 0.75) {
+              const rulePattern = txn.merchant || extractKeyword(txn.description);
+              const ruleType = txn.merchant ? 'merchant' : 'keyword';
+
+              if (rulePattern && rulePattern.length >= 3) {
+                // Check if similar rule already exists
+                const existingRule = await prisma.categoryRule.findFirst({
+                  where: {
+                    householdId: connection.householdId,
+                    pattern: { contains: rulePattern, mode: 'insensitive' },
+                  },
+                });
+
+                if (!existingRule) {
+                  try {
+                    await prisma.categoryRule.create({
+                      data: {
+                        householdId: connection.householdId,
+                        categoryId: validCategoryId,
+                        type: ruleType,
+                        pattern: rulePattern,
+                        priority: 5, // Medium priority - can be overridden by user rules
+                        isActive: true,
+                        createdFrom: 'ai_suggestion',
+                      },
+                    });
+                    console.log(
+                      `[SyncService] Auto-created ${ruleType} rule: "${rulePattern}" → category ${category.name}`
+                    );
+                  } catch (ruleError) {
+                    // Rule creation failed, but transaction was categorized - continue
+                    console.warn('[SyncService] Failed to create rule:', ruleError);
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -531,8 +686,8 @@ async function importTransactions(
           externalId: txn.externalId,
           categoryId: validCategoryId,
           categorizationSource: validCategoryId ? categorizationSource : 'fallback',
-          confidence: validCategoryId ? 1 : 0,
-          needsReview: !validCategoryId,
+          confidence: validCategoryId ? confidence : 0,
+          needsReview: !validCategoryId || categorizationSource === 'ai_suggestion',
         },
       });
     } catch (error) {
@@ -543,4 +698,12 @@ async function importTransactions(
       // Continue with other transactions
     }
   }
+
+  if (aiCategorizedCount > 0) {
+    console.log(
+      `[SyncService] AI categorized ${aiCategorizedCount}/${transactions.length} transactions`
+    );
+  }
+
+  return { aiCategorized: aiCategorizedCount };
 }

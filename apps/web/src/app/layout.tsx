@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Suspense } from 'react';
+import { Toaster } from 'sonner';
 import './globals.css';
 import { WebVitals } from '@/components/analytics/WebVitals';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -54,6 +55,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans antialiased">
         <WebVitals />
+        <Toaster position="top-center" richColors closeButton />
         <ThemeProvider>
           <TRPCProvider>
             <div className="flex min-h-screen">

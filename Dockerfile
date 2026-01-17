@@ -7,6 +7,8 @@ FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/db/package.json packages/db/
+# Copy prisma schema for postinstall script (prisma generate)
+COPY packages/db/prisma packages/db/prisma/
 COPY packages/api/package.json packages/api/
 COPY packages/domain/package.json packages/domain/
 COPY packages/scraper/package.json packages/scraper/
@@ -23,27 +25,23 @@ COPY . .
 # Generate Prisma client
 RUN cd packages/db && pnpm prisma generate
 
-# Build packages
+# Build packages (only web app, not mobile)
 ENV TURBO_TELEMETRY_DISABLED=1
-RUN pnpm build
+RUN pnpm turbo build --filter=@sfam/web...
 
 # Production runner
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy built files
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/web/.next ./apps/web/.next
+# Copy standalone build (includes all dependencies)
+COPY --from=builder /app/apps/web/.next/standalone ./
+# Copy static files and public assets
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /app/apps/web/public ./apps/web/public
-COPY --from=builder /app/apps/web/package.json ./apps/web/
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-WORKDIR /app/apps/web
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["pnpm", "start"]
+CMD ["node", "apps/web/server.js"]
